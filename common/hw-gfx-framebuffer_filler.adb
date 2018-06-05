@@ -17,6 +17,8 @@ with HW.MMIO_Range;
 pragma Elaborate_All (HW.MMIO_Range);
 
 package body HW.GFX.Framebuffer_Filler
+with
+   Refined_State => (State => FB.State, Base_Address => FB.Base_Address)
 is
 
    type FB_Index is new Natural range

@@ -18,8 +18,6 @@ pragma Elaborate_All (HW.MMIO_Range);
 with HW.PCI.Dev;
 pragma Elaborate_All (HW.PCI.Dev);
 
-with HW.GFX.Framebuffer_Filler;
-
 with HW.GFX.GMA.Config;
 with HW.GFX.GMA.Config_Helpers;
 with HW.GFX.GMA.Registers;
@@ -527,7 +525,15 @@ is
 
    ----------------------------------------------------------------------------
 
+   pragma Warnings
+     (GNATprove, Off, """Registers.Register_State"" * is not modified*",
+      Reason => "Power_Up_VGA is only effective on certain generations.");
    procedure Power_Up_VGA
+   with
+      Refined_Global =>
+        (Input => (Cur_Configs, Time.State),
+         In_Out => (Registers.Register_State),
+         Proof_In => (Initialized))
    is
       Fake_Config : constant Pipe_Configs :=
         (Primary =>
@@ -543,6 +549,14 @@ is
    begin
       Power_And_Clocks.Power_Up (Cur_Configs, Fake_Config);
    end Power_Up_VGA;
+   pragma Warnings
+     (GNATprove, Off, "no check message justified*", Reason => "see below");
+   pragma Annotate
+     (GNATprove, Intentional, "unused global",
+      "Power_Up_VGA is only effective on certain generations.");
+   pragma Warnings (GNATprove, On, "no check message justified*");
+   pragma Warnings
+     (GNATprove, On, """Registers.Register_State"" * is not modified*");
 
    ----------------------------------------------------------------------------
 

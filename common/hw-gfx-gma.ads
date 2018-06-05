@@ -16,6 +16,7 @@
 with HW.Config;
 with HW.Time;
 with HW.Port_IO;
+with HW.GFX.Framebuffer_Filler;
 
 package HW.GFX.GMA
 with
@@ -107,43 +108,85 @@ is
       Global => (Input => Init_State);
    pragma Warnings (GNATprove, On, "unused variable ""Write_Delay""");
 
-   pragma Warnings (GNATprove, Off, "subprogram ""Power_Up_VGA"" has no effect",
-                    Reason => "Effect depends on the platform compiled for");
    procedure Power_Up_VGA
    with
+      Global =>
+        (Input => (State, Time.State),
+         In_Out => (Device_State),
+         Proof_In => (Init_State)),
       Pre => Is_Initialized;
 
-   procedure Update_Outputs (Configs : Pipe_Configs);
+   ----------------------------------------------------------------------------
 
-   procedure Update_Cursor (Pipe : Pipe_Index; Cursor : Cursor_Type);
+   procedure Update_Outputs (Configs : Pipe_Configs)
+   with
+      Global =>
+        (Input => (Config_State, Time.State),
+         In_Out => (State, Device_State, Port_IO.State),
+         Proof_In => (Init_State)),
+      Pre => Is_Initialized;
+
+   procedure Update_Cursor (Pipe : Pipe_Index; Cursor : Cursor_Type)
+   with
+      Global =>
+        (In_Out => (State, Device_State),
+         Proof_In => (Init_State)),
+      Pre => Is_Initialized;
+
    procedure Place_Cursor
      (Pipe : Pipe_Index;
       X : Cursor_Pos;
-      Y : Cursor_Pos);
+      Y : Cursor_Pos)
+   with
+      Global =>
+        (In_Out => (State, Device_State),
+         Proof_In => (Init_State)),
+      Pre => Is_Initialized;
+
    procedure Move_Cursor
      (Pipe : Pipe_Index;
       X : Cursor_Pos;
-      Y : Cursor_Pos);
+      Y : Cursor_Pos)
+   with
+      Global =>
+        (In_Out => (State, Device_State),
+         Proof_In => (Init_State)),
+      Pre => Is_Initialized;
 
-   pragma Warnings (GNATprove, Off, "subprogram ""Dump_Configs"" has no effect",
-                    Reason => "It's only used for debugging");
-   procedure Dump_Configs (Configs : Pipe_Configs);
+   ----------------------------------------------------------------------------
 
    procedure Write_GTT
      (GTT_Page       : GTT_Range;
       Device_Address : GTT_Address_Type;
-      Valid          : Boolean);
+      Valid          : Boolean)
+   with
+      Global => (In_Out => Device_State, Proof_In => Init_State),
+      Pre => Is_Initialized;
 
    procedure Setup_Default_FB
      (FB       : in     Framebuffer_Type;
       Clear    : in     Boolean := True;
       Success  :    out Boolean)
    with
+      Global =>
+        (In_Out =>
+           (State, Device_State,
+            Framebuffer_Filler.State, Framebuffer_Filler.Base_Address),
+         Proof_In => (Init_State)),
       Pre => Is_Initialized and HW.Config.Dynamic_MMIO;
 
    procedure Map_Linear_FB (Linear_FB : out Word64; FB : in Framebuffer_Type)
    with
+      Global =>
+        (In_Out => (State, Device_State),
+         Proof_In => (Init_State)),
       Pre => Is_Initialized and HW.Config.Dynamic_MMIO;
+
+   ----------------------------------------------------------------------------
+
+   pragma Warnings (GNATprove, Off, "subprogram ""Dump_Configs"" has no effect",
+                    Reason => "It's only used for debugging");
+   procedure Dump_Configs (Configs : Pipe_Configs);
 
 private
 

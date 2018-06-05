@@ -19,6 +19,9 @@ with HW;
 use type HW.Int32;
 
 package HW.GFX.Framebuffer_Filler
+with
+   Abstract_State => ((State with External), Base_Address),
+   Initializes => Base_Address
 is
 
    procedure Fill (Linear_FB : Word64; Framebuffer : Framebuffer_Type)
