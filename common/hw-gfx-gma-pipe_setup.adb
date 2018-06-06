@@ -567,7 +567,8 @@ package body HW.GFX.GMA.Pipe_Setup is
            (Register => Registers.GMCH_PFIT_CONTROL,
             Value    => PF_CTRL_ENABLE or PF_Ctrl_Pipe_Sel or PF_Ctrl_Scaling);
       else
-         Debug.Put_Line ("GMCH Pannel fitter already in use, skipping...");
+         pragma Debug (Debug.Put_Line
+           ("GMCH Pannel fitter already in use, skipping..."));
       end if;
    end Setup_Gmch_Panel_Fitter;
 
