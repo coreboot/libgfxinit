@@ -29,24 +29,23 @@ is
    is
    begin
       return
-        (case Config.CPU is
-            when G45 =>
+        (case Config.Gen is
+            when G45 =>                -- everything on GMCH
                (case Port is
                    when Internal     => LVDS,
                    when HDMI1 | DP1  => DIGI_B,
                    when HDMI2 | DP2  => DIGI_C,
                    when HDMI3 | DP3  => DIGI_D,
                    when Analog       => VGA),
-            when Ironlake .. Ivybridge => -- everything but eDP through FDI/PCH
+            when Ironlake =>           -- everything but eDP through FDI/PCH
               (if Config.Internal_Is_EDP and then Port = Internal then
                   DIGI_A
                else
-                 (case Pipe is
-                     -- FDIs are fixed to the CPU pipe
+                 (case Pipe is   -- FDIs are fixed to the CPU pipe
                      when Primary   => DIGI_B,
                      when Secondary => DIGI_C,
                      when Tertiary  => DIGI_D)),
-            when Haswell .. Skylake =>    -- everything but VGA directly on CPU
+            when others =>             -- everything but VGA directly on CPU
               (case Port is
                   when Internal     => DIGI_A,  -- LVDS not available
                   when HDMI1 | DP1  => DIGI_B,

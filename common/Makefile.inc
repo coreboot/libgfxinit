@@ -45,6 +45,7 @@ gfxinit-y += hw-gfx.ads
 gfxinit-y += hw-gfx-framebuffer_filler.adb
 gfxinit-y += hw-gfx-framebuffer_filler.ads
 
+CONFIG_GFX_GMA_GENERATION	:= $(call strip_quotes,$(CONFIG_GFX_GMA_GENERATION))
 CONFIG_GFX_GMA_CPU		:= $(call strip_quotes,$(CONFIG_GFX_GMA_CPU))
 CONFIG_GFX_GMA_CPU_VARIANT	:= $(call strip_quotes,$(CONFIG_GFX_GMA_CPU_VARIANT))
 CONFIG_GFX_GMA_INTERNAL_PORT	:= $(call strip_quotes,$(CONFIG_GFX_GMA_INTERNAL_PORT))
@@ -54,7 +55,8 @@ hw-gfx-gma-config-ads := $(subst //,/,$(call src-to-obj,,$(dir)/hw-gfx-gma-confi
 
 $(hw-gfx-gma-config-ads): $(dir)/hw-gfx-gma-config.ads.template $(cnf)
 	printf "    GENERATE   $(patsubst /%,%,$(subst $(obj)/,,$@))\n"
-	sed -e's/<<CPU>>/$(CONFIG_GFX_GMA_CPU)/' \
+	sed -e's/<<GEN>>/$(CONFIG_GFX_GMA_GENERATION)/' \
+	    -e's/<<CPU>>/$(CONFIG_GFX_GMA_CPU)/' \
 	    -e's/<<CPU_VARIANT>>/$(CONFIG_GFX_GMA_CPU_VARIANT)/' \
 	    -e's/<<INTERNAL_PORT>>/$(CONFIG_GFX_GMA_INTERNAL_PORT)/' \
 	    -e's/<<ANALOG_I2C_PORT>>/$(CONFIG_GFX_GMA_ANALOG_I2C_PORT)/' \

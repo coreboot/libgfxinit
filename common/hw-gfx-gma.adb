@@ -398,13 +398,13 @@ is
       is
          Audio_VID_DID : Word32;
       begin
-         case Config.CPU is
+         case Config.Gen is
             when G45 =>
                Registers.Read (Registers.G4X_AUD_VID_DID, Audio_VID_DID);
+            when Ironlake =>
+               Registers.Read (Registers.PCH_AUD_VID_DID, Audio_VID_DID);
             when Haswell .. Skylake =>
                Registers.Read (Registers.AUD_VID_DID, Audio_VID_DID);
-            when Ironlake .. Ivybridge =>
-               Registers.Read (Registers.PCH_AUD_VID_DID, Audio_VID_DID);
          end case;
          Success :=
            (case Config.CPU is
