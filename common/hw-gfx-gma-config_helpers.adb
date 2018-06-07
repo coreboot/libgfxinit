@@ -131,7 +131,7 @@ is
    is
    begin
       Success :=
-         Config.Supported_Pipe (Pipe) and then
+         (Config.Has_Tertiary_Pipe or Pipe <= Secondary) and then
          Config.Valid_Port (Port) and then
          Port /= Disabled; -- Valid_Port should already cover this, but the
                            -- array is writeable, so it's hard to prove this.

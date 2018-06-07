@@ -43,6 +43,7 @@ is
    Has_Presence_Straps     : constant Boolean := CPU /= Broxton;
 
    ----- CPU pipe: --------
+   Has_Tertiary_Pipe       : constant Boolean := CPU >= Ivybridge;
    Disable_Trickle_Feed    : constant Boolean := not
                                                 (CPU in Haswell .. Broadwell);
    Pipe_Enabled_Workaround : constant Boolean := CPU = Broadwell;
@@ -133,15 +134,7 @@ is
    ----------------------------------------------------------------------------
 
    Max_Pipe : constant Pipe_Index :=
-     (if CPU <= Sandybridge
-      then Secondary
-      else Tertiary);
-
-   type Supported_Pipe_Array is array (Pipe_Index) of Boolean;
-   Supported_Pipe : constant Supported_Pipe_Array :=
-     (Primary     => Primary     <= Max_Pipe,
-      Secondary   => Secondary   <= Max_Pipe,
-      Tertiary    => Tertiary    <= Max_Pipe);
+     (if Has_Tertiary_Pipe then Tertiary else Secondary);
 
    type Valid_Per_Port is array (Port_Type) of Boolean;
    type Valid_Per_GPU is array (CPU_Type) of Valid_Per_Port;
