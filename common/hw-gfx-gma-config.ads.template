@@ -71,7 +71,7 @@ is
    ----- PCH/FDI: ---------
    Has_PCH                 : constant Boolean := CPU /= Broxton and CPU /= G45;
    Has_PCH_DAC             : constant Boolean := CPU in Ironlake .. Ivybridge or
-                                                 (CPU in Broadwell .. Haswell
+                                                 (CPU in Haswell .. Broadwell
                                                   and CPU_Var = Normal);
 
    Has_PCH_Aux_Channels    : constant Boolean := CPU in Ironlake .. Broadwell;
