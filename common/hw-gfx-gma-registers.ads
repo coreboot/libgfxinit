@@ -23,6 +23,15 @@ with
      (GTT_State      with External, Part_Of => GMA.Device_State)),
    Initializes => Address_State
 is
+
+   MMIO_GTT_32_Size     : constant := 16#20_0000#;
+   MMIO_GTT_32_Offset   : constant := 16#20_0000#;
+
+   -- Limit Broadwell+ to 4MiB to have a stable
+   -- interface (i.e. same number of entries):
+   MMIO_GTT_64_Size     : constant := 16#40_0000#;
+   MMIO_GTT_64_Offset   : constant := 16#80_0000#;
+
    type Registers_Invalid_Index is
      (Invalid_Register, -- Allow a placeholder when access is not acceptable
 

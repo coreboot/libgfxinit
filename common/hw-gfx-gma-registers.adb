@@ -26,9 +26,10 @@ use type HW.Word64;
 package body HW.GFX.GMA.Registers
 with
    Refined_State =>
-     (Address_State  => (Regs.Base_Address, GTT.Base_Address),
+     (Address_State  =>
+        (Regs.Base_Address, GTT_32.Base_Address, GTT_64.Base_Address),
       Register_State => Regs.State,
-      GTT_State      => GTT.State)
+      GTT_State      => (GTT_32.State, GTT_64.State))
 is
    pragma Disable_Atomic_Synchronization;
 
@@ -46,16 +47,27 @@ is
 
    ----------------------------------------------------------------------------
 
-   type GTT_PTE_Type is mod 2 ** (Config.GTT_PTE_Size * 8);
-   type GTT_Registers_Type is array (GTT_Range) of GTT_PTE_Type
+   type GTT_PTE_32 is mod 2 ** 32;
+   type GTT_Registers_32 is array (GTT_Range) of GTT_PTE_32
    with
       Volatile_Components,
-      Size => Config.GTT_Size * 8;
-   package GTT is new MMIO_Range
-     (Base_Addr   => Config.Default_MMIO_Base + Config.GTT_Offset,
-      Element_T   => GTT_PTE_Type,
+      Size => MMIO_GTT_32_Size * 8;
+   package GTT_32 is new MMIO_Range
+     (Base_Addr   => Config.Default_MMIO_Base + MMIO_GTT_32_Offset,
+      Element_T   => GTT_PTE_32,
       Index_T     => GTT_Range,
-      Array_T     => GTT_Registers_Type);
+      Array_T     => GTT_Registers_32);
+
+   type GTT_PTE_64 is mod 2 ** 64;
+   type GTT_Registers_64 is array (GTT_Range) of GTT_PTE_64
+   with
+      Volatile_Components,
+      Size => MMIO_GTT_64_Size * 8;
+   package GTT_64 is new MMIO_Range
+     (Base_Addr   => Config.Default_MMIO_Base + MMIO_GTT_64_Offset,
+      Element_T   => GTT_PTE_64,
+      Index_T     => GTT_Range,
+      Array_T     => GTT_Registers_64);
 
    GTT_PTE_Valid : constant Word32 := 1;
 
@@ -147,17 +159,17 @@ is
       Valid          : Boolean)
    is
    begin
-      if Config.Fold_39Bit_GTT_PTE then
-         GTT.Write
+      if not Config.Has_64bit_GTT then
+         GTT_32.Write
            (Index => GTT_Page,
-            Value => GTT_PTE_Type (Device_Address and 16#ffff_f000#) or
-                     GTT_PTE_Type (Shift_Right (Word64 (Device_Address), 32 - 4)
+            Value => GTT_PTE_32 (Device_Address and 16#ffff_f000#) or
+                     GTT_PTE_32 (Shift_Right (Word64 (Device_Address), 32 - 4)
                                    and 16#0000_07f0#) or
                      Boolean'Pos (Valid));
       else
-         GTT.Write
+         GTT_64.Write
            (Index => GTT_Page,
-            Value => GTT_PTE_Type (Device_Address and 16#7f_ffff_f000#) or
+            Value => GTT_PTE_64 (Device_Address and 16#7f_ffff_f000#) or
                      Boolean'Pos (Valid));
       end if;
    end Write_GTT;
@@ -375,9 +387,11 @@ is
    begin
       Regs.Set_Base_Address (Base);
       if GTT_Base = 0 then
-         GTT.Set_Base_Address (Base + Config.GTT_Offset);
+         GTT_32.Set_Base_Address (Base + MMIO_GTT_32_Offset);
+         GTT_64.Set_Base_Address (Base + MMIO_GTT_64_Offset);
       else
-         GTT.Set_Base_Address (GTT_Base);
+         GTT_32.Set_Base_Address (GTT_Base);
+         GTT_64.Set_Base_Address (GTT_Base);
       end if;
    end Set_Register_Base;
 

@@ -133,7 +133,7 @@ is
    Has_Per_Pipe_SRD        : constant Boolean := CPU >= Broadwell;
 
    ----- GTT: -------------
-   Fold_39Bit_GTT_PTE      : constant Boolean := CPU <= Haswell;
+   Has_64bit_GTT           : constant Boolean := CPU >= Broadwell;
 
    ----------------------------------------------------------------------------
 
@@ -250,19 +250,7 @@ is
 
    ----------------------------------------------------------------------------
 
-   GTT_Offset  : constant := (case CPU is
-                                 when G45 .. Haswell   => 16#0020_0000#,
-                                 when Broadwell .. Skylake  => 16#0080_0000#);
-
-   GTT_Size    : constant := (case CPU is
-                                 when G45 .. Haswell   => 16#0020_0000#,
-                                 -- Limit Broadwell to 4MiB to have a stable
-                                 -- interface (i.e. same number of entries):
-                                 when Broadwell .. Skylake  => 16#0040_0000#);
-
-   GTT_PTE_Size   : constant := (case CPU is
-                                    when G45 .. Haswell       => 4,
-                                    when Broadwell .. Skylake => 8);
+   GTT_PTE_Size : constant := (if Has_64bit_GTT then 8 else 4);
 
    Fence_Base : constant := (case CPU is
                               when G45 .. Ironlake          => 16#0000_3000#,

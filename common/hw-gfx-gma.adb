@@ -386,6 +386,10 @@ is
    is
       use type HW.Word64;
 
+      function MMIO_GTT_Offset return Natural is
+        (if Config.Has_64bit_GTT
+         then Registers.MMIO_GTT_64_Offset
+         else Registers.MMIO_GTT_32_Offset);
       PCI_MMIO_Base, PCI_GTT_Base : Word64;
 
       Now : constant Time.T := Time.Now;
@@ -447,8 +451,8 @@ is
       Dev.Initialize (Success);
 
       if Success then
-         Dev.Map (PCI_MMIO_Base, PCI.Res0, Length => Config.GTT_Offset);
-         Dev.Map (PCI_GTT_Base, PCI.Res0, Offset => Config.GTT_Offset);
+         Dev.Map (PCI_MMIO_Base, PCI.Res0, Length => MMIO_GTT_Offset);
+         Dev.Map (PCI_GTT_Base, PCI.Res0, Offset => MMIO_GTT_Offset);
          if PCI_MMIO_Base /= 0 and PCI_GTT_Base /= 0 then
             Registers.Set_Register_Base (PCI_MMIO_Base, PCI_GTT_Base);
          else
