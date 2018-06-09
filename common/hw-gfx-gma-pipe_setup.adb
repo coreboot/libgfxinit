@@ -283,18 +283,6 @@ package body HW.GFX.GMA.Pipe_Setup is
       Dither_BPC  : BPC_Type;
       Dither      : Boolean)
    with
-      Global => (In_Out => (Registers.Register_State, Port_IO.State)),
-      Depends =>
-        (Registers.Register_State
-            =>+
-              (Registers.Register_State,
-               Controller,
-               Framebuffer,
-               Dither_BPC,
-               Dither),
-         Port_IO.State
-            =>+
-               (Framebuffer)),
       Pre =>
          Framebuffer.Offset = VGA_PLANE_FRAMEBUFFER_OFFSET or
          Framebuffer.Height + Framebuffer.Start_Y <= Framebuffer.V_Stride
