@@ -41,6 +41,7 @@ is
    Internal_Is_EDP         : constant Boolean := Internal_Display = DP;
    Have_DVI_I              : constant Boolean := Analog_I2C_Port /= PCH_DAC;
    Has_Presence_Straps     : constant Boolean := CPU /= Broxton;
+   Is_ULT                  : constant Boolean := CPU_Var = ULT;
 
    ----- CPU pipe: --------
    Has_Tertiary_Pipe       : constant Boolean := CPU >= Ivybridge;
@@ -73,7 +74,7 @@ is
    Has_PCH                 : constant Boolean := CPU /= Broxton and CPU /= G45;
    Has_PCH_DAC             : constant Boolean := CPU in Ironlake .. Ivybridge or
                                                  (CPU in Haswell .. Broadwell
-                                                  and CPU_Var = Normal);
+                                                  and not Is_ULT);
 
    Has_PCH_Aux_Channels    : constant Boolean := CPU in Ironlake .. Broadwell;
 
@@ -97,13 +98,13 @@ is
    Has_Per_DDI_Clock_Sel   : constant Boolean := CPU in Haswell .. Broadwell;
    Has_HOTPLUG_CTL         : constant Boolean := CPU in Haswell .. Broadwell;
    Has_SHOTPLUG_CTL_A      : constant Boolean := (CPU in Haswell .. Broadwell
-                                                  and CPU_Var = ULT) or
+                                                  and Is_ULT) or
                                                  CPU >= Skylake;
 
    Has_DDI_PHYs            : constant Boolean := CPU = Broxton;
 
    Has_DDI_D               : constant Boolean := CPU >= Haswell and
-                                                 CPU_Var = Normal and
+                                                 not Is_ULT and
                                                  not Has_DDI_PHYs;
    Has_DDI_E               : constant Boolean := -- might be disabled by x4 eDP
                                                  Has_DDI_D;
@@ -121,8 +122,7 @@ is
    Has_PCH_GMBUS           : constant Boolean := CPU >= Ironlake;
 
    ----- Power: -----------
-   Has_IPS                 : constant Boolean := (CPU = Haswell and
-                                                  CPU_Var = ULT) or
+   Has_IPS                 : constant Boolean := (CPU = Haswell and Is_ULT) or
                                                  CPU = Broadwell;
    Has_IPS_CTL_Mailbox     : constant Boolean := CPU = Broadwell;
 
@@ -248,10 +248,7 @@ is
               Sandybridge  |
               Ivybridge    => 125_000_000,
          when Haswell      |
-              Broadwell    => (if CPU_Var = Normal then
-                                 125_000_000
-                               else
-                                 24_000_000),
+              Broadwell    => (if Is_ULT then 24_000_000 else 125_000_000),
          when Broxton      => Frequency_Type'First,   -- none needed
          when Skylake      => 24_000_000);
 

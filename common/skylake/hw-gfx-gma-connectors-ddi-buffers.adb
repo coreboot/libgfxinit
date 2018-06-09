@@ -101,15 +101,14 @@ is
          else Config.Default_DDI_HDMI_Buffer_Translation);
    begin
       Trans :=
-        (case Config.CPU_Var is
-            when Normal =>
-              (if DDIA_Low_Voltage_Swing
-               then Skylake_Trans_EDP
-               else Skylake_Trans_DP),
-            when ULT =>
-              (if DDIA_Low_Voltage_Swing
-               then Skylake_U_Trans_EDP
-               else Skylake_U_Trans_DP));
+        (if not Config.Is_ULT then
+           (if DDIA_Low_Voltage_Swing
+            then Skylake_Trans_EDP
+            else Skylake_Trans_DP)
+         else
+           (if DDIA_Low_Voltage_Swing
+            then Skylake_U_Trans_EDP
+            else Skylake_U_Trans_DP));
       if not DDIA_Low_Voltage_Swing then
          Trans (18) := Skylake_Trans_HDMI (HDMI_Trans).Trans1;
          Trans (19) := Skylake_Trans_HDMI (HDMI_Trans).Trans2;
