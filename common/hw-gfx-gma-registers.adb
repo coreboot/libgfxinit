@@ -61,7 +61,7 @@ is
 
    ----------------------------------------------------------------------------
 
-   subtype Fence_Range is Registers_Range range 0 .. Config.Fence_Count - 1;
+   subtype Fence_Range is Natural range 0 .. 31;
 
    FENCE_PAGE_SHIFT                    : constant := 12;
    FENCE_PAGE_MASK                     : constant := 16#ffff_f000#;
@@ -69,14 +69,14 @@ is
    FENCE_VALID                         : constant := 1 * 2 ** 0;
 
    function Fence_Lower_Idx (Fence : Fence_Range) return Registers_Range is
-      (Config.Fence_Base / Register_Width + 2 * Fence);
+      (Registers_Range (Config.Fence_Base / Register_Width + 2 * Fence));
    function Fence_Upper_Idx (Fence : Fence_Range) return Registers_Range is
       (Fence_Lower_Idx (Fence) + 1);
 
    procedure Clear_Fences
    is
    begin
-      for Fence in Fence_Range loop
+      for Fence in Fence_Range range 0 .. Config.Fence_Count - 1 loop
          Regs.Write (Fence_Lower_Idx (Fence), 0);
       end loop;
    end Clear_Fences;
@@ -101,7 +101,7 @@ is
       pragma Debug (Debug.Put_Line (" tiles per row."));
 
       Success := False;
-      for Fence in Fence_Range loop
+      for Fence in Fence_Range range 0 .. Config.Fence_Count - 1 loop
          Regs.Read (Reg32, Fence_Lower_Idx (Fence));
          if (Reg32 and FENCE_VALID) = 0 then
             Regs.Write
@@ -127,7 +127,7 @@ is
          Shift_Left (Word32 (Last_Page), FENCE_PAGE_SHIFT);
       Fence_Upper, Fence_Lower : Word32;
    begin
-      for Fence in Fence_Range loop
+      for Fence in Fence_Range range 0 .. Config.Fence_Count - 1 loop
          Regs.Read (Fence_Lower, Fence_Lower_Idx (Fence));
          Regs.Read (Fence_Upper, Fence_Upper_Idx (Fence));
          if (Fence_Lower and FENCE_PAGE_MASK) = Page_Lower and
