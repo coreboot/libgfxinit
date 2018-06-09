@@ -601,6 +601,15 @@ is
       Registers.Write_GTT (GTT_Page, Device_Address, Valid);
    end Write_GTT;
 
+   procedure Read_GTT
+     (Device_Address :    out GTT_Address_Type;
+      Valid          :    out Boolean;
+      GTT_Page       : in     GTT_Range)
+   is
+   begin
+      Registers.Read_GTT (Device_Address, Valid, GTT_Page);
+   end Read_GTT;
+
    procedure Setup_Default_GTT (FB : Framebuffer_Type; Phys_Base : Word32)
    with
       Pre => Is_Initialized and Valid_Phys_FB (FB, Phys_Base)

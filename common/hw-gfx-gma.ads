@@ -163,6 +163,14 @@ is
       Global => (In_Out => Device_State, Proof_In => Init_State),
       Pre => Is_Initialized;
 
+   procedure Read_GTT
+     (Device_Address :    out GTT_Address_Type;
+      Valid          :    out Boolean;
+      GTT_Page       : in     GTT_Range)
+   with
+      Global => (In_Out => Device_State, Proof_In => Init_State),
+      Pre => Is_Initialized;
+
    procedure Setup_Default_FB
      (FB       : in     Framebuffer_Type;
       Clear    : in     Boolean := True;

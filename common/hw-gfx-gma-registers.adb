@@ -69,7 +69,7 @@ is
       Index_T     => GTT_Range,
       Array_T     => GTT_Registers_64);
 
-   GTT_PTE_Valid : constant Word32 := 1;
+   GTT_PTE_Valid : constant := 1;
 
    ----------------------------------------------------------------------------
 
@@ -173,6 +173,33 @@ is
                      Boolean'Pos (Valid));
       end if;
    end Write_GTT;
+
+   procedure Read_GTT
+     (Device_Address :    out GTT_Address_Type;
+      Valid          :    out Boolean;
+      GTT_Page       : in     GTT_Range)
+   is
+   begin
+      if not Config.Has_64bit_GTT then
+         declare
+            PTE : GTT_PTE_32;
+         begin
+            GTT_32.Read (PTE, GTT_Page);
+            Valid := (PTE and GTT_PTE_Valid) /= 0;
+            Device_Address := GTT_Address_Type
+              (Shift_Left (Word64 (PTE and 16#07f0#), 32 - 4) or
+               Word64 (PTE and 16#ffff_f000#));
+         end;
+      else
+         declare
+            PTE : GTT_PTE_64;
+         begin
+            GTT_64.Read (PTE, GTT_Page);
+            Valid := (PTE and GTT_PTE_Valid) /= 0;
+            Device_Address := GTT_Address_Type (PTE and 16#7f_ffff_f000#);
+         end;
+      end if;
+   end Read_GTT;
 
    ----------------------------------------------------------------------------
 

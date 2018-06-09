@@ -1720,17 +1720,21 @@ is
 
    procedure Remove_Fence (First_Page, Last_Page : GTT_Range);
 
-   pragma Warnings (Off, "declaration of ""Write_GTT"" hides one at *");
    procedure Write_GTT
      (GTT_Page       : GTT_Range;
       Device_Address : GTT_Address_Type;
       Valid          : Boolean)
    with
       Global  => (In_Out => GTT_State),
-      Depends => (GTT_State =>+ (GTT_Page, Device_Address, Valid)),
-      Pre     => True,
-      Post    => True;
-   pragma Warnings (On, "declaration of ""Write_GTT"" hides one at *");
+      Depends => (GTT_State =>+ (GTT_Page, Device_Address, Valid));
+
+   procedure Read_GTT
+     (Device_Address :    out GTT_Address_Type;
+      Valid          :    out Boolean;
+      GTT_Page       : in     GTT_Range)
+   with
+      Global  => (In_Out => GTT_State),
+      Depends => ((Device_Address, Valid, GTT_State) => (GTT_State, GTT_Page));
 
    procedure Set_Register_Base (Base : Word64; GTT_Base : Word64 := 0)
    with
