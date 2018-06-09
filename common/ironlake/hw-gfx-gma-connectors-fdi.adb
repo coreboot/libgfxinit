@@ -40,7 +40,7 @@ is
    FDI_TX_CTL_AUTO_TRAIN_ENABLE        : constant :=      1 * 2 ** 10;
    FDI_TX_CTL_AUTO_TRAIN_DONE          : constant :=      1 * 2 **  1;
 
-   TP_SHIFT : constant := (if Config.CPU <= Sandybridge then 28 else 8);
+   TP_SHIFT : constant := (if Config.Has_New_FDI_Source then 8 else 28);
    FDI_TX_CTL_TRAINING_PATTERN_MASK    : constant := 3 * 2 ** TP_SHIFT;
    FDI_TX_CTL_TRAINING_PATTERN_1       : constant := 0 * 2 ** TP_SHIFT;
    FDI_TX_CTL_TRAINING_PATTERN_2       : constant := 1 * 2 ** TP_SHIFT;

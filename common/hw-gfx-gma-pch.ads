@@ -23,16 +23,10 @@ private package HW.GFX.GMA.PCH is
    -- common to all PCH outputs
 
    PCH_TRANSCODER_SELECT_SHIFT : constant :=
-     (case Config.CPU is
-         when Ironlake                       => 30,
-         when Sandybridge | Ivybridge        => 29,
-         when others                         =>  0);
+     (if Config.Has_New_FDI_Sink then 29 else 30);
 
    PCH_TRANSCODER_SELECT_MASK : constant :=
-     (case Config.CPU is
-         when Ironlake                       => 1 * 2 ** 30,
-         when Sandybridge | Ivybridge        => 3 * 2 ** 29,
-         when others                         =>  0);
+     (if Config.Has_New_FDI_Sink then 3 * 2 ** 29 else 1 * 2 ** 30);
 
    type PCH_TRANSCODER_SELECT_Array is array (FDI_Port_Type) of Word32;
    PCH_TRANSCODER_SELECT : constant PCH_TRANSCODER_SELECT_Array :=

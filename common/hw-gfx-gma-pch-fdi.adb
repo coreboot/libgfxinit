@@ -30,7 +30,7 @@ package body HW.GFX.GMA.PCH.FDI is
    FDI_RX_CTL_RAWCLK_TO_PCDCLK_SEL_RAWCLK : constant := 0 * 2 **  4;
    FDI_RX_CTL_RAWCLK_TO_PCDCLK_SEL_PCDCLK : constant := 1 * 2 **  4;
 
-   TP_SHIFT : constant := (if Config.CPU = Ironlake then 28 else 8);
+   TP_SHIFT : constant := (if Config.Has_New_FDI_Sink then 8 else 28);
    FDI_RX_CTL_TRAINING_PATTERN_MASK       : constant := 3 * 2 ** TP_SHIFT;
 
    type TP_Array is array (Training_Pattern) of Word32;

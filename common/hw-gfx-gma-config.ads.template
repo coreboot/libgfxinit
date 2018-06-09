@@ -87,6 +87,8 @@ is
    Has_DPLL_SEL            : constant Boolean := CPU in Ironlake .. Ivybridge;
    Has_FDI_BPC             : constant Boolean := CPU in Ironlake .. Ivybridge;
    Has_FDI_Composite_Sel   : constant Boolean := CPU = Ivybridge;
+   Has_New_FDI_Sink        : constant Boolean := CPU >= Sandybridge;
+   Has_New_FDI_Source      : constant Boolean := CPU >= Ivybridge;
    Has_Trans_DP_Ctl        : constant Boolean := CPU in
                                                  Sandybridge .. Ivybridge;
    Has_FDI_C               : constant Boolean := CPU = Ivybridge;
