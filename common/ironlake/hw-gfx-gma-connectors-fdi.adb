@@ -270,7 +270,7 @@ is
 
    procedure Pre_On (Port_Cfg : Port_Config)
    is
-      Composite_Sel : constant :=
+      Composite_Sel : constant Word32 :=
         (if Config.Has_FDI_Composite_Sel then
             FDI_TX_CTL_COMPOSITE_SYNC_SELECT else 0);
    begin

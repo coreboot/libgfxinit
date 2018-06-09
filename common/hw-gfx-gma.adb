@@ -695,7 +695,7 @@ is
    with
       Pre => Is_Initialized
    is
-      GGC_Reg : constant :=
+      GGC_Reg : constant PCI.Index :=
         (if Config.Gen_G45 or Config.CPU_Ironlake then 16#52# else 16#50#);
       GGC : Word16;
    begin
