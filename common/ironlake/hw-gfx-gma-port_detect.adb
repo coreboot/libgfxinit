@@ -69,6 +69,8 @@ is
          PCH_HDMI_C => DP2,
          PCH_HDMI_D => DP3);
    begin
+      Config.Valid_Port (Analog) := True;
+
       case Config.Internal_Display is
          when LVDS =>
             -- PCH_LVDS

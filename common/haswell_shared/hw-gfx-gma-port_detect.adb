@@ -135,10 +135,8 @@ is
          else
             DDI_Detected := True;
          end if;
-         Config.Valid_Port (To_HDMI_Port (Port)) :=
-            Config.Valid_Port (To_HDMI_Port (Port)) and DDI_Detected;
-         Config.Valid_Port (To_DP_Port (Port)) :=
-            Config.Valid_Port (To_DP_Port (Port)) and DDI_Detected;
+         Config.Valid_Port (To_HDMI_Port (Port)) := DDI_Detected;
+         Config.Valid_Port (To_DP_Port (Port)) := DDI_Detected;
 
          if DDI_Detected then
             Registers.Unset_And_Set_Mask

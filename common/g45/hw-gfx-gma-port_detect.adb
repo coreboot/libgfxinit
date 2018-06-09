@@ -73,6 +73,8 @@ is
          DIGI_D => DP3);
 
    begin
+      Config.Valid_Port (Analog) := True;
+      Config.Valid_Port (Internal) := Config.Internal_Is_LVDS;
       for HDMI_Port in GMCH_HDMI_Port loop
          Registers.Is_Set_Mask
            (Register => GMCH_HDMI (HDMI_Port),

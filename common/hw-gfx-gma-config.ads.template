@@ -14,7 +14,7 @@
 
 private package HW.GFX.GMA.Config
 with
-   Initializes => (Valid_Port_GPU, Raw_Clock)
+   Initializes => (Valid_Port, Raw_Clock)
 is
 
    CPU : constant CPU_Type := <<CPU>>;
@@ -38,6 +38,7 @@ is
    Default_MMIO_Base_Set   : constant Boolean := Default_MMIO_Base /= 0;
 
    Has_Internal_Display    : constant Boolean := Internal_Display /= None;
+   Internal_Is_LVDS        : constant Boolean := Internal_Display = LVDS;
    Internal_Is_EDP         : constant Boolean := Internal_Display = DP;
    Have_DVI_I              : constant Boolean := Analog_I2C_Port /= PCH_DAC;
    Has_Presence_Straps     : constant Boolean := CPU /= Broxton;
@@ -136,55 +137,9 @@ is
    Max_Pipe : constant Pipe_Index :=
      (if Has_Tertiary_Pipe then Tertiary else Secondary);
 
-   type Valid_Per_Port is array (Port_Type) of Boolean;
-   type Valid_Per_GPU is array (CPU_Type) of Valid_Per_Port;
-   Valid_Port_GPU : Valid_Per_GPU :=
-     (G45         =>
-        (Disabled => False,
-         Internal => Config.Internal_Display = LVDS,
-         HDMI3    => False,
-         others   => True),
-      Ironlake    =>
-        (Disabled => False,
-         Internal => Config.Internal_Display = LVDS,
-         others   => True),
-      Sandybridge =>
-        (Disabled => False,
-         Internal => Config.Internal_Display = LVDS,
-         others   => True),
-      Ivybridge   =>
-        (Disabled => False,
-         Internal => Config.Internal_Display /= None,
-         others   => True),
-      Haswell     =>
-        (Disabled => False,
-         Internal => Config.Internal_Display = DP,
-         HDMI3    => CPU_Var = Normal,
-         DP3      => CPU_Var = Normal,
-         Analog   => CPU_Var = Normal,
-         others   => True),
-      Broadwell   =>
-        (Disabled => False,
-         Internal => Config.Internal_Display = DP,
-         HDMI3    => CPU_Var = Normal,
-         DP3      => CPU_Var = Normal,
-         Analog   => CPU_Var = Normal,
-         others   => True),
-      Broxton     =>
-        (Internal => Config.Internal_Display = DP,
-         DP1      => True,
-         DP2      => True,
-         HDMI1    => True,
-         HDMI2    => True,
-         others   => False),
-      Skylake     =>
-        (Disabled => False,
-         Internal => Config.Internal_Display = DP,
-         Analog   => False,
-         others   => True))
+   Valid_Port : array (Port_Type) of Boolean := (others => False)
    with
       Part_Of => GMA.Config_State;
-   Valid_Port : Valid_Per_Port renames Valid_Port_GPU (CPU);
 
    Last_Digital_Port : constant Digital_Port :=
      (if Has_DDI_E then DIGI_E else DIGI_C);
@@ -195,7 +150,7 @@ is
    Is_FDI_Port : constant FDI_Per_Port :=
      (case CPU is
          when Ironlake .. Ivybridge => FDI_Per_Port'
-           (Internal => Internal_Display = LVDS,
+           (Internal => Internal_Is_LVDS,
             others   => True),
          when Haswell .. Broadwell => FDI_Per_Port'
            (Analog   => Has_PCH_DAC,

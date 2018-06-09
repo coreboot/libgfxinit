@@ -44,7 +44,7 @@ package body HW.GFX.GMA
          HPD_Delay, Wait_For_HPD,
          Linear_FB_Base),
       Init_State => Initialized,
-      Config_State => (Config.Valid_Port_GPU, Config.Raw_Clock),
+      Config_State => (Config.Valid_Port, Config.Raw_Clock),
       Device_State =>
         (Dev.PCI_State, Registers.Register_State, Registers.GTT_State))
 is
@@ -371,7 +371,7 @@ is
    with
       Refined_Global =>
         (In_Out =>
-           (Config.Valid_Port_GPU, Dev.PCI_State,
+           (Config.Valid_Port, Dev.PCI_State,
             Registers.Register_State, Port_IO.State,
             Config.Raw_Clock),
          Input =>
