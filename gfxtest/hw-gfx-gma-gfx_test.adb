@@ -28,21 +28,17 @@ is
 
    package Dev is new PCI.Dev (PCI.Address'(0, 2, 0));
 
-   type GTT_PTE_Type is mod 2 ** (Config.GTT_PTE_Size * 8);
-   type GTT_Registers_Type is array (GTT_Range) of GTT_PTE_Type;
-   package GTT is new MMIO_Range
-     (Base_Addr   => 0,
-      Element_T   => GTT_PTE_Type,
-      Index_T     => GTT_Range,
-      Array_T     => GTT_Registers_Type);
-
-   GTT_Backup : GTT_Registers_Type;
+   type GTT_Entry is record
+      Addr  : GTT_Address_Type;
+      Valid : Boolean;
+   end record;
+   GTT_Backup : array (GTT_Range) of GTT_Entry;
 
    procedure Backup_GTT
    is
    begin
       for Idx in GTT_Range loop
-         GTT.Read (GTT_Backup (Idx), Idx);
+         Read_GTT (GTT_Backup (Idx).Addr, GTT_Backup (Idx).Valid, Idx);
       end loop;
    end Backup_GTT;
 
@@ -50,7 +46,7 @@ is
    is
    begin
       for Idx in GTT_Range loop
-         GTT.Write (Idx, GTT_Backup (Idx));
+         Write_GTT (Idx, GTT_Backup (Idx).Addr, GTT_Backup (Idx).Valid);
       end loop;
    end Restore_GTT;
 
@@ -573,13 +569,6 @@ is
          Debug.Put_Line ("Failed to map PCI config.");
          return;
       end if;
-
-      Dev.Map (Res_Addr, PCI.Res0, Offset => Config.GTT_Offset);
-      if Res_Addr = 0 then
-         Debug.Put_Line ("Failed to map PCI resource0.");
-         return;
-      end if;
-      GTT.Set_Base_Address (Res_Addr);
 
       Dev.Map (Res_Addr, PCI.Res2, WC => True);
       if Res_Addr = 0 then
