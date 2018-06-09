@@ -31,13 +31,13 @@ is
    PCH_HDMI_HSYNC_ACTIVE_HIGH    : constant := 1 * 2 **  3;
    PCH_HDMI_PORT_DETECT          : constant := 1 * 2 **  2;
 
-   PCH_HDMI_MASK : constant Word32 :=
-      PCH_TRANSCODER_SELECT_MASK or
+   function PCH_HDMI_MASK return Word32 is
+     (PCH_TRANSCODER_SELECT_MASK or
       PCH_HDMI_ENABLE or
       PCH_HDMI_COLOR_FORMAT_MASK or
       PCH_HDMI_SDVO_ENCODING_MASK or
       PCH_HDMI_HSYNC_ACTIVE_HIGH or
-      PCH_HDMI_VSYNC_ACTIVE_HIGH;
+      PCH_HDMI_VSYNC_ACTIVE_HIGH);
 
    type PCH_HDMI_Array is array (PCH_HDMI_Port) of Registers.Registers_Index;
    PCH_HDMI : constant PCH_HDMI_Array := PCH_HDMI_Array'

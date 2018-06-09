@@ -22,16 +22,16 @@ private package HW.GFX.GMA.PCH is
 
    -- common to all PCH outputs
 
-   PCH_TRANSCODER_SELECT_SHIFT : constant :=
+   function PCH_TRANSCODER_SELECT_SHIFT return Natural is
      (if Config.Has_New_FDI_Sink then 29 else 30);
 
-   PCH_TRANSCODER_SELECT_MASK : constant :=
+   function PCH_TRANSCODER_SELECT_MASK return Word32 is
      (if Config.Has_New_FDI_Sink then 3 * 2 ** 29 else 1 * 2 ** 30);
 
-   type PCH_TRANSCODER_SELECT_Array is array (FDI_Port_Type) of Word32;
-   PCH_TRANSCODER_SELECT : constant PCH_TRANSCODER_SELECT_Array :=
-     (FDI_A => 0 * 2 ** PCH_TRANSCODER_SELECT_SHIFT,
-      FDI_B => 1 * 2 ** PCH_TRANSCODER_SELECT_SHIFT,
-      FDI_C => 2 * 2 ** PCH_TRANSCODER_SELECT_SHIFT);
+   function PCH_TRANSCODER_SELECT (Port : FDI_Port_Type) return Word32 is
+     (case Port is
+         when FDI_A => Shift_Left (0, PCH_TRANSCODER_SELECT_SHIFT),
+         when FDI_B => Shift_Left (1, PCH_TRANSCODER_SELECT_SHIFT),
+         when FDI_C => Shift_Left (2, PCH_TRANSCODER_SELECT_SHIFT));
 
 end HW.GFX.GMA.PCH;

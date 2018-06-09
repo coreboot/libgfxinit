@@ -23,6 +23,8 @@ with GNAT.Source_Info;
 package body HW.GFX.GMA.Connectors.FDI
 is
 
+   use all type PCH.FDI.Training_Pattern;
+
    PCH_FDI_CHICKEN_B_AND_C             : constant :=      1 * 2 ** 12;
 
    type TX_CTL_Regs is array (GPU_FDI_Port) of Registers.Registers_Index;
@@ -40,12 +42,19 @@ is
    FDI_TX_CTL_AUTO_TRAIN_ENABLE        : constant :=      1 * 2 ** 10;
    FDI_TX_CTL_AUTO_TRAIN_DONE          : constant :=      1 * 2 **  1;
 
-   TP_SHIFT : constant := (if Config.Has_New_FDI_Source then 8 else 28);
-   FDI_TX_CTL_TRAINING_PATTERN_MASK    : constant := 3 * 2 ** TP_SHIFT;
-   FDI_TX_CTL_TRAINING_PATTERN_1       : constant := 0 * 2 ** TP_SHIFT;
-   FDI_TX_CTL_TRAINING_PATTERN_2       : constant := 1 * 2 ** TP_SHIFT;
-   FDI_TX_CTL_TRAINING_PATTERN_IDLE    : constant := 2 * 2 ** TP_SHIFT;
-   FDI_TX_CTL_TRAINING_PATTERN_NORMAL  : constant := 3 * 2 ** TP_SHIFT;
+   function TP_SHIFT return Natural is
+     (if Config.Has_New_FDI_Source then 8 else 28);
+
+   function FDI_TX_CTL_TRAINING_PATTERN_MASK
+      return Word32 is (Shift_Left (3, TP_SHIFT));
+
+   function FDI_TX_CTL_TRAINING_PATTERN (TP : PCH.FDI.Training_Pattern)
+      return Word32 is
+     (case TP is
+         when TP_1      => Shift_Left (0, TP_SHIFT),
+         when TP_2      => Shift_Left (1, TP_SHIFT),
+         when TP_Idle   => Shift_Left (2, TP_SHIFT),
+         when TP_None   => Shift_Left (3, TP_SHIFT));
 
    subtype FDI_TX_CTL_VP_T is Natural range 0 .. 3;
    type Vswing_Preemph_Values is array (FDI_TX_CTL_VP_T) of Word32;
@@ -88,7 +97,7 @@ is
             Mask_Set    => FDI_TX_CTL_FDI_TX_ENABLE or
                            FDI_TX_CTL_VSWING_PREEMPH (VP2 / 2) or
                            FDI_TX_CTL_AUTO_TRAIN_ENABLE or
-                           FDI_TX_CTL_TRAINING_PATTERN_1);
+                           FDI_TX_CTL_TRAINING_PATTERN (TP_1));
          Registers.Posting_Read (TX_CTL (Port_Cfg.Port));
 
          PCH.FDI.Auto_Train (PCH_FDI_Port);
@@ -109,7 +118,7 @@ is
             Mask_Unset  => FDI_TX_CTL_FDI_TX_ENABLE or
                            FDI_TX_CTL_AUTO_TRAIN_ENABLE or
                            FDI_TX_CTL_TRAINING_PATTERN_MASK,
-            Mask_Set    => FDI_TX_CTL_TRAINING_PATTERN_1);
+            Mask_Set    => FDI_TX_CTL_TRAINING_PATTERN (TP_1));
 
          PCH.FDI.Off (PCH_FDI_Port, PCH.FDI.Rx_Off);
       end loop;
@@ -149,19 +158,19 @@ is
                            FDI_TX_CTL_TRAINING_PATTERN_MASK,
             Mask_Set    => FDI_TX_CTL_FDI_TX_ENABLE or
                            FDI_TX_CTL_VSWING_PREEMPH (VP2 / 2) or
-                           FDI_TX_CTL_TRAINING_PATTERN_1);
+                           FDI_TX_CTL_TRAINING_PATTERN (TP_1));
          Registers.Posting_Read (TX_CTL (Port_Cfg.Port));
 
-         PCH.FDI.Train (PCH_FDI_Port, PCH.FDI.TP_1, Success);
+         PCH.FDI.Train (PCH_FDI_Port, TP_1, Success);
 
          if Success then
             Registers.Unset_And_Set_Mask
               (Register    => TX_CTL (Port_Cfg.Port),
                Mask_Unset  => FDI_TX_CTL_TRAINING_PATTERN_MASK,
-               Mask_Set    => FDI_TX_CTL_TRAINING_PATTERN_2);
+               Mask_Set    => FDI_TX_CTL_TRAINING_PATTERN (TP_2));
             Registers.Posting_Read (TX_CTL (Port_Cfg.Port));
 
-            PCH.FDI.Train (PCH_FDI_Port, PCH.FDI.TP_2, Success);
+            PCH.FDI.Train (PCH_FDI_Port, TP_2, Success);
          end if;
          exit when Success;
 
@@ -169,7 +178,7 @@ is
            (Register    => TX_CTL (Port_Cfg.Port),
             Mask_Unset  => FDI_TX_CTL_FDI_TX_ENABLE or
                            FDI_TX_CTL_TRAINING_PATTERN_MASK,
-            Mask_Set    => FDI_TX_CTL_TRAINING_PATTERN_1);
+            Mask_Set    => FDI_TX_CTL_TRAINING_PATTERN (TP_1));
 
          PCH.FDI.Off (PCH_FDI_Port, PCH.FDI.Rx_Off);
       end loop;
@@ -178,10 +187,10 @@ is
          Registers.Unset_And_Set_Mask
            (Register    => TX_CTL (Port_Cfg.Port),
             Mask_Unset  => FDI_TX_CTL_TRAINING_PATTERN_MASK,
-            Mask_Set    => FDI_TX_CTL_TRAINING_PATTERN_NORMAL);
+            Mask_Set    => FDI_TX_CTL_TRAINING_PATTERN (TP_None));
          Registers.Posting_Read (TX_CTL (Port_Cfg.Port));
 
-         PCH.FDI.Train (PCH_FDI_Port, PCH.FDI.TP_None, Success);
+         PCH.FDI.Train (PCH_FDI_Port, TP_None, Success);
       else
          Registers.Unset_Mask
            (Register => TX_CTL (Port_Cfg.Port),
@@ -219,35 +228,35 @@ is
         (Register    => TX_CTL (Port_Cfg.Port),
          Mask_Unset  => FDI_TX_CTL_TRAINING_PATTERN_MASK,
          Mask_Set    => FDI_TX_CTL_FDI_TX_ENABLE or
-                        FDI_TX_CTL_TRAINING_PATTERN_1);
+                        FDI_TX_CTL_TRAINING_PATTERN (TP_1));
       Registers.Posting_Read (TX_CTL (Port_Cfg.Port));
 
-      PCH.FDI.Train (PCH_FDI_Port, PCH.FDI.TP_1, Success);
+      PCH.FDI.Train (PCH_FDI_Port, TP_1, Success);
 
       if Success then
          Registers.Unset_And_Set_Mask
            (Register    => TX_CTL (Port_Cfg.Port),
             Mask_Unset  => FDI_TX_CTL_TRAINING_PATTERN_MASK,
-            Mask_Set    => FDI_TX_CTL_TRAINING_PATTERN_2);
+            Mask_Set    => FDI_TX_CTL_TRAINING_PATTERN (TP_2));
          Registers.Posting_Read (TX_CTL (Port_Cfg.Port));
 
-         PCH.FDI.Train (PCH_FDI_Port, PCH.FDI.TP_2, Success);
+         PCH.FDI.Train (PCH_FDI_Port, TP_2, Success);
       end if;
 
       if Success then
          Registers.Unset_And_Set_Mask
            (Register    => TX_CTL (Port_Cfg.Port),
             Mask_Unset  => FDI_TX_CTL_TRAINING_PATTERN_MASK,
-            Mask_Set    => FDI_TX_CTL_TRAINING_PATTERN_NORMAL);
+            Mask_Set    => FDI_TX_CTL_TRAINING_PATTERN (TP_None));
          Registers.Posting_Read (TX_CTL (Port_Cfg.Port));
 
-         PCH.FDI.Train (PCH_FDI_Port, PCH.FDI.TP_None, Success);
+         PCH.FDI.Train (PCH_FDI_Port, TP_None, Success);
       else
          Registers.Unset_And_Set_Mask
            (Register    => TX_CTL (Port_Cfg.Port),
             Mask_Unset  => FDI_TX_CTL_FDI_TX_ENABLE or
                            FDI_TX_CTL_TRAINING_PATTERN_MASK,
-            Mask_Set    => FDI_TX_CTL_TRAINING_PATTERN_1);
+            Mask_Set    => FDI_TX_CTL_TRAINING_PATTERN (TP_1));
          PCH.FDI.Off (PCH_FDI_Port, PCH.FDI.Rx_Off);
 
          Registers.Unset_Mask
@@ -293,7 +302,7 @@ is
                      FDI_TX_CTL_ENHANCED_FRAMING_ENABLE or
                      FDI_TX_CTL_FDI_PLL_ENABLE or
                      Composite_Sel or
-                     FDI_TX_CTL_TRAINING_PATTERN_1);
+                     FDI_TX_CTL_TRAINING_PATTERN (TP_1));
       Registers.Posting_Read (TX_CTL (Port_Cfg.Port));
       Time.U_Delay (100);
    end Pre_On;
@@ -327,7 +336,7 @@ is
          Mask_Unset  => FDI_TX_CTL_FDI_TX_ENABLE or
                         FDI_TX_CTL_AUTO_TRAIN_ENABLE or
                         FDI_TX_CTL_TRAINING_PATTERN_MASK,
-         Mask_Set    => FDI_TX_CTL_TRAINING_PATTERN_1);
+         Mask_Set    => FDI_TX_CTL_TRAINING_PATTERN (TP_1));
 
       PCH.FDI.Off (PCH_FDI_Port, PCH.FDI.Rx_Off);
 

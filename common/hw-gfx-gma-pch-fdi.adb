@@ -30,15 +30,18 @@ package body HW.GFX.GMA.PCH.FDI is
    FDI_RX_CTL_RAWCLK_TO_PCDCLK_SEL_RAWCLK : constant := 0 * 2 **  4;
    FDI_RX_CTL_RAWCLK_TO_PCDCLK_SEL_PCDCLK : constant := 1 * 2 **  4;
 
-   TP_SHIFT : constant := (if Config.Has_New_FDI_Sink then 8 else 28);
-   FDI_RX_CTL_TRAINING_PATTERN_MASK       : constant := 3 * 2 ** TP_SHIFT;
+   function TP_SHIFT return Natural is
+     (if Config.Has_New_FDI_Sink then 8 else 28);
 
-   type TP_Array is array (Training_Pattern) of Word32;
-   FDI_RX_CTL_TRAINING_PATTERN : constant TP_Array :=
-     (TP_1     => 0 * 2 ** TP_SHIFT,
-      TP_2     => 1 * 2 ** TP_SHIFT,
-      TP_Idle  => 2 * 2 ** TP_SHIFT,
-      TP_None  => 3 * 2 ** TP_SHIFT);
+   function FDI_RX_CTL_TRAINING_PATTERN_MASK
+      return Word32 is (Shift_Left (3, TP_SHIFT));
+
+   function FDI_RX_CTL_TRAINING_PATTERN (TP : Training_Pattern) return Word32 is
+     (case TP is
+         when TP_1     => Shift_Left (0, TP_SHIFT),
+         when TP_2     => Shift_Left (1, TP_SHIFT),
+         when TP_Idle  => Shift_Left (2, TP_SHIFT),
+         when TP_None  => Shift_Left (3, TP_SHIFT));
 
    function FDI_RX_CTL_PORT_WIDTH_SEL (Lane_Count : DP_Lane_Count) return Word32
    is

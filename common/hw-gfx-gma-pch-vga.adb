@@ -29,13 +29,13 @@ package body HW.GFX.GMA.PCH.VGA is
    PCH_ADPA_VSYNC_ACTIVE_HIGH : constant := 1 * 2 **  4;
    PCH_ADPA_HSYNC_ACTIVE_HIGH : constant := 1 * 2 **  3;
 
-   PCH_ADPA_MASK : constant Word32 :=
-      PCH_TRANSCODER_SELECT_MASK or
+   function PCH_ADPA_MASK return Word32 is
+     (PCH_TRANSCODER_SELECT_MASK or
       PCH_ADPA_DAC_ENABLE        or
       PCH_ADPA_VSYNC_DISABLE     or
       PCH_ADPA_HSYNC_DISABLE     or
       PCH_ADPA_VSYNC_ACTIVE_HIGH or
-      PCH_ADPA_HSYNC_ACTIVE_HIGH;
+      PCH_ADPA_HSYNC_ACTIVE_HIGH);
 
    ----------------------------------------------------------------------------
 
