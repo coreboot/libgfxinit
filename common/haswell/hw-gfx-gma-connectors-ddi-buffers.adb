@@ -120,11 +120,7 @@ is
    procedure Translations (Trans : out Buf_Trans_Array; Port : Digital_Port)
    is
       HDMI_Trans : constant DDI_HDMI_Buf_Trans_Range :=
-        (if (Config.CPU = Broadwell and
-             Config.DDI_HDMI_Buffer_Translation in Broadwell_HDMI_Range)
-            or
-            (Config.CPU /= Broadwell and
-             Config.DDI_HDMI_Buffer_Translation in Haswell_HDMI_Range)
+        (if Config.Have_HDMI_Buf_Override
          then Config.DDI_HDMI_Buffer_Translation
          else Config.Default_DDI_HDMI_Buffer_Translation);
    begin

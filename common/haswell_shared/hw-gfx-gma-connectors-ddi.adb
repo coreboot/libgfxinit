@@ -679,8 +679,7 @@ package body HW.GFX.GMA.Connectors.DDI is
          then
             declare
                HDMI_Level : constant DDI_Phy.HDMI_Buf_Trans_Range :=
-                 (if Config.DDI_HDMI_Buffer_Translation
-                     in DDI_Phy.HDMI_Buf_Trans_Range
+                 (if Config.Have_HDMI_Buf_Override
                   then Config.DDI_HDMI_Buffer_Translation
                   else Config.Default_DDI_HDMI_Buffer_Translation);
             begin

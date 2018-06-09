@@ -35,6 +35,7 @@ is
 
    ----------------------------------------------------------------------------
 
+   Have_HDMI_Buf_Override  : constant Boolean := DDI_HDMI_Buffer_Translation >= 0;
    Default_MMIO_Base_Set   : constant Boolean := Default_MMIO_Base /= 0;
 
    Has_Internal_Display    : constant Boolean := Internal_Display /= None;
