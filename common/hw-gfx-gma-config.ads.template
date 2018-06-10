@@ -14,7 +14,7 @@
 
 private package HW.GFX.GMA.Config
 with
-   Initializes => (Valid_Port, Raw_Clock)
+   Initializes => Variable
 is
 
    Gen : constant Generation := <<GEN>>;
@@ -55,6 +55,23 @@ is
    Default_MMIO_Base : constant := <<DEFAULT_MMIO_BASE>>;
 
    LVDS_Dual_Threshold : constant := 95_000_000;
+
+   ----------------------------------------------------------------------------
+
+   type Valid_Port_Array is array (Port_Type) of Boolean;
+   type Variable_Config is record
+      Valid_Port     : Valid_Port_Array;
+      Raw_Clock      : Frequency_Type;
+   end record;
+
+   Variable : Variable_Config :=
+     (Valid_Port     => (others => False),
+      Raw_Clock      => Frequency_Type'First)
+   with
+      Part_Of => GMA.Config_State;
+
+   Valid_Port  : Valid_Port_Array renames Variable.Valid_Port;
+   Raw_Clock   : Frequency_Type renames Variable.Raw_Clock;
 
    ----------------------------------------------------------------------------
 
@@ -187,10 +204,6 @@ is
    Max_Pipe : constant Pipe_Index :=
      (if Has_Tertiary_Pipe then Tertiary else Secondary);
 
-   Valid_Port : array (Port_Type) of Boolean := (others => False)
-   with
-      Part_Of => GMA.Config_State;
-
    Last_Digital_Port : constant Digital_Port :=
      (if Has_DDI_E then DIGI_E else DIGI_C);
 
@@ -238,9 +251,6 @@ is
       elsif Gen_Broxton    then Frequency_Type'First  -- none needed
       elsif Gen_Skylake    then 24_000_000
                            else Frequency_Type'First);
-
-    Raw_Clock : Frequency_Type := Default_RawClk_Freq
-    with Part_Of => GMA.Config_State;
 
    ----------------------------------------------------------------------------
 

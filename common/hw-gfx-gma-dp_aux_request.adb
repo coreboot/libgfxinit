@@ -163,7 +163,7 @@ package body HW.GFX.GMA.DP_Aux_Request is
       Success           :    out Boolean)
    with
       Global => (In_Out => Registers.Register_State,
-                 Input  => (Time.State, Config.Raw_Clock)),
+                 Input  => (Time.State, Config.Variable)),
       Depends =>
         ((Registers.Register_State,
           Response,
@@ -171,7 +171,7 @@ package body HW.GFX.GMA.DP_Aux_Request is
           Success)
              =>
                (Registers.Register_State,
-                Config.Raw_Clock,
+                Config.Variable,
                 Time.State,
                 Port,
                 Request,
