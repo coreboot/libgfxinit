@@ -216,12 +216,15 @@ package body HW.GFX.GMA.Power_And_Clocks is
 
    CDClk_Ref : constant := 19_200_000;
 
-   procedure Set_CDClk (Freq : Frequency_Type)
-   with
-      Pre =>
-         Freq =   CDClk_Ref or Freq = 144_000_000 or Freq = 288_000_000 or
-         Freq = 384_000_000 or Freq = 576_000_000 or Freq = 624_000_000
+   procedure Set_CDClk (Freq_In : Frequency_Type)
    is
+      Freq : constant Frequency_Type :=
+        (if    Freq_In  = CDClk_Ref    then CDClk_Ref
+         elsif Freq_In <= 144_000_000  then 144_000_000
+         elsif Freq_In <= 288_000_000  then 288_000_000
+         elsif Freq_In <= 384_000_000  then 384_000_000
+         elsif Freq_In <= 576_000_000  then 576_000_000
+                                       else 624_000_000);
       VCO : constant Int64 :=
          CDClk_Ref *
            (if Freq = CDClk_Ref then
