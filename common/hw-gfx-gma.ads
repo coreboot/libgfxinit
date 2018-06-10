@@ -25,9 +25,7 @@ with
       Init_State,
       Config_State,
       (Device_State with External)),
-   Initializes =>
-     (Init_State,
-      Config_State)
+   Initializes => Init_State
 is
 
    GTT_Page_Size : constant := 4096;
@@ -101,8 +99,8 @@ is
       Success     :    out Boolean)
    with
       Global =>
-        (In_Out => (Config_State, Device_State, Port_IO.State),
-         Output => (State, Init_State),
+        (In_Out => (Device_State, Port_IO.State),
+         Output => (State, Init_State, Config_State),
          Input  => (Time.State)),
       Post => Success = Is_Initialized;
    function Is_Initialized return Boolean

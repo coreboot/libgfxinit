@@ -370,13 +370,11 @@ is
       Success     :    out Boolean)
    with
       Refined_Global =>
-        (In_Out =>
-           (Config.Variable, Dev.PCI_State,
-            Registers.Register_State, Port_IO.State),
-         Input =>
-           (Time.State),
+        (Input => (Time.State),
+         In_Out => (Dev.PCI_State, Registers.Register_State, Port_IO.State),
          Output =>
-           (Dev.Address_State,
+           (Config.Variable,
+            Dev.Address_State,
             Registers.Address_State,
             PLLs.State, Panel.Panel_State,
             Cur_Configs, Allocated_PLLs,
@@ -444,6 +442,7 @@ is
             Framebuffer => HW.GFX.Default_FB,
             Cursor      => Default_Cursor,
             Mode        => HW.GFX.Invalid_Mode));
+      Config.Variable := Config.Initial_Settings;
       PLLs.Initialize;
 
       Dev.Initialize (Success);

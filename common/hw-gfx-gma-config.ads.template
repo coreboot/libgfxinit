@@ -12,10 +12,7 @@
 -- GNU General Public License for more details.
 --
 
-private package HW.GFX.GMA.Config
-with
-   Initializes => Variable
-is
+private package HW.GFX.GMA.Config is
 
    Gen : constant Generation := <<GEN>>;
 
@@ -64,11 +61,11 @@ is
       Raw_Clock      : Frequency_Type;
    end record;
 
-   Variable : Variable_Config :=
+   Initial_Settings : constant Variable_Config :=
      (Valid_Port     => (others => False),
-      Raw_Clock      => Frequency_Type'First)
-   with
-      Part_Of => GMA.Config_State;
+      Raw_Clock      => Frequency_Type'First);
+
+   Variable : Variable_Config with Part_Of => GMA.Config_State;
 
    Valid_Port  : Valid_Port_Array renames Variable.Valid_Port;
    Raw_Clock   : Frequency_Type renames Variable.Raw_Clock;
