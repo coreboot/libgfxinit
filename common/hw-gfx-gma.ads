@@ -111,7 +111,7 @@ is
    procedure Power_Up_VGA
    with
       Global =>
-        (Input => (State, Time.State),
+        (Input => (State, Config_State, Time.State),
          In_Out => (Device_State),
          Proof_In => (Init_State)),
       Pre => Is_Initialized;
@@ -160,7 +160,9 @@ is
       Device_Address : GTT_Address_Type;
       Valid          : Boolean)
    with
-      Global => (In_Out => Device_State, Proof_In => Init_State),
+      Global =>
+        (Input => Config_State,
+         In_Out => Device_State, Proof_In => Init_State),
       Pre => Is_Initialized;
 
    procedure Read_GTT
@@ -168,7 +170,9 @@ is
       Valid          :    out Boolean;
       GTT_Page       : in     GTT_Range)
    with
-      Global => (In_Out => Device_State, Proof_In => Init_State),
+      Global =>
+        (Input => Config_State,
+         In_Out => Device_State, Proof_In => Init_State),
       Pre => Is_Initialized;
 
    procedure Setup_Default_FB
@@ -177,18 +181,27 @@ is
       Success  :    out Boolean)
    with
       Global =>
-        (In_Out =>
+        (Input => Config_State,
+         In_Out =>
            (State, Device_State,
             Framebuffer_Filler.State, Framebuffer_Filler.Base_Address),
          Proof_In => (Init_State)),
       Pre => Is_Initialized and HW.Config.Dynamic_MMIO;
 
+   pragma Warnings (GNATprove, Off, "no check message justified by this",
+                    Reason => "see Annotate aspects.");
    procedure Map_Linear_FB (Linear_FB : out Word64; FB : in Framebuffer_Type)
    with
       Global =>
-        (In_Out => (State, Device_State),
+        (Input => Config_State,
+         In_Out => (State, Device_State),
          Proof_In => (Init_State)),
-      Pre => Is_Initialized and HW.Config.Dynamic_MMIO;
+      Pre => Is_Initialized and HW.Config.Dynamic_MMIO,
+      Annotate =>
+        (GNATprove, Intentional,
+         "global input ""GMA.Config_State"" of ""Map_Linear_FB"" not read",
+         "Reading of Config_State depends on the platform configuration.");
+   pragma Warnings (GNATprove, On, "no check message justified by this");
 
    ----------------------------------------------------------------------------
 

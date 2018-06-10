@@ -16,8 +16,6 @@ with HW.Time;
 with HW.MMIO_Range;
 pragma Elaborate_All (HW.MMIO_Range);
 
-with HW.GFX.GMA.Config;
-
 with HW.Debug;
 with GNAT.Source_Info;
 

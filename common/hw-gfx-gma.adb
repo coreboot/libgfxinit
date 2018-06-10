@@ -528,11 +528,11 @@ is
 
    pragma Warnings
      (GNATprove, Off, """Registers.Register_State"" * is not modified*",
-      Reason => "Power_Up_VGA is only effective on certain generations.");
+      Reason => "Power_Up_VGA is only effective in certain configurations.");
    procedure Power_Up_VGA
    with
       Refined_Global =>
-        (Input => (Cur_Configs, Time.State),
+        (Input => (Cur_Configs, Config.Variable, Time.State),
          In_Out => (Registers.Register_State),
          Proof_In => (Initialized))
    is
@@ -554,7 +554,7 @@ is
      (GNATprove, Off, "no check message justified*", Reason => "see below");
    pragma Annotate
      (GNATprove, Intentional, "unused global",
-      "Power_Up_VGA is only effective on certain generations.");
+      "Power_Up_VGA is only effective in certain configurations.");
    pragma Warnings (GNATprove, On, "no check message justified*");
    pragma Warnings
      (GNATprove, On, """Registers.Register_State"" * is not modified*");

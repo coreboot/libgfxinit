@@ -59,16 +59,22 @@ private package HW.GFX.GMA.Config is
    type Variable_Config is record
       Valid_Port     : Valid_Port_Array;
       Raw_Clock      : Frequency_Type;
+      Dyn_CPU        : Gen_CPU_Type;
+      Dyn_CPU_Var    : Gen_CPU_Variant;
    end record;
 
    Initial_Settings : constant Variable_Config :=
      (Valid_Port     => (others => False),
-      Raw_Clock      => Frequency_Type'First);
+      Raw_Clock      => Frequency_Type'First,
+      Dyn_CPU        => Gen_CPU_Type'First,
+      Dyn_CPU_Var    => Gen_CPU_Variant'First);
 
    Variable : Variable_Config with Part_Of => GMA.Config_State;
 
    Valid_Port  : Valid_Port_Array renames Variable.Valid_Port;
    Raw_Clock   : Frequency_Type renames Variable.Raw_Clock;
+   CPU         : Gen_CPU_Type renames Variable.Dyn_CPU;
+   CPU_Var     : Gen_CPU_Variant renames Variable.Dyn_CPU_Var;
 
    ----------------------------------------------------------------------------
 
@@ -303,12 +309,12 @@ private package HW.GFX.GMA.Config is
 
    ----------------------------------------------------------------------------
 
-   GTT_PTE_Size : <hswvar> := (if Has_64bit_GTT then 8 else 4);
+   GTT_PTE_Size : <hswvar> Natural := (if Has_64bit_GTT then 8 else 4);
 
-   Fence_Base : <ilkvar> :=
+   Fence_Base : <ilkvar> Natural :=
      (if not Sandybridge_On then 16#0000_3000# else 16#0010_0000#);
 
-   Fence_Count : <ilkvar> :=
+   Fence_Count : <ilkvar> Natural :=
      (if not Ivybridge_On then 16 else 32);
 
    ----------------------------------------------------------------------------

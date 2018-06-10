@@ -14,6 +14,7 @@
 
 with System;
 with HW.GFX.GMA;
+with HW.GFX.GMA.Config;
 
 private package HW.GFX.GMA.Registers
 with
@@ -1720,21 +1721,39 @@ is
 
    procedure Remove_Fence (First_Page, Last_Page : GTT_Range);
 
+   pragma Warnings (GNATprove, Off, "no check message justified by this",
+                    Reason => "see Annotate aspects.");
    procedure Write_GTT
      (GTT_Page       : GTT_Range;
       Device_Address : GTT_Address_Type;
       Valid          : Boolean)
    with
-      Global  => (In_Out => GTT_State),
-      Depends => (GTT_State =>+ (GTT_Page, Device_Address, Valid));
+      Global  =>
+        (Input => Config.Variable,
+         In_Out => GTT_State),
+      Depends =>
+        (GTT_State =>+ (Config.Variable, GTT_Page, Device_Address, Valid)),
+      Annotate =>
+        (GNATprove, Intentional,
+         """GMA.Config_State"" of ""Write_GTT"" not read",
+         "Reading of Config_State depends on the platform configuration.");
 
    procedure Read_GTT
      (Device_Address :    out GTT_Address_Type;
       Valid          :    out Boolean;
       GTT_Page       : in     GTT_Range)
    with
-      Global  => (In_Out => GTT_State),
-      Depends => ((Device_Address, Valid, GTT_State) => (GTT_State, GTT_Page));
+      Global  =>
+        (Input => Config.Variable,
+         In_Out => GTT_State),
+      Depends =>
+        ((Device_Address, Valid, GTT_State) =>
+           (Config.Variable, GTT_State, GTT_Page)),
+      Annotate =>
+        (GNATprove, Intentional,
+         """GMA.Config_State"" of ""Read_GTT"" not read",
+         "Reading of Config_State depends on the platform configuration.");
+   pragma Warnings (GNATprove, On, "no check message justified by this");
 
    procedure Set_Register_Base (Base : Word64; GTT_Base : Word64 := 0)
    with
