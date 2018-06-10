@@ -19,9 +19,30 @@ is
 
    Gen : constant Generation := <<GEN>>;
 
-   CPU : constant CPU_Type := <<CPU>>;
+   CPU_First : constant CPU_Type :=
+     (case Gen is
+         when G45       => G45,
+         when Ironlake  => Ironlake,
+         when Haswell   => Haswell,
+         when Broxton   => Broxton,
+         when Skylake   => Skylake);
+   CPU_Last : constant CPU_Type :=
+     (case Gen is
+         when G45       => G45,
+         when Ironlake  => Ivybridge,
+         when Haswell   => Broadwell,
+         when Broxton   => Broxton,
+         when Skylake   => Skylake);
+   CPU_Var_Last : constant CPU_Variant :=
+     (case Gen is
+         when Haswell | Skylake  => ULT,
+         when others             => Normal);
+   subtype Gen_CPU_Type is CPU_Type range CPU_First .. CPU_Last;
+   subtype Gen_CPU_Variant is CPU_Variant range Normal .. CPU_Var_Last;
 
-   CPU_Var : constant CPU_Variant := <<CPU_VARIANT>>;
+   CPU : constant Gen_CPU_Type := <<CPU>>;
+
+   CPU_Var : constant Gen_CPU_Variant := <<CPU_VARIANT>>;
 
    Internal_Display : constant Internal_Type := <<INTERNAL_PORT>>;
 
