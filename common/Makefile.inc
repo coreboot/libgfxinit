@@ -61,6 +61,8 @@ $(hw-gfx-gma-config-ads): $(dir)/hw-gfx-gma-config.ads.template $(cnf)
 	    -e's/<<INTERNAL_PORT>>/$(CONFIG_GFX_GMA_INTERNAL_PORT)/' \
 	    -e's/<<ANALOG_I2C_PORT>>/$(CONFIG_GFX_GMA_ANALOG_I2C_PORT)/' \
 	    -e's/<<DEFAULT_MMIO_BASE>>/$(CONFIG_GFX_GMA_DEFAULT_MMIO)/' \
+	    -e's/<\(gen\|\(ilk\|hsw\|skl\)\(...\)\?\)bool>/constant Boolean/' \
+	    -e's/<\(\(ilk\|hsw\|skl\)\(...\)\?\)var>/constant/' \
 	    $< >$@
 gfxinit-gen-y += $(hw-gfx-gma-config-ads)
 
