@@ -49,6 +49,19 @@ is
    Broxton_On        : constant Boolean := Gen >= Broxton;
    Skylake_On        : constant Boolean := Gen >= Skylake;
 
+   CPU_Ironlake      : constant Boolean := Gen_Ironlake and then CPU = Ironlake;
+   CPU_Sandybridge   : constant Boolean := Gen_Ironlake and then CPU = Sandybridge;
+   CPU_Ivybridge     : constant Boolean := Gen_Ironlake and then CPU = Ivybridge;
+   CPU_Haswell       : constant Boolean := Gen_Haswell and then CPU = Haswell;
+   CPU_Broadwell     : constant Boolean := Gen_Haswell and then CPU = Broadwell;
+
+   Sandybridge_On    : constant Boolean :=
+     ((Gen_Ironlake and then CPU >= Sandybridge) or Haswell_On);
+   Ivybridge_On      : constant Boolean :=
+     ((Gen_Ironlake and then CPU >= Ivybridge) or Haswell_On);
+   Broadwell_On      : constant Boolean :=
+     ((Gen_Haswell and then CPU >= Broadwell) or Broxton_On);
+
    ----------------------------------------------------------------------------
 
    Have_HDMI_Buf_Override  : constant Boolean := DDI_HDMI_Buffer_Translation >= 0;
@@ -59,24 +72,25 @@ is
    Internal_Is_EDP         : constant Boolean := Internal_Display = DP;
    Have_DVI_I              : constant Boolean := Analog_I2C_Port /= PCH_DAC;
    Has_Presence_Straps     : constant Boolean := not Gen_Broxton;
-   Is_ULT                  : constant Boolean := CPU_Var = ULT;
+   Is_ULT                  : constant Boolean :=
+     ((Gen_Haswell or Gen_Skylake) and then CPU_Var = ULT);
 
    ----- CPU pipe: --------
-   Has_Tertiary_Pipe       : constant Boolean := CPU >= Ivybridge;
+   Has_Tertiary_Pipe       : constant Boolean := Ivybridge_On;
    Disable_Trickle_Feed    : constant Boolean := not Gen_Haswell;
-   Pipe_Enabled_Workaround : constant Boolean := CPU = Broadwell;
+   Pipe_Enabled_Workaround : constant Boolean := CPU_Broadwell;
    Has_EDP_Transcoder      : constant Boolean := Haswell_On;
-   Use_PDW_For_EDP_Scaling : constant Boolean := CPU = Haswell;
+   Use_PDW_For_EDP_Scaling : constant Boolean := CPU_Haswell;
    Has_Pipe_DDI_Func       : constant Boolean := Haswell_On;
    Has_Trans_Clk_Sel       : constant Boolean := Haswell_On;
    Has_Pipe_MSA_Misc       : constant Boolean := Haswell_On;
-   Has_Pipeconf_Misc       : constant Boolean := CPU >= Broadwell;
-   Has_Pipeconf_BPC        : constant Boolean := CPU /= Haswell;
+   Has_Pipeconf_Misc       : constant Boolean := Broadwell_On;
+   Has_Pipeconf_BPC        : constant Boolean := not CPU_Haswell;
    Has_Plane_Control       : constant Boolean := Broxton_On;
    Has_DSP_Linoff          : constant Boolean := Up_To_Ironlake;
-   Has_PF_Pipe_Select      : constant Boolean := CPU in Ivybridge .. Haswell;
-   Has_Cursor_FBC_Control  : constant Boolean := CPU >= Ivybridge;
-   VGA_Plane_Workaround    : constant Boolean := CPU = Ivybridge;
+   Has_PF_Pipe_Select      : constant Boolean := CPU_Ivybridge or CPU_Haswell;
+   Has_Cursor_FBC_Control  : constant Boolean := Ivybridge_On;
+   VGA_Plane_Workaround    : constant Boolean := CPU_Ivybridge;
    Has_GMCH_DP_Transcoder  : constant Boolean := Gen_G45;
    Has_GMCH_VGACNTRL       : constant Boolean := Gen_G45;
    Has_GMCH_PFIT_CONTROL   : constant Boolean := Gen_G45;
@@ -89,24 +103,22 @@ is
 
    ----- PCH/FDI: ---------
    Has_PCH                 : constant Boolean := not Gen_Broxton and not Gen_G45;
-   Has_PCH_DAC             : constant Boolean := CPU in Ironlake .. Ivybridge or
-                                                 (CPU in Haswell .. Broadwell
-                                                  and not Is_ULT);
+   Has_PCH_DAC             : constant Boolean :=
+     (Gen_Ironlake or (Gen_Haswell and then not Is_ULT));
 
    Has_PCH_Aux_Channels    : constant Boolean := Gen_Ironlake or Gen_Haswell;
 
    VGA_Has_Sync_Disable    : constant Boolean := Up_To_Ironlake;
 
-   Has_Trans_Timing_Ovrrde : constant Boolean := CPU >= Sandybridge;
+   Has_Trans_Timing_Ovrrde : constant Boolean := Sandybridge_On;
 
    Has_DPLL_SEL            : constant Boolean := Gen_Ironlake;
    Has_FDI_BPC             : constant Boolean := Gen_Ironlake;
-   Has_FDI_Composite_Sel   : constant Boolean := CPU = Ivybridge;
-   Has_New_FDI_Sink        : constant Boolean := CPU >= Sandybridge;
-   Has_New_FDI_Source      : constant Boolean := CPU >= Ivybridge;
-   Has_Trans_DP_Ctl        : constant Boolean := CPU in
-                                                 Sandybridge .. Ivybridge;
-   Has_FDI_C               : constant Boolean := CPU = Ivybridge;
+   Has_FDI_Composite_Sel   : constant Boolean := CPU_Ivybridge;
+   Has_New_FDI_Sink        : constant Boolean := Sandybridge_On;
+   Has_New_FDI_Source      : constant Boolean := Ivybridge_On;
+   Has_Trans_DP_Ctl        : constant Boolean := CPU_Sandybridge or CPU_Ivybridge;
+   Has_FDI_C               : constant Boolean := CPU_Ivybridge;
 
    Has_FDI_RX_Power_Down   : constant Boolean := Gen_Haswell;
 
@@ -116,15 +128,13 @@ is
    End_EDP_Training_Late   : constant Boolean := Gen_Haswell;
    Has_Per_DDI_Clock_Sel   : constant Boolean := Gen_Haswell;
    Has_HOTPLUG_CTL         : constant Boolean := Gen_Haswell;
-   Has_SHOTPLUG_CTL_A      : constant Boolean := (CPU in Haswell .. Broadwell
-                                                  and Is_ULT) or
-                                                 CPU >= Skylake;
+   Has_SHOTPLUG_CTL_A      : constant Boolean :=
+     ((Gen_Haswell and then Is_ULT) or Skylake_On);
 
    Has_DDI_PHYs            : constant Boolean := Gen_Broxton;
 
-   Has_DDI_D               : constant Boolean := CPU >= Haswell and
-                                                 not Is_ULT and
-                                                 not Has_DDI_PHYs;
+   Has_DDI_D               : constant Boolean :=
+     ((Gen_Haswell or Gen_Skylake) and then not Is_ULT);
    Has_DDI_E               : constant Boolean := -- might be disabled by x4 eDP
                                                  Has_DDI_D;
 
@@ -141,14 +151,15 @@ is
    Has_PCH_GMBUS           : constant Boolean := Ironlake_On;
 
    ----- Power: -----------
-   Has_IPS                 : constant Boolean := (CPU = Haswell and Is_ULT) or
-                                                 CPU = Broadwell;
-   Has_IPS_CTL_Mailbox     : constant Boolean := CPU = Broadwell;
+   Has_IPS                 : constant Boolean :=
+     (Gen_Haswell and then
+      ((CPU_Haswell and Is_ULT) or CPU_Broadwell));
+   Has_IPS_CTL_Mailbox     : constant Boolean := CPU_Broadwell;
 
-   Has_Per_Pipe_SRD        : constant Boolean := CPU >= Broadwell;
+   Has_Per_Pipe_SRD        : constant Boolean := Broadwell_On;
 
    ----- GTT: -------------
-   Has_64bit_GTT           : constant Boolean := CPU >= Broadwell;
+   Has_64bit_GTT           : constant Boolean := Broadwell_On;
 
    ----------------------------------------------------------------------------
 
@@ -177,44 +188,35 @@ is
       others => (if Gen_Ironlake then DP_Lane_Count_4 else DP_Lane_Count_2));
 
    FDI_Training : constant FDI_Training_Type :=
-     (case CPU is
-         when Ironlake     => Simple_Training,
-         when Sandybridge  => Full_Training,
-         when others       => Auto_Training);
+     (if    CPU_Ironlake      then Simple_Training
+      elsif CPU_Sandybridge   then Full_Training
+                              else Auto_Training);
 
    ----------------------------------------------------------------------------
 
    Default_DDI_HDMI_Buffer_Translation : constant DDI_HDMI_Buf_Trans_Range :=
-     (case CPU is
-         when Haswell   => 6,
-         when Broadwell => 7,
-         when Broxton   => 8,
-         when Skylake   => 8,
-         when others    => 0);
+     (if    CPU_Haswell    then 6
+      elsif CPU_Broadwell  then 7
+      elsif Broxton_On     then 8
+                           else 0);
 
    ----------------------------------------------------------------------------
 
    Default_CDClk_Freq : constant Frequency_Type :=
-     (case CPU is
-         when G45          => 320_000_000, -- unused
-         when Ironlake     |
-              Haswell      |
-              Broadwell    => 450_000_000,
-         when Sandybridge  |
-              Ivybridge    => 400_000_000,
-         when Broxton      => 288_000_000,
-         when Skylake      => 337_500_000);
+     (if    Gen_G45                          then 320_000_000  -- unused
+      elsif CPU_Ironlake or Gen_Haswell      then 450_000_000
+      elsif CPU_Sandybridge or CPU_Ivybridge then 400_000_000
+      elsif Gen_Broxton                      then 288_000_000
+      elsif Gen_Skylake                      then 337_500_000
+                                             else Frequency_Type'First);
 
    Default_RawClk_Freq : constant Frequency_Type :=
-     (case CPU is
-         when G45          => 100_000_000, -- unused, depends on FSB
-         when Ironlake     |
-              Sandybridge  |
-              Ivybridge    => 125_000_000,
-         when Haswell      |
-              Broadwell    => (if Is_ULT then 24_000_000 else 125_000_000),
-         when Broxton      => Frequency_Type'First,   -- none needed
-         when Skylake      => 24_000_000);
+     (if    Gen_G45        then 100_000_000  -- unused, depends on FSB
+      elsif Gen_Ironlake   then 125_000_000
+      elsif Gen_Haswell    then (if Is_ULT then 24_000_000 else 125_000_000)
+      elsif Gen_Broxton    then Frequency_Type'First  -- none needed
+      elsif Gen_Skylake    then 24_000_000
+                           else Frequency_Type'First);
 
     Raw_Clock : Frequency_Type := Default_RawClk_Freq
     with Part_Of => GMA.Config_State;
@@ -227,19 +229,18 @@ is
    type Width_Per_Pipe is array (Pipe_Index) of Width_Type;
 
    Maximum_Scalable_Width : constant Width_Per_Pipe :=
-     (case CPU is
-         when G45 => -- TODO: Is this true?
-           (Primary     => 4096,
-            Secondary   => 2048,
-            Tertiary    => Pos32'First),
-         when Ironlake..Haswell =>
-           (Primary     => 4096,
-            Secondary   => 2048,
-            Tertiary    => 2048),
-         when Broadwell..Skylake =>
-           (Primary     => 4096,
-            Secondary   => 4096,
-            Tertiary    => 4096));
+     (if Gen_G45 then   -- TODO: Is this true?
+        (Primary     => 4096,
+         Secondary   => 2048,
+         Tertiary    => Pos32'First)
+      elsif Gen_Ironlake or CPU_Haswell then
+        (Primary     => 4096,
+         Secondary   => 2048,
+         Tertiary    => 2048)
+      else
+        (Primary     => 4096,
+         Secondary   => 4096,
+         Tertiary    => 4096));
 
    -- Maximum X position of hardware cursors
    Maximum_Cursor_X : constant := (case Gen is
@@ -258,13 +259,11 @@ is
 
    GTT_PTE_Size : constant := (if Has_64bit_GTT then 8 else 4);
 
-   Fence_Base : constant := (case CPU is
-                              when G45 .. Ironlake          => 16#0000_3000#,
-                              when Sandybridge .. Skylake   => 16#0010_0000#);
+   Fence_Base : constant :=
+     (if not Sandybridge_On then 16#0000_3000# else 16#0010_0000#);
 
-   Fence_Count : constant := (case CPU is
-                                 when G45 .. Sandybridge       => 16,
-                                 when Ivybridge .. Skylake     => 32);
+   Fence_Count : constant :=
+     (if not Ivybridge_On then 16 else 32);
 
    ----------------------------------------------------------------------------
 

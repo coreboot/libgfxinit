@@ -407,18 +407,17 @@ is
                Registers.Read (Registers.AUD_VID_DID, Audio_VID_DID);
          end case;
          Success :=
-           (case Config.CPU is
-               when Broxton      => Audio_VID_DID = 16#8086_280a#,
-               when Skylake      => Audio_VID_DID = 16#8086_2809#,
-               when Broadwell    => Audio_VID_DID = 16#8086_2808#,
-               when Haswell      => Audio_VID_DID = 16#8086_2807#,
-               when Ivybridge |
-                    Sandybridge  => Audio_VID_DID = 16#8086_2806# or
-                                    Audio_VID_DID = 16#8086_2805#,
-               when Ironlake     => Audio_VID_DID = 16#0000_0000#,
-               when G45          => Audio_VID_DID = 16#8086_2801# or
-                                    Audio_VID_DID = 16#8086_2802# or
-                                    Audio_VID_DID = 16#8086_2803#);
+           ((Config.Gen_Broxton        and Audio_VID_DID = 16#8086_280a#) or
+            (Config.Gen_Skylake        and Audio_VID_DID = 16#8086_2809#) or
+            (Config.CPU_Broadwell      and Audio_VID_DID = 16#8086_2808#) or
+            (Config.CPU_Haswell        and Audio_VID_DID = 16#8086_2807#) or
+            ((Config.CPU_Ivybridge or
+              Config.CPU_Sandybridge)  and (Audio_VID_DID = 16#8086_2806# or
+                                            Audio_VID_DID = 16#8086_2805#)) or
+            (Config.CPU_Ironlake       and Audio_VID_DID = 16#0000_0000#) or
+            (Config.Gen_G45            and (Audio_VID_DID = 16#8086_2801# or
+                                            Audio_VID_DID = 16#8086_2802# or
+                                            Audio_VID_DID = 16#8086_2803#)));
       end Check_Platform;
 
       procedure Check_Platform_PCI (Success : out Boolean)
@@ -697,26 +696,24 @@ is
       Pre => Is_Initialized
    is
       GGC_Reg : constant :=
-        (case Config.CPU is
-            when G45 | Ironlake           => 16#52#,
-            when Sandybridge .. Skylake   => 16#50#);
+        (if Config.Gen_G45 or Config.CPU_Ironlake then 16#52# else 16#50#);
       GGC : Word16;
    begin
       Dev.Read16 (GGC, GGC_Reg);
-      case Config.CPU is
-         when G45 | Ironlake =>
-            GTT_Size    := GTT_Size_Gen4 (GGC);
-            Stolen_Size := Stolen_Size_Gen4 (GGC);
-         when Sandybridge .. Haswell =>
-            GTT_Size    := GTT_Size_Gen6 (GGC);
-            Stolen_Size := Stolen_Size_Gen6 (GGC);
-         when Broadwell =>
-            GTT_Size    := GTT_Size_Gen8 (GGC);
-            Stolen_Size := Stolen_Size_Gen8 (GGC);
-         when Broxton .. Skylake =>
-            GTT_Size    := GTT_Size_Gen8 (GGC);
-            Stolen_Size := Stolen_Size_Gen9 (GGC);
-      end case;
+      if Config.Gen_G45 or Config.CPU_Ironlake then
+         GTT_Size    := GTT_Size_Gen4 (GGC);
+         Stolen_Size := Stolen_Size_Gen4 (GGC);
+      elsif Config.CPU_Sandybridge or Config.CPU_Ivybridge or Config.CPU_Haswell
+      then
+         GTT_Size    := GTT_Size_Gen6 (GGC);
+         Stolen_Size := Stolen_Size_Gen6 (GGC);
+      elsif Config.CPU_Broadwell then
+         GTT_Size    := GTT_Size_Gen8 (GGC);
+         Stolen_Size := Stolen_Size_Gen8 (GGC);
+      else
+         GTT_Size    := GTT_Size_Gen8 (GGC);
+         Stolen_Size := Stolen_Size_Gen9 (GGC);
+      end if;
    end Decode_Stolen;
 
    -- Additional runtime validation that FB fits stolen memory and aperture.

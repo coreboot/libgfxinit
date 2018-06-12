@@ -125,27 +125,25 @@ is
          else Config.Default_DDI_HDMI_Buffer_Translation);
    begin
       Trans :=
-        (case Config.CPU is
-            when Broadwell =>
-              (case Port is
-                  when DIGI_A =>
-                    (if Config.EDP_Low_Voltage_Swing
-                     then Broadwell_Trans_EDP
-                     else Broadwell_Trans_DP),
-                  when DIGI_B .. DIGI_D   => Broadwell_Trans_DP,
-                  when DIGI_E             => Broadwell_Trans_FDI),
-            when others =>
-              (case Port is
-                  when DIGI_A .. DIGI_D   => Haswell_Trans_DP,
-                  when DIGI_E             => Haswell_Trans_FDI));
-      case Config.CPU is
-         when Broadwell =>
-            Trans (18) := Broadwell_Trans_HDMI (HDMI_Trans).Trans1;
-            Trans (19) := Broadwell_Trans_HDMI (HDMI_Trans).Trans2;
-         when others =>
-            Trans (18) := Haswell_Trans_HDMI (HDMI_Trans).Trans1;
-            Trans (19) := Haswell_Trans_HDMI (HDMI_Trans).Trans2;
-      end case;
+        (if Config.CPU_Haswell then
+           (case Port is
+               when DIGI_A .. DIGI_D   => Haswell_Trans_DP,
+               when DIGI_E             => Haswell_Trans_FDI)
+         else
+           (case Port is
+               when DIGI_A =>
+                 (if Config.EDP_Low_Voltage_Swing
+                  then Broadwell_Trans_EDP
+                  else Broadwell_Trans_DP),
+               when DIGI_B .. DIGI_D   => Broadwell_Trans_DP,
+               when DIGI_E             => Broadwell_Trans_FDI));
+      if Config.CPU_Haswell then
+         Trans (18) := Haswell_Trans_HDMI (HDMI_Trans).Trans1;
+         Trans (19) := Haswell_Trans_HDMI (HDMI_Trans).Trans2;
+      else
+         Trans (18) := Broadwell_Trans_HDMI (HDMI_Trans).Trans1;
+         Trans (19) := Broadwell_Trans_HDMI (HDMI_Trans).Trans2;
+      end if;
    end Translations;
 
 end HW.GFX.GMA.Connectors.DDI.Buffers;
