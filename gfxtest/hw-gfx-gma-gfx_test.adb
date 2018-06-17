@@ -20,8 +20,8 @@ is
    Seed                 : constant := 12345;
 
    package Rand_P is new Ada.Numerics.Discrete_Random (Natural);
-   Gen : Rand_P.Generator;
-   function Rand return Int32 is (Int32 (Rand_P.Random (Gen)));
+   function Rand (Gen : Rand_P.Generator)
+      return Int32 is (Int32 (Rand_P.Random (Gen)));
 
    Start_X : constant := 0;
    Start_Y : constant := 0;
@@ -341,7 +341,7 @@ is
 
    Pipes : GMA.Pipe_Configs;
 
-   procedure Prepare_Configs (Rotation : Rotation_Type)
+   procedure Prepare_Configs (Rotation : Rotation_Type; Gen : Rand_P.Generator)
    is
       use type HW.GFX.GMA.Port_Type;
 
@@ -366,7 +366,7 @@ is
             end if;
          end if;
          Prepare_Cursors (Cursors (Pipe), Offset);
-         Pipes (Pipe).Cursor := Cursors (Pipe) (Cursor_Size'Val (Rand mod 3));
+         Pipes (Pipe).Cursor := Cursors (Pipe) (Cursor_Size'Val (Rand (Gen) mod 3));
       end loop;
 
       GMA.Dump_Configs (Pipes);
@@ -427,18 +427,14 @@ is
       Color : Pipe_Index;
       Size : Cursor_Size;
    end record;
-   function Cursor_Rand return Int32 is (Rand mod 51 - 25);
-   Cursor_Infos : array (Pipe_Index) of Cursor_Info :=
-     (others =>
-        (Color    => Pipe_Index'Val (Rand mod 3),
-         Size     => Cursor_Size'Val (Rand mod 3),
-         X_Velo   => 3 * Cursor_Rand,
-         Y_Velo   => 3 * Cursor_Rand,
-         others   => Cursor_Rand));
+   function Cursor_Rand (Gen : Rand_P.Generator)
+      return Int32 is (Rand (Gen) mod 51 - 25);
+   Cursor_Infos : array (Pipe_Index) of Cursor_Info;
 
    procedure Move_Cursors
      (Pipes    : in out GMA.Pipe_Configs;
-      Time_MS  : in     Natural)
+      Time_MS  : in     Natural;
+      Gen      : in     Rand_P.Generator)
    is
       procedure Select_New_Cursor
         (P  : in     Pipe_Index;
@@ -448,12 +444,12 @@ is
          Old_C : constant Cursor_Type := C;
       begin
          -- change either size or color
-         if Rand mod 2 = 0 then
+         if Rand (Gen) mod 2 = 0 then
             CI.Color := Pipe_Index'Val
-              ((Pipe_Index'Pos (CI.Color) + 1 + Rand mod 2) mod 3);
+              ((Pipe_Index'Pos (CI.Color) + 1 + Rand (Gen) mod 2) mod 3);
          else
             CI.Size := Cursor_Size'Val
-              ((Cursor_Size'Pos (CI.Size) + 1 + Rand mod 2) mod 3);
+              ((Cursor_Size'Pos (CI.Size) + 1 + Rand (Gen) mod 2) mod 3);
          end if;
          C := Cursors (CI.Color) (CI.Size);
          C.Center_X := Old_C.Center_X;
@@ -482,8 +478,8 @@ is
                Update : Boolean := False;
             begin
                if Cnt mod 16 = 0 then
-                  CI.X_Acc := Cursor_Rand;
-                  CI.Y_Acc := Cursor_Rand;
+                  CI.X_Acc := Cursor_Rand (Gen);
+                  CI.Y_Acc := Cursor_Rand (Gen);
                end if;
                CI.X_Velo := CI.X_Velo + CI.X_Acc;
                CI.Y_Velo := CI.Y_Velo + CI.Y_Acc;
@@ -537,6 +533,8 @@ is
       Dev_Init,
       Initialized : Boolean;
 
+      Gen : Rand_P.Generator;
+
       function iopl (level : Interfaces.C.int) return Interfaces.C.int;
       pragma Import (C, iopl, "iopl");
    begin
@@ -584,7 +582,7 @@ is
       if Initialized then
          Backup_GTT;
 
-         Prepare_Configs (Rotation);
+         Prepare_Configs (Rotation, Gen);
 
          GMA.Update_Outputs (Pipes);
 
@@ -600,6 +598,14 @@ is
             end loop;
          end loop;
 
+         Cursor_Infos :=
+           (others =>
+              (Color    => Pipe_Index'Val (Rand (Gen) mod 3),
+               Size     => Cursor_Size'Val (Rand (Gen) mod 3),
+               X_Velo   => 3 * Cursor_Rand (Gen),
+               Y_Velo   => 3 * Cursor_Rand (Gen),
+               others   => Cursor_Rand (Gen)));
+
          if Delay_MS < Primary_Delay_MS + Secondary_Delay_MS then
             Script_Cursors (Pipes, Delay_MS);
          else -- getting bored?
@@ -609,10 +615,10 @@ is
                New_Pipes : GMA.Pipe_Configs := Pipes;
 
                function Rand_Div (Num : Position_Type) return Position_Type is
-                 (case Rand mod 4 is
-                     when 3 => Rand mod Num / 3,
-                     when 2 => Rand mod Num / 2,
-                     when 1 => Rand mod Num,
+                 (case Rand (Gen) mod 4 is
+                     when 3 => Rand (Gen) mod Num / 3,
+                     when 2 => Rand (Gen) mod Num / 2,
+                     when 1 => Rand (Gen) mod Num,
                      when others => 0);
             begin
                Rand_P.Reset (Gen, Seed);
@@ -645,10 +651,10 @@ is
                   end loop;
                   GMA.Dump_Configs (New_Pipes);
                   GMA.Update_Outputs (New_Pipes);
-                  Move_Cursors (New_Pipes, Secondary_Delay_MS);
+                  Move_Cursors (New_Pipes, Secondary_Delay_MS, Gen);
                   Delay_MS := Delay_MS - Secondary_Delay_MS;
                end loop;
-               Move_Cursors (New_Pipes, Delay_MS);
+               Move_Cursors (New_Pipes, Delay_MS, Gen);
             end;
          end if;
 
