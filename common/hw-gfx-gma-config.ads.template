@@ -361,4 +361,8 @@ private package HW.GFX.GMA.Config is
    function Compatible_GPU (Device_Id : Word16) return Boolean is
      (Is_GPU (Device_Id, CPU, CPU_Var));
 
+   pragma Warnings (GNATprove, Off, "subprogram ""Detect_CPU"" has no effect",
+                    Reason => "only effective in dynamic cpu config");
+   procedure Detect_CPU (Device : Word16)<cpunull>;
+
 end HW.GFX.GMA.Config;

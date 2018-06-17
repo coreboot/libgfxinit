@@ -79,6 +79,7 @@ $(hw-gfx-gma-config-ads): $(dir)/hw-gfx-gma-config.ads.template $(cnf)
 	    -e's/<\(ilk\|hsw\|skl\)\(...\)\?var>/$(_GEN_CONST_TARGET)/' \
 	    -e's/\(.*: *<cpufunc>.*:=\) *\(.*\);/\1\n     (\2);/' \
 	    -e's/\([^ ]\+\) *: *<cpufunc> \+\([^ ]*\) *:=/function \1 return \2 is/' \
+	    -e's/<cpunull>//' \
 	    $< >$@
 else
 $(hw-gfx-gma-config-ads): $(dir)/hw-gfx-gma-config.ads.template $(cnf)
@@ -93,18 +94,20 @@ $(hw-gfx-gma-config-ads): $(dir)/hw-gfx-gma-config.ads.template $(cnf)
 	    -e'/Dyn_CPU\(_Var\)\?/d' \
 	    -e's/<\(gen\|\(ilk\|hsw\|skl\)\(...\)\?\)bool>/constant Boolean/' \
 	    -e's/<\(\(ilk\|hsw\|skl\)\(...\)\?\)var>/constant/' \
+	    -e's/<cpunull>/ is null/' \
 	    $< >$@
 endif
 gfxinit-gen-y += $(hw-gfx-gma-config-ads)
+gfxinit-$(CONFIG_GFX_GMA_DYN_CPU) += dyncpu/hw-gfx-gma-config.adb
 
-ifneq ($(filter G45,$(CONFIG_GFX_GMA_CPU)),)
+ifneq ($(filter G45,$(CONFIG_GFX_GMA_GENERATION)),)
 subdirs-y += g45
-else ifneq ($(filter Ironlake Sandybridge Ivybridge,$(CONFIG_GFX_GMA_CPU)),)
+else ifneq ($(filter Ironlake,$(CONFIG_GFX_GMA_GENERATION)),)
 subdirs-y += ironlake
-else ifneq ($(filter Haswell Broadwell,$(CONFIG_GFX_GMA_CPU)),)
+else ifneq ($(filter Haswell,$(CONFIG_GFX_GMA_GENERATION)),)
 subdirs-y += haswell_shared haswell
-else ifneq ($(filter Broxton,$(CONFIG_GFX_GMA_CPU)),)
+else ifneq ($(filter Broxton,$(CONFIG_GFX_GMA_GENERATION)),)
 subdirs-y += haswell_shared broxton
-else ifneq ($(filter Skylake,$(CONFIG_GFX_GMA_CPU)),)
+else ifneq ($(filter Skylake,$(CONFIG_GFX_GMA_GENERATION)),)
 subdirs-y += haswell_shared skylake
 endif

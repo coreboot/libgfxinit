@@ -425,6 +425,7 @@ is
          Dev.Read16 (Vendor, PCI.Vendor_Id);
          Dev.Read16 (Device, PCI.Device_Id);
 
+         Config.Detect_CPU (Device);
          Success := Vendor = 16#8086# and Config.Compatible_GPU (Device);
       end Check_Platform_PCI;
    begin
@@ -443,29 +444,27 @@ is
             Cursor      => Default_Cursor,
             Mode        => HW.GFX.Invalid_Mode));
       Config.Variable := Config.Initial_Settings;
+      Registers.Set_Register_Base (Config.Default_MMIO_Base);
       PLLs.Initialize;
 
       Dev.Initialize (Success);
 
       if Success then
-         Dev.Map (PCI_MMIO_Base, PCI.Res0, Length => MMIO_GTT_Offset);
-         Dev.Map (PCI_GTT_Base, PCI.Res0, Offset => MMIO_GTT_Offset);
-         if PCI_MMIO_Base /= 0 and PCI_GTT_Base /= 0 then
-            Registers.Set_Register_Base (PCI_MMIO_Base, PCI_GTT_Base);
-         else
-            pragma Debug (Debug.Put_Line
-              ("ERROR: Couldn't map resoure0."));
-            Registers.Set_Register_Base (Config.Default_MMIO_Base);
-            Success := Config.Default_MMIO_Base_Set;
-         end if;
-
+         Check_Platform_PCI (Success);
          if Success then
-            Check_Platform_PCI (Success);
+            Dev.Map (PCI_MMIO_Base, PCI.Res0, Length => MMIO_GTT_Offset);
+            Dev.Map (PCI_GTT_Base, PCI.Res0, Offset => MMIO_GTT_Offset);
+            if PCI_MMIO_Base /= 0 and PCI_GTT_Base /= 0 then
+               Registers.Set_Register_Base (PCI_MMIO_Base, PCI_GTT_Base);
+            else
+               pragma Debug (Debug.Put_Line
+                 ("ERROR: Couldn't map resoure0."));
+               Success := Config.Default_MMIO_Base_Set;
+            end if;
          end if;
       else
          pragma Debug (Debug.Put_Line
            ("WARNING: Couldn't initialize PCI dev."));
-         Registers.Set_Register_Base (Config.Default_MMIO_Base);
          Success := Config.Default_MMIO_Base_Set;
 
          if Success then
