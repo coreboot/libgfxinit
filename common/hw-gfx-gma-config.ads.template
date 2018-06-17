@@ -12,6 +12,8 @@
 -- GNU General Public License for more details.
 --
 
+pragma Restrictions (No_Elaboration_Code);
+
 private package HW.GFX.GMA.Config is
 
    Gen : constant Generation := <<GEN>>;
