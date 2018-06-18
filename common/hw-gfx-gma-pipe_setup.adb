@@ -508,6 +508,10 @@ package body HW.GFX.GMA.Pipe_Setup is
       if Width < Mode.H_Visible and Width mod 2 = 1 then
          Width := Width + 1;
       end if;
+      -- Do not scale to odd height (at least Sandy Bridge makes trouble).
+      if Height < Mode.V_Visible and Height mod 2 = 1 then
+         Height := Height + 1;
+      end if;
 
       X := (Mode.H_Visible - Width) / 2;
       Y := (Mode.V_Visible - Height) / 2;
