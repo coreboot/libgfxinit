@@ -259,11 +259,16 @@ package body HW.GFX.GMA.Pipe_Setup is
          Registers.Write
            (Controller.DSPSTRIDE, Word32 (Pixel_To_Bytes (FB.Stride, FB)));
          if Config.Has_DSP_Linoff and then FB.Tiling = Linear then
-            Registers.Write
-              (Register => Controller.DSPLINOFF,
-               Value    => Word32 (Pixel_To_Bytes
-                             (FB.Start_Y * FB.Stride + FB.Start_X, FB)));
-            Registers.Write (Controller.DSPTILEOFF, 0);
+            pragma Assert_And_Cut (True);
+            declare
+               Linear_Offset : constant Pixel_Type :=
+                  FB.Start_Y * FB.Stride + FB.Start_X;
+            begin
+               Registers.Write
+                 (Register => Controller.DSPLINOFF,
+                  Value    => Word32 (Pixel_To_Bytes (Linear_Offset, FB)));
+               Registers.Write (Controller.DSPTILEOFF, 0);
+            end;
          else
             if Config.Has_DSP_Linoff then
                Registers.Write (Controller.DSPLINOFF, 0);
