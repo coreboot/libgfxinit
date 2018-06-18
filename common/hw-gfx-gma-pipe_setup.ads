@@ -12,6 +12,7 @@
 -- GNU General Public License for more details.
 --
 
+with HW.GFX.GMA.Config;
 with HW.GFX.GMA.Registers;
 
 use type HW.Int32;
@@ -78,10 +79,6 @@ private
          DSPSURF           : Registers.Registers_Index;
          DSPTILEOFF        : Registers.Registers_Index;
          SPCNTR            : Registers.Registers_Index;
-         CUR_CTL           : Registers.Registers_Index;
-         CUR_BASE          : Registers.Registers_Index;
-         CUR_POS           : Registers.Registers_Index;
-         CUR_FBC_CTL       : Registers.Registers_Index;
          -- Skylake registers (partially aliased)
          PLANE_CTL         : Registers.Registers_Index;
          PLANE_OFFSET      : Registers.Registers_Index;
@@ -117,10 +114,6 @@ private
          DSPSURF           => Registers.DSPASURF,
          DSPTILEOFF        => Registers.DSPATILEOFF,
          SPCNTR            => Registers.SPACNTR,
-         CUR_CTL           => Registers.CUR_CTL_A,
-         CUR_BASE          => Registers.CUR_BASE_A,
-         CUR_POS           => Registers.CUR_POS_A,
-         CUR_FBC_CTL       => Registers.CUR_FBC_CTL_A,
          PLANE_CTL         => Registers.DSPACNTR,
          PLANE_OFFSET      => Registers.DSPATILEOFF,
          PLANE_POS         => Registers.PLANE_POS_1_A,
@@ -166,10 +159,6 @@ private
          DSPSURF           => Registers.DSPBSURF,
          DSPTILEOFF        => Registers.DSPBTILEOFF,
          SPCNTR            => Registers.SPBCNTR,
-         CUR_CTL           => Registers.CUR_CTL_B,
-         CUR_BASE          => Registers.CUR_BASE_B,
-         CUR_POS           => Registers.CUR_POS_B,
-         CUR_FBC_CTL       => Registers.CUR_FBC_CTL_B,
          PLANE_CTL         => Registers.DSPBCNTR,
          PLANE_OFFSET      => Registers.DSPBTILEOFF,
          PLANE_POS         => Registers.PLANE_POS_1_B,
@@ -215,10 +204,6 @@ private
          DSPSURF           => Registers.DSPCSURF,
          DSPTILEOFF        => Registers.DSPCTILEOFF,
          SPCNTR            => Registers.SPCCNTR,
-         CUR_CTL           => Registers.CUR_CTL_C,
-         CUR_BASE          => Registers.CUR_BASE_C,
-         CUR_POS           => Registers.CUR_POS_C,
-         CUR_FBC_CTL       => Registers.CUR_FBC_CTL_C,
          PLANE_CTL         => Registers.DSPCCNTR,
          PLANE_OFFSET      => Registers.DSPCTILEOFF,
          PLANE_POS         => Registers.PLANE_POS_1_C,
@@ -251,5 +236,41 @@ private
                               Registers.CUR_WM_C_5,
                               Registers.CUR_WM_C_6,
                               Registers.CUR_WM_C_7)));
+
+   type Cursor_Regs is record
+      CTL      : Registers.Registers_Index;
+      BASE     : Registers.Registers_Index;
+      POS      : Registers.Registers_Index;
+      FBC_CTL  : Registers.Registers_Invalid_Index;
+   end record;
+
+   function Cursors (Pipe : Pipe_Index) return Cursor_Regs is
+     (if not Config.Has_Ivybridge_Cursors then
+        (if Pipe = Primary then
+           (CTL      => Registers.CURACNTR,
+            BASE     => Registers.CURABASE,
+            POS      => Registers.CURAPOS,
+            FBC_CTL  => Registers.Invalid_Register)
+         else
+           (CTL      => Registers.CURBCNTR,
+            BASE     => Registers.CURBBASE,
+            POS      => Registers.CURBPOS,
+            FBC_CTL  => Registers.Invalid_Register))
+      else
+        (if Pipe = Primary then
+           (CTL      => Registers.CUR_CTL_A,
+            BASE     => Registers.CUR_BASE_A,
+            POS      => Registers.CUR_POS_A,
+            FBC_CTL  => Registers.CUR_FBC_CTL_A)
+         elsif Pipe = Secondary then
+           (CTL      => Registers.CUR_CTL_B,
+            BASE     => Registers.CUR_BASE_B,
+            POS      => Registers.CUR_POS_B,
+            FBC_CTL  => Registers.CUR_FBC_CTL_B)
+         else
+           (CTL      => Registers.CUR_CTL_C,
+            BASE     => Registers.CUR_BASE_C,
+            POS      => Registers.CUR_POS_C,
+            FBC_CTL  => Registers.CUR_FBC_CTL_C)));
 
 end HW.GFX.GMA.Pipe_Setup;

@@ -129,12 +129,19 @@ is
          Proof_In => (Init_State)),
       Pre => Is_Initialized;
 
+   pragma Warnings (GNATprove, Off, "no check message justified by this",
+                    Reason => "see Annotate aspects.");
    procedure Update_Cursor (Pipe : Pipe_Index; Cursor : Cursor_Type)
    with
       Global =>
-        (In_Out => (State, Device_State),
+        (Input => (Config_State),
+         In_Out => (State, Device_State),
          Proof_In => (Init_State)),
-      Pre => Is_Initialized;
+      Pre => Is_Initialized,
+      Annotate =>
+        (GNATprove, Intentional,
+         "global input ""GMA.Config_State"" of ""Update_Cursor"" not read",
+         "Reading of Config_State depends on the platform configuration.");
 
    procedure Place_Cursor
      (Pipe : Pipe_Index;
@@ -142,9 +149,14 @@ is
       Y : Cursor_Pos)
    with
       Global =>
-        (In_Out => (State, Device_State),
+        (Input => (Config_State),
+         In_Out => (State, Device_State),
          Proof_In => (Init_State)),
-      Pre => Is_Initialized;
+      Pre => Is_Initialized,
+      Annotate =>
+        (GNATprove, Intentional,
+         "global input ""GMA.Config_State"" of ""Place_Cursor"" not read",
+         "Reading of Config_State depends on the platform configuration.");
 
    procedure Move_Cursor
      (Pipe : Pipe_Index;
@@ -152,9 +164,14 @@ is
       Y : Cursor_Pos)
    with
       Global =>
-        (In_Out => (State, Device_State),
+        (Input => (Config_State),
+         In_Out => (State, Device_State),
          Proof_In => (Init_State)),
-      Pre => Is_Initialized;
+      Pre => Is_Initialized,
+      Annotate =>
+        (GNATprove, Intentional,
+         "global input ""GMA.Config_State"" of ""Move_Cursor"" not read",
+         "Reading of Config_State depends on the platform configuration.");
 
    ----------------------------------------------------------------------------
 
@@ -191,8 +208,6 @@ is
          Proof_In => (Init_State)),
       Pre => Is_Initialized and HW.Config.Dynamic_MMIO;
 
-   pragma Warnings (GNATprove, Off, "no check message justified by this",
-                    Reason => "see Annotate aspects.");
    procedure Map_Linear_FB (Linear_FB : out Word64; FB : in Framebuffer_Type)
    with
       Global =>

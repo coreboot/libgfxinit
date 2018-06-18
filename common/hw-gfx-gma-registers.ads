@@ -473,6 +473,9 @@ is
       CUR_BASE_A,
       CUR_POS_A,
       CUR_FBC_CTL_A,
+      CURBCNTR,
+      CURBBASE,
+      CURBPOS,
       CUR_WM_A_0,
       CUR_WM_A_1,
       CUR_WM_A_2,
@@ -927,6 +930,9 @@ is
       PS_CTRL_2_B           => 16#06_8a80# / Register_Width,
 
       -- cursor control
+      CURBCNTR              => 16#07_00c0# / Register_Width,   -- <= SNB
+      CURBBASE              => 16#07_00c4# / Register_Width,   -- <= SNB
+      CURBPOS               => 16#07_00c8# / Register_Width,   -- <= SNB
       CUR_CTL_B             => 16#07_1080# / Register_Width,
       CUR_BASE_B            => 16#07_1084# / Register_Width,
       CUR_POS_B             => 16#07_1088# / Register_Width,
@@ -1632,6 +1638,9 @@ is
    GMCH_ADPA            : constant Registers_Index := FDI_TX_CTL_B;
    GMCH_HDMIB           : constant Registers_Index := GMCH_SDVOB;
    GMCH_HDMIC           : constant Registers_Index := GMCH_SDVOC;
+   CURACNTR             : constant Registers_Index := CUR_CTL_A;
+   CURABASE             : constant Registers_Index := CUR_BASE_A;
+   CURAPOS              : constant Registers_Index := CUR_POS_A;
 
    ---------------------------------------------------------------------------
 

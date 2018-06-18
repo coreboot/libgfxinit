@@ -155,7 +155,7 @@ private package HW.GFX.GMA.Config is
    Has_Plane_Control             : <genbool> := Broxton_On;
    Has_DSP_Linoff                : <genbool> := Up_To_Ironlake;
    Has_PF_Pipe_Select            : <ilkhswbool> := CPU_Ivybridge or CPU_Haswell;
-   Has_Cursor_FBC_Control        : <ilkbool> := Ivybridge_On;
+   Has_Ivybridge_Cursors         : <ilkbool> := Ivybridge_On;
    VGA_Plane_Workaround          : <ilkbool> := CPU_Ivybridge;
    Has_GMCH_DP_Transcoder        : <genbool> := Gen_G45;
    Has_GMCH_VGACNTRL             : <genbool> := Gen_G45;

@@ -15,7 +15,6 @@
 with HW.Debug;
 with GNAT.Source_Info;
 
-with HW.GFX.GMA.Config;
 with HW.GFX.GMA.Transcoder;
 
 package body HW.GFX.GMA.Pipe_Setup is
@@ -352,7 +351,7 @@ package body HW.GFX.GMA.Pipe_Setup is
       -- on some platforms writing CUR_CTL disables self-arming of CUR_POS
       -- so keep it first
       Registers.Write
-        (Register => Controllers (Pipe).CUR_CTL,
+        (Register => Cursors (Pipe).CTL,
          Value    => CUR_CTL_PIPE_SELECT (Pipe) or
                      CUR_CTL_MODE (Cursor.Mode, Cursor.Size));
       Place_Cursor (Pipe, FB, Cursor);
@@ -376,11 +375,11 @@ package body HW.GFX.GMA.Pipe_Setup is
          Y := -Width;
       end if;
       Registers.Write
-        (Register => Controllers (Pipe).CUR_POS,
+        (Register => Cursors (Pipe).POS,
          Value    => CUR_POS_Y (Y) or CUR_POS_X (X));
       -- write to CUR_BASE always arms other CUR_* registers
       Registers.Write
-        (Register => Controllers (Pipe).CUR_BASE,
+        (Register => Cursors (Pipe).BASE,
          Value    => Shift_Left (Word32 (Cursor.GTT_Offset), 12));
    end Place_Cursor;
 
@@ -699,11 +698,13 @@ package body HW.GFX.GMA.Pipe_Setup is
 
    ----------------------------------------------------------------------------
 
-   procedure Planes_Off (Controller : Controller_Type) is
+   procedure Planes_Off (Controller : Controller_Type; CUR : Cursor_Regs)
+   is
+      use type Registers.Registers_Invalid_Index;
    begin
-      Registers.Write (Controller.CUR_CTL, 16#0000_0000#);
-      if Config.Has_Cursor_FBC_Control then
-         Registers.Write (Controller.CUR_FBC_CTL, 16#0000_0000#);
+      Registers.Write (CUR.CTL, 16#0000_0000#);
+      if CUR.FBC_CTL /= Registers.Invalid_Register then
+         Registers.Write (CUR.FBC_CTL, 16#0000_0000#);
       end if;
       Registers.Unset_Mask (Controller.SPCNTR, DSPCNTR_ENABLE);
       if Config.Has_Plane_Control then
@@ -720,7 +721,7 @@ package body HW.GFX.GMA.Pipe_Setup is
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
-      Planes_Off (Controllers (Pipe));
+      Planes_Off (Controllers (Pipe), Cursors (Pipe));
       Transcoder.Off (Pipe);
       Panel_Fitter_Off (Controllers (Pipe));
       Transcoder.Clk_Off (Pipe);
@@ -746,7 +747,7 @@ package body HW.GFX.GMA.Pipe_Setup is
       Legacy_VGA_Off;
 
       for Pipe in Pipe_Index loop
-         Planes_Off (Controllers (Pipe));
+         Planes_Off (Controllers (Pipe), Cursors (Pipe));
          Transcoder.Off (Pipe);
          Panel_Fitter_Off (Controllers (Pipe));
          Transcoder.Clk_Off (Pipe);
