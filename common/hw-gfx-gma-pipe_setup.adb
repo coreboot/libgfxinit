@@ -552,8 +552,15 @@ package body HW.GFX.GMA.Pipe_Setup is
                when Secondary => GMCH_PFIT_CONTROL_SELECT_PIPE_B,
                when others    => 0);
 
+      -- Work around a quirk:
+      -- In legacy VGA mode Pillarbox fails to display anything so just force
+      -- 'auto' mode on all displays, which will the output stretched to
+      -- fullscreen .
       PF_Ctrl_Scaling : constant Word32 :=
-         GMCH_PFIT_CONTROL_SCALING (Scaling_Type (Framebuffer, Mode));
+        (if Framebuffer.Offset = VGA_PLANE_FRAMEBUFFER_OFFSET then
+           GMCH_PFIT_CONTROL_SCALING (Uniform)
+         else
+           GMCH_PFIT_CONTROL_SCALING (Scaling_Type (Framebuffer, Mode)));
 
       In_Use : Boolean;
    begin
