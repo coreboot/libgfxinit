@@ -43,7 +43,8 @@ is
       Haswell,
       Broadwell,
       Broxton,
-      Skylake);
+      Skylake,
+      Kabylake);
 
    type CPU_Variant is (Normal, ULT, ULX);
 

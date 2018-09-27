@@ -31,7 +31,7 @@ private package HW.GFX.GMA.Config is
          when Ironlake  => Ivybridge,
          when Haswell   => Broadwell,
          when Broxton   => Broxton,
-         when Skylake   => Skylake);
+         when Skylake   => Kabylake);
    CPU_Var_Last : constant CPU_Variant :=
      (case Gen is
          when Haswell | Skylake  => ULX,
@@ -114,6 +114,8 @@ private package HW.GFX.GMA.Config is
    CPU_Ivybridge     : <ilkbool> := Gen_Ironlake and then CPU = Ivybridge;
    CPU_Haswell       : <hswbool> := Gen_Haswell and then CPU = Haswell;
    CPU_Broadwell     : <hswbool> := Gen_Haswell and then CPU = Broadwell;
+   CPU_Skylake       : <sklbool> := Gen_Skylake and then CPU = Skylake;
+   CPU_Kabylake      : <sklbool> := Gen_Skylake and then CPU = Kabylake;
 
    Sandybridge_On    : <ilkbool> :=
      ((Gen_Ironlake and then CPU >= Sandybridge) or Haswell_On);
@@ -205,6 +207,7 @@ private package HW.GFX.GMA.Config is
    Has_DDI_Buffer_Trans          : <genbool> := Haswell_On and not Has_DDI_PHYs;
    Has_Low_Voltage_Swing         : <genbool> := Broxton_On;
    Has_Iboost_Config             : <genbool> := Skylake_On;
+   Use_KBL_DDI_Buf_Trans         : <sklbool> := CPU_Kabylake;
 
    Need_DP_Aux_Mutex             : <genbool> := False; -- Skylake & (PSR | GTC)
 
@@ -257,7 +260,8 @@ private package HW.GFX.GMA.Config is
 
    ----------------------------------------------------------------------------
 
-   DDI_Buffer_Iboost : <hswsklvar> Natural := (if Is_ULX then 3 else 1);
+   DDI_Buffer_Iboost : <hswsklvar> Natural :=
+     (if Is_ULX or (CPU_Kabylake and Is_ULT) then 3 else 1);
 
    Default_DDI_HDMI_Buffer_Translation : <hswvar> DDI_HDMI_Buf_Trans_Range :=
      (if    CPU_Haswell    then 6
@@ -378,6 +382,20 @@ private package HW.GFX.GMA.Config is
       (Device_Id and 16#ffcf#) = 16#190b# or
       (Device_Id and 16#ffcf#) = 16#190d#);
 
+   function Is_Kaby_Lake_Y (Device_Id : Word16) return Boolean is
+     ((Device_Id and 16#ffcf#) = 16#5905# or
+      (Device_Id and 16#ffcf#) = 16#590e#);
+   function Is_Kaby_Lake_Y_AML (Device_Id : Word16) return Boolean is
+     (Device_Id = 16#591c# or Device_Id = 16#87c0#);
+   function Is_Kaby_Lake_U (Device_Id : Word16) return Boolean is
+     ((Device_Id and 16#ffcd#) = 16#5901# or
+      (Device_Id and 16#ffce#) = 16#5906#);
+   function Is_Kaby_Lake (Device_Id : Word16) return Boolean is
+     ((Device_Id and 16#ffc7#) = 16#5902# or
+      (Device_Id and 16#ffcf#) = 16#5908# or
+      (Device_Id and 16#ffcf#) = 16#590b# or
+      (Device_Id and 16#ffcf#) = 16#590d#);
+
    function Is_GPU (Device_Id : Word16; CPU : CPU_Type; CPU_Var : CPU_Variant)
       return Boolean is
      (case CPU is
@@ -398,7 +416,12 @@ private package HW.GFX.GMA.Config is
          when Skylake      => (case CPU_Var is
                                  when Normal => Is_Skylake (Device_Id),
                                  when ULT    => Is_Skylake_U (Device_Id),
-                                 when ULX    => Is_Skylake_Y (Device_Id)));
+                                 when ULX    => Is_Skylake_Y (Device_Id)),
+         when Kabylake     => (case CPU_Var is
+                                 when Normal => Is_Kaby_Lake (Device_Id),
+                                 when ULT    => Is_Kaby_Lake_U (Device_Id),
+                                 when ULX    => Is_Kaby_Lake_Y (Device_Id) or
+                                                Is_Kaby_Lake_Y_AML (Device_Id)));
 
    function Compatible_GPU (Device_Id : Word16) return Boolean is
      (Is_GPU (Device_Id, CPU, CPU_Var));

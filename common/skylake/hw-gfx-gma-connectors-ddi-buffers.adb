@@ -99,6 +99,42 @@ is
       16#8000_5012#, 16#0000_00c0#,
       others => 0);
 
+   Kaby_Lake_Trans_DP : constant Buf_Trans_Array :=
+     (16#0000_2016#, 16#0000_00a0#,
+      16#0000_5012#, 16#0000_009b#,
+      16#0000_7011#, 16#0000_0088#,
+      16#8000_9010#, 16#0000_00c0#,
+      16#0000_2016#, 16#0000_009b#,
+      16#0000_5012#, 16#0000_0088#,
+      16#8000_7011#, 16#0000_00c0#,
+      16#0000_2016#, 16#0000_0097#,
+      16#8000_5012#, 16#0000_00c0#,
+      others => 0);
+
+   Kaby_Lake_U_Trans_DP : constant Buf_Trans_Array :=
+     (16#0000_201b#, 16#0000_00a1#,
+      16#0000_5012#, 16#0000_0088#,
+      16#8000_7011#, 16#0000_00cd#,
+      16#8000_9010#, 16#0000_00c0#,
+      16#0000_201b#, 16#0000_009d#,
+      16#8000_5012#, 16#0000_00c0#,
+      16#8000_7011#, 16#0000_00c0#,
+      16#0000_2016#, 16#0000_004f#,
+      16#8000_5012#, 16#0000_00c0#,
+      others => 0);
+
+   Kaby_Lake_Y_Trans_DP : constant Buf_Trans_Array :=
+     (16#0000_1017#, 16#0000_00a1#,
+      16#0000_5012#, 16#0000_0088#,
+      16#8000_7011#, 16#0000_00cd#,
+      16#8000_800f#, 16#0000_00c0#,
+      16#0000_1017#, 16#0000_009d#,
+      16#8000_5012#, 16#0000_00c0#,
+      16#8000_7011#, 16#0000_00c0#,
+      16#0000_1017#, 16#0000_004c#,
+      16#8000_5012#, 16#0000_00c0#,
+      others => 0);
+
    Skylake_Trans_HDMI : constant HDMI_Buf_Trans_Array :=
      ((16#0000_0018#, 16#0000_00ac#),
       (16#0000_5012#, 16#0000_009d#),
@@ -138,18 +174,18 @@ is
          else Config.Default_DDI_HDMI_Buffer_Translation);
    begin
       Trans :=
-        (if Config.Is_ULX then
-           (if DDIA_Low_Voltage_Swing
-            then Skylake_Y_Trans_EDP
-            else Skylake_Y_Trans_DP)
-         elsif Config.Is_ULT then
-           (if DDIA_Low_Voltage_Swing
-            then Skylake_U_Trans_EDP
-            else Skylake_U_Trans_DP)
+        (if DDIA_Low_Voltage_Swing then
+           (if    Config.Is_ULX  then Skylake_Y_Trans_EDP
+            elsif Config.Is_ULT  then Skylake_U_Trans_EDP
+                                 else Skylake_Trans_EDP)
+         elsif not Config.Use_KBL_DDI_Buf_Trans then
+           (if    Config.Is_ULX  then Skylake_Y_Trans_DP
+            elsif Config.Is_ULT  then Skylake_U_Trans_DP
+                                 else Skylake_Trans_DP)
          else
-           (if DDIA_Low_Voltage_Swing
-            then Skylake_Trans_EDP
-            else Skylake_Trans_DP));
+           (if    Config.Is_ULX  then Kaby_Lake_Y_Trans_DP
+            elsif Config.Is_ULT  then Kaby_Lake_U_Trans_DP
+                                 else Kaby_Lake_Trans_DP));
       if not DDIA_Low_Voltage_Swing then
          if Config.Is_ULX then
             Trans (18) := Skylake_Y_Trans_HDMI (HDMI_Trans).Trans1;

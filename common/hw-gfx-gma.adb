@@ -405,7 +405,8 @@ is
          end case;
          Success :=
            ((Config.Gen_Broxton        and Audio_VID_DID = 16#8086_280a#) or
-            (Config.Gen_Skylake        and Audio_VID_DID = 16#8086_2809#) or
+            (Config.CPU_Kabylake       and Audio_VID_DID = 16#8086_280b#) or
+            (Config.CPU_Skylake        and Audio_VID_DID = 16#8086_2809#) or
             (Config.CPU_Broadwell      and Audio_VID_DID = 16#8086_2808#) or
             (Config.CPU_Haswell        and Audio_VID_DID = 16#8086_2807#) or
             ((Config.CPU_Ivybridge or
