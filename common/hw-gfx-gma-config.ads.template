@@ -1,5 +1,5 @@
 --
--- Copyright (C) 2015-2018 secunet Security Networks AG
+-- Copyright (C) 2015-2019 secunet Security Networks AG
 --
 -- This program is free software; you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@ private package HW.GFX.GMA.Config is
          when Skylake   => Skylake);
    CPU_Var_Last : constant CPU_Variant :=
      (case Gen is
-         when Haswell | Skylake  => ULT,
+         when Haswell | Skylake  => ULX,
          when others             => Normal);
    subtype Gen_CPU_Type is CPU_Type range CPU_First .. CPU_Last;
    subtype Gen_CPU_Variant is CPU_Variant range Normal .. CPU_Var_Last;
@@ -135,6 +135,9 @@ private package HW.GFX.GMA.Config is
    Has_Presence_Straps           : <genbool> := not Gen_Broxton;
    Is_ULT                        : <hswsklbool> :=
      ((Gen_Haswell or Gen_Skylake) and then CPU_Var = ULT);
+   Is_ULX                        : <hswsklbool> :=
+     ((Gen_Haswell or Gen_Skylake) and then CPU_Var = ULX);
+   Is_LP                         : <hswsklbool> := Is_ULT or Is_ULX;
 
    ---------- CPU pipe: ---------
    Has_Tertiary_Pipe             : <ilkbool> := Ivybridge_On;
@@ -165,7 +168,7 @@ private package HW.GFX.GMA.Config is
    ----------- PCH/FDI: ---------
    Has_PCH                       : <genbool> := not Gen_Broxton and not Gen_G45;
    Has_PCH_DAC                   : <hswbool> :=
-     (Gen_Ironlake or (Gen_Haswell and then not Is_ULT));
+     (Gen_Ironlake or (Gen_Haswell and then not Is_LP));
 
    Has_PCH_Aux_Channels          : <genbool> := Gen_Ironlake or Gen_Haswell;
 
@@ -190,12 +193,12 @@ private package HW.GFX.GMA.Config is
    Has_Per_DDI_Clock_Sel         : <genbool> := Gen_Haswell;
    Has_HOTPLUG_CTL               : <genbool> := Gen_Haswell;
    Has_SHOTPLUG_CTL_A            : <hswbool> :=
-     ((Gen_Haswell and then Is_ULT) or Skylake_On);
+     ((Gen_Haswell and then Is_LP) or Skylake_On);
 
    Has_DDI_PHYs                  : <genbool> := Gen_Broxton;
 
    Has_DDI_D                     : <hswsklbool> :=
-     ((Gen_Haswell or Gen_Skylake) and then not Is_ULT);
+     ((Gen_Haswell or Gen_Skylake) and then not Is_LP);
    -- might be disabled by x4 eDP:
    Has_DDI_E                     : <hswsklbool> := Has_DDI_D;
 
@@ -205,6 +208,10 @@ private package HW.GFX.GMA.Config is
 
    Need_DP_Aux_Mutex             : <genbool> := False; -- Skylake & (PSR | GTC)
 
+   ----- DP: --------------------
+   DP_Max_2_7_GHz                : <hswbool> :=
+     (not Haswell_On or else (CPU_Haswell and Is_ULX));
+
    ----------- GMBUS: -----------
    Ungate_GMBUS_Unit_Level       : <genbool> := Skylake_On;
    GMBUS_Alternative_Pins        : <genbool> := Gen_Broxton;
@@ -213,7 +220,7 @@ private package HW.GFX.GMA.Config is
    ----------- Power: -----------
    Has_IPS                       : <hswbool> :=
      (Gen_Haswell and then
-      ((CPU_Haswell and Is_ULT) or CPU_Broadwell));
+      ((CPU_Haswell and Is_LP) or CPU_Broadwell));
    Has_IPS_CTL_Mailbox           : <hswbool> := CPU_Broadwell;
 
    Has_Per_Pipe_SRD              : <hswbool> := Broadwell_On;
@@ -250,6 +257,8 @@ private package HW.GFX.GMA.Config is
 
    ----------------------------------------------------------------------------
 
+   DDI_Buffer_Iboost : <hswsklvar> Natural := (if Is_ULX then 3 else 1);
+
    Default_DDI_HDMI_Buffer_Translation : <hswvar> DDI_HDMI_Buf_Trans_Range :=
      (if    CPU_Haswell    then 6
       elsif CPU_Broadwell  then 7
@@ -258,10 +267,12 @@ private package HW.GFX.GMA.Config is
 
    ----------------------------------------------------------------------------
 
-   Default_CDClk_Freq : <ilkvar> Frequency_Type :=
+   Default_CDClk_Freq : <ilkhswvar> Frequency_Type :=
      (if    Gen_G45                          then 320_000_000  -- unused
-      elsif CPU_Ironlake or Gen_Haswell      then 450_000_000
+      elsif CPU_Ironlake                     then 450_000_000
       elsif CPU_Sandybridge or CPU_Ivybridge then 400_000_000
+      elsif Gen_Haswell and then Is_ULX      then 337_500_000
+      elsif Gen_Haswell                      then 450_000_000
       elsif Gen_Broxton                      then 288_000_000
       elsif Gen_Skylake                      then 337_500_000
                                              else Frequency_Type'First);
@@ -269,7 +280,7 @@ private package HW.GFX.GMA.Config is
    Default_RawClk_Freq : <hswvar> Frequency_Type :=
      (if    Gen_G45        then 100_000_000  -- unused, depends on FSB
       elsif Gen_Ironlake   then 125_000_000
-      elsif Gen_Haswell    then (if Is_ULT then 24_000_000 else 125_000_000)
+      elsif Gen_Haswell    then (if Is_LP then 24_000_000 else 125_000_000)
       elsif Gen_Broxton    then Frequency_Type'First  -- none needed
       elsif Gen_Skylake    then 24_000_000
                            else Frequency_Type'First);
@@ -323,15 +334,50 @@ private package HW.GFX.GMA.Config is
 
    use type HW.Word16;
 
-   function Is_Broadwell_H (Device_Id : Word16) return Boolean is
-     (Device_Id = 16#1612# or Device_Id = 16#1622# or Device_Id = 16#162a#);
+   -- GMA PCI IDs:
+   --
+   -- Rather catch too much here than too little, it's
+   -- mostly used to distinguish generations. Best public
+   -- reference for these IDs is Linux' i915.
+   --
+   -- Since Sandybridge, bits 4 and 5 encode the compu-
+   -- tational capabilities and can mostly be ignored.
+   -- From Haswell on, we have to distinguish between
+   -- Normal, ULT (U CPU lines) and ULX (Y CPU lines).
 
+   function Is_Haswell_Y (Device_Id : Word16) return Boolean is
+     ((Device_Id and 16#ffef#) = 16#0a0e#);
+   function Is_Haswell_U (Device_Id : Word16) return Boolean is
+     (((Device_Id and 16#ffc3#) = 16#0a02# or
+       (Device_Id and 16#ffcf#) = 16#0a0b#) and
+      not Is_Haswell_Y (Device_Id));
+   function Is_Haswell (Device_Id : Word16) return Boolean is
+     ((Device_Id and 16#ffc3#) = 16#0402# or
+      (Device_Id and 16#ffcf#) = 16#040b# or
+      (Device_Id and 16#ffc3#) = 16#0c02# or
+      (Device_Id and 16#ffcf#) = 16#0c0b# or
+      (Device_Id and 16#ffc3#) = 16#0d02# or
+      (Device_Id and 16#ffcf#) = 16#0d0b#);
+
+   function Is_Broadwell_Y (Device_Id : Word16) return Boolean is
+     ((Device_Id and 16#ffcf#) = 16#160e#);
+   function Is_Broadwell_U (Device_Id : Word16) return Boolean is
+     ((Device_Id and 16#ffcf#) = 16#1606# or
+      (Device_Id and 16#ffcf#) = 16#160b#);
+   function Is_Broadwell (Device_Id : Word16) return Boolean is
+     ((Device_Id and 16#ffc7#) = 16#1602# or
+      (Device_Id and 16#ffcf#) = 16#160d#);
+
+   function Is_Skylake_Y (Device_Id : Word16) return Boolean is
+     ((Device_Id and 16#ffcf#) = 16#190e#);
    function Is_Skylake_U (Device_Id : Word16) return Boolean is
-     (Device_Id = 16#1906# or Device_Id = 16#1916# or Device_Id = 16#1923# or
-      Device_Id = 16#1926# or Device_Id = 16#1927#);
+     ((Device_Id and 16#ffc9#) = 16#1901# or
+      (Device_Id and 16#ffcf#) = 16#1906#);
+   function Is_Skylake (Device_Id : Word16) return Boolean is
+     ((Device_Id and 16#ffc7#) = 16#1902# or
+      (Device_Id and 16#ffcf#) = 16#190b# or
+      (Device_Id and 16#ffcf#) = 16#190d#);
 
-   -- Rather catch too much here than too little,
-   -- it's only used to distinguish generations.
    function Is_GPU (Device_Id : Word16; CPU : CPU_Type; CPU_Var : CPU_Variant)
       return Boolean is
      (case CPU is
@@ -340,25 +386,19 @@ private package HW.GFX.GMA.Config is
          when Ironlake     => (Device_Id and 16#fff3#) = 16#0042#,
          when Sandybridge  => (Device_Id and 16#ffc2#) = 16#0102#,
          when Ivybridge    => (Device_Id and 16#ffc3#) = 16#0142#,
-         when Haswell =>
-           (case CPU_Var is
-               when Normal => (Device_Id and 16#ffc3#) = 16#0402# or
-                              (Device_Id and 16#ffc3#) = 16#0d02#,
-               when ULT    => (Device_Id and 16#ffc3#) = 16#0a02#),
-         when Broadwell    => ((Device_Id and 16#ffc3#) = 16#1602# or
-                               (Device_Id and 16#ffcf#) = 16#160b# or
-                               (Device_Id and 16#ffcf#) = 16#160d#) and
-                             (case CPU_Var is
-                                 when Normal =>     Is_Broadwell_H (Device_Id),
-                                 when ULT    => not Is_Broadwell_H (Device_Id)),
+         when Haswell      => (case CPU_Var is
+                                 when Normal => Is_Haswell (Device_Id),
+                                 when ULT    => Is_Haswell_U (Device_Id),
+                                 when ULX    => Is_Haswell_Y (Device_Id)),
+         when Broadwell    => (case CPU_Var is
+                                 when Normal => Is_Broadwell (Device_Id),
+                                 when ULT    => Is_Broadwell_U (Device_Id),
+                                 when ULX    => Is_Broadwell_Y (Device_Id)),
          when Broxton      => (Device_Id and 16#fffe#) = 16#5a84#,
-         when Skylake      => ((Device_Id and 16#ffc3#) = 16#1902# or
-                               (Device_Id and 16#ffcf#) = 16#190b# or
-                               (Device_Id and 16#ffcf#) = 16#190d# or
-                               (Device_Id and 16#fff9#) = 16#1921#) and
-                             (case CPU_Var is
-                                 when Normal => not Is_Skylake_U (Device_Id),
-                                 when ULT    =>     Is_Skylake_U (Device_Id)));
+         when Skylake      => (case CPU_Var is
+                                 when Normal => Is_Skylake (Device_Id),
+                                 when ULT    => Is_Skylake_U (Device_Id),
+                                 when ULX    => Is_Skylake_Y (Device_Id)));
 
    function Compatible_GPU (Device_Id : Word16) return Boolean is
      (Is_GPU (Device_Id, CPU, CPU_Var));

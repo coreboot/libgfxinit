@@ -1,5 +1,5 @@
 --
--- Copyright (C) 2017 secunet Security Networks AG
+-- Copyright (C) 2017, 2019 secunet Security Networks AG
 --
 -- This program is free software; you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -51,6 +51,18 @@ is
       16#0000_5013#, 16#0000_009f#,
       16#0000_0018#, 16#0000_00df#);
 
+   Skylake_Y_Trans_EDP : constant Buf_Trans_Array :=
+     (16#0000_0018#, 16#0000_00a8#,
+      16#0000_4013#, 16#0000_00ab#,
+      16#0000_7011#, 16#0000_00a4#,
+      16#0000_9010#, 16#0000_00df#,
+      16#0000_0018#, 16#0000_00aa#,
+      16#0000_6013#, 16#0000_00a4#,
+      16#0000_7011#, 16#0000_009d#,
+      16#0000_0018#, 16#0000_00a0#,
+      16#0000_6012#, 16#0000_00df#,
+      16#0000_0018#, 16#0000_008a#);
+
    Skylake_Trans_DP : constant Buf_Trans_Array :=
      (16#0000_2016#, 16#0000_00a0#,
       16#0000_5012#, 16#0000_009b#,
@@ -75,6 +87,18 @@ is
       16#8000_5012#, 16#0000_00c0#,
       others => 0);
 
+   Skylake_Y_Trans_DP : constant Buf_Trans_Array :=
+     (16#0000_0018#, 16#0000_00a2#,
+      16#0000_5012#, 16#0000_0088#,
+      16#8000_7011#, 16#0000_00cd#,
+      16#8000_9010#, 16#0000_00c0#,
+      16#0000_0018#, 16#0000_009d#,
+      16#8000_5012#, 16#0000_00c0#,
+      16#8000_7011#, 16#0000_00c0#,
+      16#0000_0018#, 16#0000_0088#,
+      16#8000_5012#, 16#0000_00c0#,
+      others => 0);
+
    Skylake_Trans_HDMI : constant HDMI_Buf_Trans_Array :=
      ((16#0000_0018#, 16#0000_00ac#),
       (16#0000_5012#, 16#0000_009d#),
@@ -85,6 +109,19 @@ is
       (16#8000_6012#, 16#0000_00cd#),
       (16#0000_0018#, 16#0000_00df#),
       (16#8000_3015#, 16#0000_00cd#),
+      (16#8000_3015#, 16#0000_00c0#),
+      (16#8000_0018#, 16#0000_00c0#));
+
+   Skylake_Y_Trans_HDMI : constant HDMI_Buf_Trans_Array :=
+     ((16#0000_0018#, 16#0000_00a1#),
+      (16#0000_5012#, 16#0000_00df#),
+      (16#8000_7011#, 16#0000_00cb#),
+      (16#0000_0018#, 16#0000_00a4#),
+      (16#0000_0018#, 16#0000_009d#),
+      (16#0000_4013#, 16#0000_0080#),
+      (16#8000_6013#, 16#0000_00c0#),
+      (16#0000_0018#, 16#0000_008a#),
+      (16#8000_3015#, 16#0000_00c0#),
       (16#8000_3015#, 16#0000_00c0#),
       (16#8000_0018#, 16#0000_00c0#));
 
@@ -101,17 +138,26 @@ is
          else Config.Default_DDI_HDMI_Buffer_Translation);
    begin
       Trans :=
-        (if not Config.Is_ULT then
+        (if Config.Is_ULX then
            (if DDIA_Low_Voltage_Swing
-            then Skylake_Trans_EDP
-            else Skylake_Trans_DP)
-         else
+            then Skylake_Y_Trans_EDP
+            else Skylake_Y_Trans_DP)
+         elsif Config.Is_ULT then
            (if DDIA_Low_Voltage_Swing
             then Skylake_U_Trans_EDP
-            else Skylake_U_Trans_DP));
+            else Skylake_U_Trans_DP)
+         else
+           (if DDIA_Low_Voltage_Swing
+            then Skylake_Trans_EDP
+            else Skylake_Trans_DP));
       if not DDIA_Low_Voltage_Swing then
-         Trans (18) := Skylake_Trans_HDMI (HDMI_Trans).Trans1;
-         Trans (19) := Skylake_Trans_HDMI (HDMI_Trans).Trans2;
+         if Config.Is_ULX then
+            Trans (18) := Skylake_Y_Trans_HDMI (HDMI_Trans).Trans1;
+            Trans (19) := Skylake_Y_Trans_HDMI (HDMI_Trans).Trans2;
+         else
+            Trans (18) := Skylake_Trans_HDMI (HDMI_Trans).Trans1;
+            Trans (19) := Skylake_Trans_HDMI (HDMI_Trans).Trans2;
+         end if;
       end if;
    end Translations;
 

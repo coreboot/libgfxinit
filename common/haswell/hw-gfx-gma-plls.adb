@@ -1,5 +1,5 @@
 --
--- Copyright (C) 2015-2016 secunet Security Networks AG
+-- Copyright (C) 2015-2016, 2019 secunet Security Networks AG
 --
 -- This program is free software; you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -12,6 +12,7 @@
 -- GNU General Public License for more details.
 --
 
+with HW.GFX.GMA.Config;
 with HW.GFX.GMA.PLLs.LCPLL;
 with HW.GFX.GMA.PLLs.WRPLL;
 
@@ -87,8 +88,15 @@ is
          PLL := Invalid;
          Success := True;
       elsif Port_Cfg.Display = DP then
-         PLL := LCPLL.Fixed_LCPLLs (Port_Cfg.DP.Bandwidth);
-         Success := True;
+         if Config.DP_Max_2_7_GHz and then
+            Port_Cfg.DP.Bandwidth > DP_Bandwidth_2_7
+         then
+            PLL := Invalid;
+            Success := False;
+         else
+            PLL := LCPLL.Fixed_LCPLLs (Port_Cfg.DP.Bandwidth);
+            Success := True;
+         end if;
       else
          Alloc_Configurable (Port_Cfg.Mode, PLL, Success);
       end if;

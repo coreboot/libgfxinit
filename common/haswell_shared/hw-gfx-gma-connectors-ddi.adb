@@ -298,7 +298,7 @@ package body HW.GFX.GMA.Connectors.DDI is
 
    procedure Initialize
    is
-      Iboost_Value : constant Word32 := 1;
+      Iboost_Value : constant Word32 := Word32 (Config.DDI_Buffer_Iboost);
    begin
       if Config.Has_DDI_Buffer_Trans then
          declare

@@ -45,7 +45,7 @@ is
       Broxton,
       Skylake);
 
-   type CPU_Variant is (Normal, ULT);
+   type CPU_Variant is (Normal, ULT, ULX);
 
    type Port_Type is
      (Disabled,
