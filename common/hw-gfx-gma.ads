@@ -58,6 +58,8 @@ is
       HDMI2, -- or DVI
       HDMI3, -- or DVI
       Analog);
+   subtype Active_Port_Type is Port_Type
+      range Port_Type'Succ (Disabled) .. Port_Type'Last;
 
    type Cursor_Mode is (No_Cursor, ARGB_Cursor);
    type Cursor_Size is (Cursor_64x64, Cursor_128x128, Cursor_256x256);
@@ -234,9 +236,6 @@ private
 
    ----------------------------------------------------------------------------
    -- Internal representation of a single pipe's configuration
-
-   subtype Active_Port_Type is Port_Type
-      range Port_Type'Succ (Disabled) .. Port_Type'Last;
 
    type GPU_Port is (DIGI_A, DIGI_B, DIGI_C, DIGI_D, DIGI_E, LVDS, VGA);
 

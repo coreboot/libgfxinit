@@ -12,6 +12,8 @@
 -- GNU General Public License for more details.
 --
 
+with HW.GFX.EDID;
+
 package HW.GFX.GMA.Display_Probing
 is
 
@@ -19,6 +21,13 @@ is
    type Port_List is array (Port_List_Range) of Port_Type;
    All_Ports : constant Port_List :=
      (DP1, DP2, DP3, HDMI1, HDMI2, HDMI3, Analog, Internal);
+
+   procedure Read_EDID
+     (Raw_EDID :    out EDID.Raw_EDID_Data;
+      Port     : in     Active_Port_Type;
+      Success  :    out Boolean)
+   with
+      Post => (if Success then EDID.Valid (Raw_EDID));
 
    procedure Scan_Ports
      (Configs     :    out Pipe_Configs;

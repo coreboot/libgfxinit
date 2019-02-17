@@ -13,7 +13,6 @@
 --
 
 with HW.GFX.I2C;
-with HW.GFX.EDID;
 with HW.GFX.GMA.Config;
 with HW.GFX.GMA.Config_Helpers;
 with HW.GFX.GMA.I2C;
@@ -56,8 +55,6 @@ is
      (Raw_EDID :    out EDID.Raw_EDID_Data;
       Port     : in     Active_Port_Type;
       Success  :    out Boolean)
-   with
-      Post => (if Success then EDID.Valid (Raw_EDID))
    is
       Raw_EDID_Length : GFX.I2C.Transfer_Length := Raw_EDID'Length;
    begin
