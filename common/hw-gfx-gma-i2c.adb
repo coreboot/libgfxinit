@@ -1,5 +1,6 @@
 --
 -- Copyright (C) 2015 secunet Security Networks AG
+-- Copyright (C) 2019 Nico Huber <nico.h@gmx.de>
 --
 -- This program is free software; you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -199,7 +200,7 @@ package body HW.GFX.GMA.I2C is
       Data     :    out HW.GFX.I2C.Transfer_Data;
       Success  :    out Boolean)
    is
-      GMBUS2,
+      GMBUS2 : Word32 := 0;
       GMBUS3 : Word32;
 
       Current     : HW.GFX.I2C.Transfer_Length;
@@ -250,6 +251,12 @@ package body HW.GFX.GMA.I2C is
             Registers.Wait_Unset_Mask
               (Register => GMBUS_Regs (2),
                Mask     => GMBUS2_GMBUS_ACTIVE);
+         elsif (GMBUS2 and GMBUS2_NAK_INDICATOR) /= 0 then
+            Registers.Wait_Unset_Mask
+              (Register => GMBUS_Regs (2),
+               Mask     => GMBUS2_GMBUS_ACTIVE);
+            Registers.Write (GMBUS_Regs (1), GMBUS1_SOFTWARE_CLEAR_INTERRUPT);
+            Registers.Write (GMBUS_Regs (1), 0);
          end if;
       end if;
       Length := Transfered;
