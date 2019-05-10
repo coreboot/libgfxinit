@@ -1,5 +1,6 @@
 --
 -- Copyright (C) 2015-2016 secunet Security Networks AG
+-- Copyright (C) 2019 Nico Huber <nico.h@gmx.de>
 --
 -- This program is free software; you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -183,6 +184,7 @@ is
       for Pipe in Pipe_Index range
          Pipe_Index'First .. Pipe_Index'Min (Max_Pipe, Config.Max_Pipe)
       loop
+         Success := False;
          while Ports (Port_Idx) /= Disabled loop
             if not Port_Configured (Configs, Ports (Port_Idx)) and
                (not Has_Sibling_Port (Ports (Port_Idx)) or
@@ -198,6 +200,7 @@ is
 
             exit when Success;
          end loop;
+         exit when not Success;
       end loop;
 
       -- Restore power settings
