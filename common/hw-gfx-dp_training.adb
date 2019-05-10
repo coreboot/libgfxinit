@@ -113,9 +113,10 @@ package body HW.GFX.DP_Training is
    end Sink_Init;
 
    procedure Sink_Set_Training_Pattern
-     (DP          : in     Aux_T;
+     (Port        : in     T;
       Link        : in     DP_Link;
       Pattern     : in     DP_Info.Training_Pattern;
+      Train_Set   : in     DP_Info.Train_Set;
       Success     :    out Boolean)
    is
       use type DP_Info.Training_Pattern;
@@ -124,21 +125,21 @@ package body HW.GFX.DP_Training is
       TP : constant TP_Array := TP_Array'
         (DP_Info.TP_1 => 16#21#, DP_Info.TP_2 => 16#22#, DP_Info.TP_3 => 16#23#,
          DP_Info.TP_Idle => 16#00#, DP_Info.TP_None => 16#00#);
+      T_Set : constant Word8 := Training_Set (Port, Train_Set);
 
       Data : DP_Defs.Aux_Payload;
       Length : Positive := 1;
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
-      Data :=
-        (0      => TP (Pattern),
-         others => 0);  -- Don't care
-
+      Data := (TP (Pattern), others => 0);
       if Pattern < DP_Info.TP_Idle then
          Length := Length + Lane_Count (Link);
+         Data (1 .. Lane_Count (Link)) := (others => T_Set);
       end if;
+
       Aux_Ch.Aux_Write
-        (Port     => DP,
+        (Port     => To_Aux (Port),
          Address  => 16#00102#,     -- TRAINING_PATTERN_SET
          Length   => Length,
          Data     => Data,
@@ -332,7 +333,8 @@ package body HW.GFX.DP_Training is
       pragma Warnings
         (GNATprove, On, """Success"" modified by call, but value overwritten*");
       if Success then
-         Sink_Set_Training_Pattern (DP, Link, DP_Info.TP_1, Success);
+         Sink_Set_Training_Pattern
+           (Port, Link, DP_Info.TP_1, Train_Set, Success);
       end if;
 
       if Success then
@@ -365,7 +367,7 @@ package body HW.GFX.DP_Training is
 
       if Success then
          Set_Pattern (Port, Link, EQ_Pattern);
-         Sink_Set_Training_Pattern (DP, Link, EQ_Pattern, Success);
+         Sink_Set_Training_Pattern (Port, Link, EQ_Pattern, Train_Set, Success);
       end if;
 
       if Success then
@@ -385,7 +387,7 @@ package body HW.GFX.DP_Training is
       -- Set_Pattern (TP_None) includes sending the Idle Pattern,
       -- so tell sink first.
       Sink_Set_Training_Pattern
-        (DP, Link, DP_Info.TP_None, Success);
+        (Port, Link, DP_Info.TP_None, Train_Set, Success);
       Set_Pattern (Port, Link, DP_Info.TP_None);
 
       Success := Success and then EQ_Done;
