@@ -1,5 +1,5 @@
 --
--- Copyright (C) 2015-2016 secunet Security Networks AG
+-- Copyright (C) 2015-2016, 2019 secunet Security Networks AG
 -- Copyright (C) 2017 Nico Huber <nico.h@gmx.de>
 --
 -- This program is free software; you can redistribute it and/or modify
@@ -382,20 +382,14 @@ package body HW.GFX.DP_Training is
          end loop;
       end if;
 
-      if Success then
-         if EQ_Done then
-            -- Set_Pattern (TP_None) includes sending the Idle Pattern,
-            -- so tell sink first.
-            Sink_Set_Training_Pattern
-              (DP, Link, DP_Info.TP_None, Success);
-         else
-            Success := False;
-         end if;
-      end if;
+      -- Set_Pattern (TP_None) includes sending the Idle Pattern,
+      -- so tell sink first.
+      Sink_Set_Training_Pattern
+        (DP, Link, DP_Info.TP_None, Success);
+      Set_Pattern (Port, Link, DP_Info.TP_None);
 
-      if Success then
-         Set_Pattern (Port, Link, DP_Info.TP_None);
-      else
+      Success := Success and then EQ_Done;
+      if not Success then
          Off (Port);
       end if;
    end Train_DP;
