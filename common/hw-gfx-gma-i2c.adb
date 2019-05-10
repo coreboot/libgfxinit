@@ -225,7 +225,7 @@ package body HW.GFX.GMA.I2C is
             Registers.Wait_Set_Mask
               (Register => GMBUS_Regs (2),
                Mask     => GMBUS2_HARDWARE_READY,
-               TOut_MS  => 55);
+               TOut_MS  => 110);
 
             Registers.Read (GMBUS_Regs (2), GMBUS2);
             Success :=  (GMBUS2 and GMBUS2_HARDWARE_READY) /= 0 and
