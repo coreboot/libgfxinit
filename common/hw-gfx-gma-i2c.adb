@@ -122,27 +122,39 @@ package body HW.GFX.GMA.I2C is
 
    ----------------------------------------------------------------------------
 
-   procedure GMBUS_Ready (Result : out Boolean)
+   function GMBUS_Ready (GMBUS2 : Word32) return Boolean is
+     ((GMBUS2 and (GMBUS2_HARDWARE_WAIT_PHASE or
+                   GMBUS2_SLAVE_STALL_TIMEOUT_ERROR or
+                   GMBUS2_GMBUS_INTERRUPT_STATUS or
+                   GMBUS2_NAK_INDICATOR or
+                   GMBUS2_GMBUS_ACTIVE)) = 0);
+
+   procedure Check_And_Reset (Success : out Boolean)
    is
       GMBUS2 : Word32;
    begin
-      Registers.Read (GMBUS_Regs (2), GMBUS2);
-      Result := (GMBUS2 and (GMBUS2_HARDWARE_WAIT_PHASE or
-                              GMBUS2_SLAVE_STALL_TIMEOUT_ERROR or
-                              GMBUS2_GMBUS_INTERRUPT_STATUS or
-                              GMBUS2_NAK_INDICATOR)) = 0;
-   end GMBUS_Ready;
-
-   procedure Reset_GMBUS (Success : out Boolean) is
-   begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
-      Registers.Write (GMBUS_Regs (1), GMBUS1_SOFTWARE_CLEAR_INTERRUPT);
-      Registers.Write (GMBUS_Regs (1), 0);
-      Registers.Write (GMBUS_Regs (0), GMBUS0_PIN_PAIR_SELECT_NONE);
+      Registers.Read (GMBUS_Regs (2), GMBUS2);
+      if (GMBUS2 and GMBUS2_GMBUS_ACTIVE) /= 0 then
+         Registers.Write
+           (Register => GMBUS_Regs (1),
+            Value    => GMBUS1_SOFTWARE_READY or GMBUS1_BUS_CYCLE_STOP);
+         Registers.Wait_Unset_Mask
+           (Register => GMBUS_Regs (2),
+            Mask     => GMBUS2_GMBUS_ACTIVE,
+            TOut_MS  => 1);
+         Registers.Read (GMBUS_Regs (2), GMBUS2);
+      end if;
+      Success := GMBUS_Ready (GMBUS2);
 
-      GMBUS_Ready (Success);
-   end Reset_GMBUS;
+      if not Success then
+         Registers.Write (GMBUS_Regs (1), GMBUS1_SOFTWARE_CLEAR_INTERRUPT);
+         Registers.Write (GMBUS_Regs (1), 0);
+         Registers.Read (GMBUS_Regs (2), GMBUS2);
+         Success := GMBUS_Ready (GMBUS2);
+      end if;
+   end Check_And_Reset;
 
    procedure Init_GMBUS (Port : PCH_Port; Success : out Boolean) is
    begin
@@ -157,23 +169,19 @@ package body HW.GFX.GMA.I2C is
       -- TODO: Refactor + check for timeout.
       Registers.Wait_Unset_Mask (GMBUS_Regs (2), GMBUS2_INUSE);
 
-      GMBUS_Ready (Success);
-      if not Success then
-         Reset_GMBUS (Success);
-      end if;
+      Registers.Write (GMBUS_Regs (4), 0);
+      Registers.Write (GMBUS_Regs (5), 0);
 
-      if Success then
-         Registers.Write
-           (Register => GMBUS_Regs (0),
-            Value    => GMBUS0_GMBUS_RATE_SELECT_100KHZ or
-                        GMBUS0_PIN_PAIR_SELECT (Port));
-         Registers.Write
-           (Register => GMBUS_Regs (4),
-            Value    => 0);
-         Registers.Write
-           (Register => GMBUS_Regs (5),
-            Value    => 0);
-      end if;
+      -- Resetting the state machine only works if a valid port
+      -- is selected and we don't always know which ports are
+      -- valid. So do the cleanup before we use the GMBUS with
+      -- the current port. If the port is valid, the reset should
+      -- work, if not, it shouldn't matter.
+      Registers.Write
+        (Register => GMBUS_Regs (0),
+         Value    => GMBUS0_GMBUS_RATE_SELECT_100KHZ or
+                     GMBUS0_PIN_PAIR_SELECT (Port));
+      Check_And_Reset (Success);
    end Init_GMBUS;
 
    procedure Release_GMBUS
