@@ -237,7 +237,9 @@ package body HW.GFX.GMA.Transcoder is
       Trans : Transcoder_Regs renames
                Transcoders (Get_Idx (Pipe, Port_Cfg.Port));
       EDP_Select : constant Word32 :=
-        (if Pipe = Primary and not Scale then
+        (if Pipe = Primary and
+            (not Config.Use_PDW_For_EDP_Scaling or else not Scale)
+         then
             DDI_FUNC_CTL_EDP_SELECT_ALWAYS_ON
          else
             DDI_FUNC_CTL_EDP_SELECT (Pipe));
