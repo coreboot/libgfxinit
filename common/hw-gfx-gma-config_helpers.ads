@@ -31,7 +31,12 @@ is
       Pipe     : in     Pipe_Index;
       Port     : in     Port_Type;
       Mode     : in     Mode_Type;
-      Success  :    out Boolean);
+      Success  :    out Boolean)
+   with
+      Post =>
+        (if Success then
+            Port_Cfg.Mode.H_Visible = Mode.H_Visible and
+            Port_Cfg.Mode.V_Visible = Mode.V_Visible);
 
    ----------------------------------------------------------------------------
 
@@ -54,8 +59,7 @@ is
    function Validate_Config
      (FB                : Framebuffer_Type;
       Mode              : Mode_Type;
-      Pipe              : Pipe_Index;
-      Scaler_Available  : Boolean)
+      Pipe              : Pipe_Index)
       return Boolean
    with
       Post => (if Validate_Config'Result then Valid_FB (FB, Mode));

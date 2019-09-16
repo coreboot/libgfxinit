@@ -635,12 +635,20 @@ package body HW.GFX.GMA.Pipe_Setup is
       end if;
    end Setup_Scaling;
 
-   procedure Scaler_Available (Available : out Boolean; Pipe : Pipe_Index)
+   procedure Reserve_Scaler
+     (Success     :    out Boolean;
+      Reservation : in out Scaler_Reservation;
+      Pipe        : in     Pipe_Index)
    is
       Pipe_Using_PF : Pipe_Index := Pipe_Index'First;
       PF_Enabled : Boolean;
    begin
       if Config.Has_GMCH_PFIT_CONTROL then
+         if Reservation.Reserved then
+            Success := Reservation.Pipe = Pipe;
+            return;
+         end if;
+
          Registers.Is_Set_Mask
            (Register => Registers.GMCH_PFIT_CONTROL,
             Mask     => PF_CTRL_ENABLE,
@@ -649,11 +657,15 @@ package body HW.GFX.GMA.Pipe_Setup is
             Gmch_Panel_Fitter_Pipe (Pipe_Using_PF);
          end if;
 
-         Available := not PF_Enabled or Pipe_Using_PF = Pipe;
+         Success := not PF_Enabled or Pipe_Using_PF = Pipe;
+         if Success then
+            Reservation.Reserved := True;
+            Reservation.Pipe     := Pipe;
+         end if;
       else
-         Available := True;
+         Success := True;
       end if;
-   end Scaler_Available;
+   end Reserve_Scaler;
 
    ----------------------------------------------------------------------------
 

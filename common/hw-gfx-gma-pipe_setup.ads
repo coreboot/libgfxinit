@@ -51,9 +51,21 @@ is
       FB       : Framebuffer_Type;
       Cursor   : Cursor_Type);
 
-   procedure Scaler_Available (Available : out Boolean; Pipe : Pipe_Index);
+   type Scaler_Reservation is private;
+   Null_Scaler_Reservation : constant Scaler_Reservation;
+   procedure Reserve_Scaler
+     (Success     :    out Boolean;
+      Reservation : in out Scaler_Reservation;
+      Pipe        : in     Pipe_Index);
 
 private
+
+   type Scaler_Reservation is record
+      Reserved : Boolean;
+      Pipe     : Pipe_Index;
+   end record;
+   Null_Scaler_Reservation : constant Scaler_Reservation :=
+     (Reserved => False, Pipe => Pipe_Index'First);
 
    subtype WM_Levels is Natural range 0 .. 7;
    type PLANE_WM_Type is array (WM_Levels) of Registers.Registers_Index;

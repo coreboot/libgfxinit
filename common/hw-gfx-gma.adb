@@ -1,5 +1,5 @@
 --
--- Copyright (C) 2014-2018 secunet Security Networks AG
+-- Copyright (C) 2014-2019 secunet Security Networks AG
 -- Copyright (C) 2017 Nico Huber <nico.h@gmx.de>
 --
 -- This program is free software; you can redistribute it and/or modify
@@ -98,10 +98,11 @@ is
       Pipe_Cfg : in     Pipe_Config;
       Success  :    out Boolean)
    with
-      Pre => Pipe_Cfg.Port in Active_Port_Type
+      Pre =>
+         Pipe_Cfg.Port in Active_Port_Type and
+         Config_Helpers.Valid_FB (Pipe_Cfg.Framebuffer, Pipe_Cfg.Mode)
    is
       Port_Cfg : Port_Config;
-      Scaler_Available : Boolean;
    begin
       pragma Debug (Debug.New_Line);
       pragma Debug (Debug.Put_Line
@@ -109,12 +110,6 @@ is
 
       Config_Helpers.Fill_Port_Config
         (Port_Cfg, Pipe, Pipe_Cfg.Port, Pipe_Cfg.Mode, Success);
-
-      if Success then
-         Display_Controller.Scaler_Available (Scaler_Available, Pipe);
-         Success := Config_Helpers.Validate_Config
-           (Pipe_Cfg.Framebuffer, Port_Cfg.Mode, Pipe, Scaler_Available);
-      end if;
 
       if Success then
          Connector_Info.Preferred_Link_Setting (Port_Cfg, Success);
@@ -223,19 +218,12 @@ is
          end if;
       end Check_HPD;
 
-      Power_Changed  : Boolean := False;
-      Old_Configs    : Pipe_Configs;
+      Scaler_Reservation : Display_Controller.Scaler_Reservation :=
+         Display_Controller.Null_Scaler_Reservation;
 
-      -- Only called when we actually tried to change something
-      -- so we don't congest the log with unnecessary messages.
-      procedure Update_Power
-      is
-      begin
-         if not Power_Changed then
-            Power_And_Clocks.Power_Up (Old_Configs, Configs);
-            Power_Changed := True;
-         end if;
-      end Update_Power;
+      Update_Power   : Boolean := False;
+      Old_Configs,
+      New_Configs    : Pipe_Configs;
 
       function Full_Update (Cur_Config, New_Config : Pipe_Config) return Boolean
       is
@@ -255,13 +243,48 @@ is
       end Full_Update;
    begin
       Old_Configs := Cur_Configs;
+      New_Configs := Configs;
+
+      -- validate new configs, filter invalid configs and those waiting for HPD
+      for Pipe in Pipe_Index loop
+         declare
+            Success : Boolean := True;
+            Cur_Config : Pipe_Config renames Cur_Configs (Pipe);
+            New_Config : Pipe_Config renames New_Configs (Pipe);
+         begin
+            if New_Config.Port /= Disabled then
+               if Wait_For_HPD (New_Config.Port) then
+                  Check_HPD (New_Config.Port, Success);
+                  Wait_For_HPD (New_Config.Port) := not Success;
+               end if;
+
+               Success := Success and then
+                           Config_Helpers.Validate_Config
+                             (New_Config.Framebuffer, New_Config.Mode, Pipe);
+
+               if Success and then Requires_Scaling (New_Config) then
+                  Display_Controller.Reserve_Scaler
+                    (Success, Scaler_Reservation, Pipe);
+               end if;
+
+               if not Success then
+                  New_Config.Port := Disabled;
+               end if;
+            end if;
+         end;
+         pragma Loop_Invariant
+           (for all P in Pipe_Index'First .. Pipe =>
+               New_Configs (P).Port = Disabled or
+               Config_Helpers.Valid_FB
+                 (New_Configs (P).Framebuffer, New_Configs (P).Mode));
+      end loop;
 
       -- disable all pipes that changed or had a hot-plug event
       for Pipe in Pipe_Index loop
          declare
             Unplug_Detected : Boolean;
             Cur_Config : Pipe_Config renames Cur_Configs (Pipe);
-            New_Config : Pipe_Config renames Configs (Pipe);
+            New_Config : Pipe_Config renames New_Configs (Pipe);
          begin
             if Cur_Config.Port /= Disabled then
                Check_HPD (Cur_Config.Port, Unplug_Detected);
@@ -269,7 +292,7 @@ is
                if Full_Update (Cur_Config, New_Config) or Unplug_Detected then
                   Disable_Output (Pipe, Cur_Config);
                   Cur_Config.Port := Disabled;
-                  Update_Power;
+                  Update_Power := True;
                end if;
             end if;
          end;
@@ -279,25 +302,17 @@ is
       for Pipe in Pipe_Index loop
          declare
             Success : Boolean;
-            Scaler_Available : Boolean;
             Cur_Config : Pipe_Config renames Cur_Configs (Pipe);
-            New_Config : Pipe_Config renames Configs (Pipe);
+            New_Config : Pipe_Config renames New_Configs (Pipe);
          begin
+            -- full update
             if New_Config.Port /= Disabled and
                Full_Update (Cur_Config, New_Config)
             then
-               if Wait_For_HPD (New_Config.Port) then
-                  Check_HPD (New_Config.Port, Success);
-                  Wait_For_HPD (New_Config.Port) := not Success;
-               else
-                  Success := True;
-               end if;
+               Power_And_Clocks.Power_Up (Old_Configs, New_Configs);
+               Update_Power := True;
 
-               if Success then
-                  Update_Power;
-                  Enable_Output (Pipe, New_Config, Success);
-               end if;
-
+               Enable_Output (Pipe, New_Config, Success);
                if Success then
                   Cur_Config := New_Config;
                end if;
@@ -306,23 +321,17 @@ is
             elsif New_Config.Port /= Disabled and
                   Cur_Config.Framebuffer /= New_Config.Framebuffer
             then
-               Display_Controller.Scaler_Available (Scaler_Available, Pipe);
-               if Config_Helpers.Validate_Config
-                    (New_Config.Framebuffer, New_Config.Mode,
-                     Pipe, Scaler_Available)
-               then
-                  Display_Controller.Setup_FB
-                    (Pipe, New_Config.Mode, New_Config.Framebuffer);
-                  Display_Controller.Update_Cursor
-                    (Pipe, New_Config.Framebuffer, New_Config.Cursor);
-                  Cur_Config := New_Config;
-               end if;
+               Display_Controller.Setup_FB
+                 (Pipe, New_Config.Mode, New_Config.Framebuffer);
+               Display_Controller.Update_Cursor
+                 (Pipe, New_Config.Framebuffer, New_Config.Cursor);
+               Cur_Config := New_Config;
             end if;
          end;
       end loop;
 
-      if Power_Changed then
-         Power_And_Clocks.Power_Down (Old_Configs, Configs, Cur_Configs);
+      if Update_Power then
+         Power_And_Clocks.Power_Down (Old_Configs, New_Configs, Cur_Configs);
       end if;
    end Update_Outputs;
 
