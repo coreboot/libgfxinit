@@ -1,5 +1,5 @@
 --
--- Copyright (C) 2015-2016 secunet Security Networks AG
+-- Copyright (C) 2015-2016, 2019 secunet Security Networks AG
 --
 -- This program is free software; you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -79,6 +79,33 @@ is
             when HDMI1 .. HDMI3  => HDMI,
             when DP1 .. DP3      => DP);
    end To_Display_Type;
+
+   function Highest_Dotclock (Configs : Pipe_Configs) return Frequency_Type
+   is
+      Max : Frequency_Type := Frequency_Type'First;
+   begin
+      for I in Pipe_Index loop
+         if Configs (I).Port /= Disabled and
+            Max < Configs (I).Mode.Dotclock
+         then
+            Max := Configs (I).Mode.Dotclock;
+         end if;
+      end loop;
+      return Max;
+   end Highest_Dotclock;
+
+   procedure Limit_Dotclocks
+     (Configs  : in out Pipe_Configs;
+      Max      : in     Frequency_Type) is
+   begin
+      for I in Pipe_Index loop
+         if Configs (I).Port /= Disabled and
+            Max < Configs (I).Mode.Dotclock
+         then
+            Configs (I).Mode.Dotclock := Max;
+         end if;
+      end loop;
+   end Limit_Dotclocks;
 
    ----------------------------------------------------------------------------
 

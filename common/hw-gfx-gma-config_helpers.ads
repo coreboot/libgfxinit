@@ -60,4 +60,25 @@ is
    with
       Post => (if Validate_Config'Result then Valid_FB (FB, Mode));
 
+   -- For still active pipes, ensure only timings
+   -- changed that don't affect FB validity.
+   function Stable_FB (Old_C, New_C : Pipe_Configs) return Boolean is
+     (for all P in Pipe_Index =>
+         New_C (P).Port = Disabled or
+           (New_C (P).Port = Old_C (P).Port and
+            New_C (P).Framebuffer = Old_C (P).Framebuffer and
+            New_C (P).Cursor = Old_C (P).Cursor and
+            New_C (P).Mode.H_Visible = Old_C (P).Mode.H_Visible and
+            New_C (P).Mode.V_Visible = Old_C (P).Mode.V_Visible));
+
+   ----------------------------------------------------------------------------
+
+   function Highest_Dotclock (Configs : Pipe_Configs) return Frequency_Type;
+
+   procedure Limit_Dotclocks
+     (Configs  : in out Pipe_Configs;
+      Max      : in     Frequency_Type)
+   with
+      Post => Stable_FB (Configs'Old, Configs);
+
 end HW.GFX.GMA.Config_Helpers;
