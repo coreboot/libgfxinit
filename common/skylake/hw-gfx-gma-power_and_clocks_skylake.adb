@@ -1,5 +1,5 @@
 --
--- Copyright (C) 2014-2016 secunet Security Networks AG
+-- Copyright (C) 2014-2016, 2019 secunet Security Networks AG
 --
 -- This program is free software; you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -33,6 +33,12 @@ package body HW.GFX.GMA.Power_And_Clocks_Skylake is
 
    FUSE_STATUS_DOWNLOAD_STATUS         : constant := 1 * 2 ** 31;
    FUSE_STATUS_PG0_DIST_STATUS         : constant := 1 * 2 ** 27;
+
+   DFSM_DISPLAY_CDCLK_LIMIT_675MHZ     : constant := 0 * 2 ** 23;
+   DFSM_DISPLAY_CDCLK_LIMIT_540MHZ     : constant := 1 * 2 ** 23;
+   DFSM_DISPLAY_CDCLK_LIMIT_450MHZ     : constant := 2 * 2 ** 23;
+   DFSM_DISPLAY_CDCLK_LIMIT_337_5MHZ   : constant := 3 * 2 ** 23;
+   DFSM_DISPLAY_CDCLK_LIMIT_MASK       : constant := 3 * 2 ** 23;
 
    type Power_Domain_Values is array (Power_Domain) of Word32;
    PWR_WELL_CTL_POWER_REQUEST : constant Power_Domain_Values :=
@@ -87,12 +93,10 @@ package body HW.GFX.GMA.Power_And_Clocks_Skylake is
    SKL_CDCLK_PREPARE_FOR_CHANGE        : constant := 3;
    SKL_CDCLK_READY_FOR_CHANGE          : constant := 1;
 
-   function CDCLK_CTL_CD_FREQ_DECIMAL
-     (Freq        : Pos16;
-      Plus_Half   : Boolean)
-      return Word32 is
+   function CDCLK_CTL_CD_FREQ_DECIMAL (CDClk : Frequency_Type) return Word32 is
    begin
-      return Word32 (2 * (Pos32 (Freq) - 1)) or (if Plus_Half then 1 else 0);
+      -- Weirdest representation: CDClk - 1MHz in 10.1 (10 + 1 fractional bit)
+      return Word32 ((CDClk - 1_000_000) / 500_000);
    end CDCLK_CTL_CD_FREQ_DECIMAL;
 
    ----------------------------------------------------------------------------
@@ -232,9 +236,80 @@ package body HW.GFX.GMA.Power_And_Clocks_Skylake is
       PD_Off (PW1);
    end Post_All_Off;
 
-   procedure Initialize
+   function Normalize_CDClk (CDClk : in Int64) return Config.CDClk_Range is
+     (   if CDClk <= 337_500_000 then 337_500_000
+      elsif CDClk <= 450_000_000 then 450_000_000
+      elsif CDClk <= 540_000_000 then 540_000_000
+                                 else 675_000_000);
+
+   procedure Get_Cur_CDClk (CDClk : out Config.CDClk_Range)
    is
+      CDCLK_CTL : Word32;
+   begin
+      Registers.Read (Registers.CDCLK_CTL, CDCLK_CTL);
+      CDCLK_CTL := CDCLK_CTL and CDCLK_CTL_CD_FREQ_DECIMAL_MASK;
+      CDClk := Normalize_CDClk (Int64 (CDCLK_CTL) * 500_000 + 1_000_000);
+   end Get_Cur_CDClk;
+
+   procedure Get_Max_CDClk (CDClk : out Config.CDClk_Range)
+   is
+      DFSM : Word32;
+   begin
+      Registers.Read (Registers.DFSM, DFSM);
+      CDClk :=
+        (case DFSM and DFSM_DISPLAY_CDCLK_LIMIT_MASK is
+            when DFSM_DISPLAY_CDCLK_LIMIT_675MHZ   => 675_000_000,
+            when DFSM_DISPLAY_CDCLK_LIMIT_540MHZ   => 540_000_000,
+            when DFSM_DISPLAY_CDCLK_LIMIT_450MHZ   => 450_000_000,
+            when others                            => 337_500_000);
+   end Get_Max_CDClk;
+
+   procedure Set_CDClk (CDClk_In : Frequency_Type)
+   is
+      CDClk : constant Config.CDClk_Range :=
+         Normalize_CDClk (Frequency_Type'Min (CDClk_In, Config.Max_CDClk));
       Success : Boolean;
+   begin
+      PCode.Mailbox_Request
+        (MBox        => SKL_PCODE_CDCLK_CONTROL,
+         Command     => SKL_CDCLK_PREPARE_FOR_CHANGE,
+         Reply_Mask  => SKL_CDCLK_READY_FOR_CHANGE,
+         Wait_Ready  => True,
+         Success     => Success);
+
+      if not Success then
+         pragma Debug (Debug.Put_Line
+           ("ERROR: PCODE not ready for frequency change."));
+         return;
+      end if;
+
+      Registers.Write
+        (Register => Registers.CDCLK_CTL,
+         Value    => (case CDClk is
+                        when 675_000_000 => CDCLK_CTL_CD_FREQ_SELECT_675MHZ,
+                        when 540_000_000 => CDCLK_CTL_CD_FREQ_SELECT_540MHZ,
+                        when 450_000_000 => CDCLK_CTL_CD_FREQ_SELECT_450MHZ,
+                        when others      => CDCLK_CTL_CD_FREQ_SELECT_337_5MHZ)
+                     or CDCLK_CTL_CD_FREQ_DECIMAL (CDClk));
+
+      PCode.Mailbox_Write
+        (MBox        => SKL_PCODE_CDCLK_CONTROL,
+         Command     => (case CDClk is
+                           when 675_000_000 => 3,
+                           when 540_000_000 => 2,
+                           when 450_000_000 => 1,
+                           when others      => 0));
+      Registers.Set_Mask
+        (Register    => Registers.DBUF_CTL,
+         Mask        => DBUF_CTL_DBUF_POWER_REQUEST);
+      Registers.Wait_Set_Mask
+        (Register    => Registers.DBUF_CTL,
+         Mask        => DBUF_CTL_DBUF_POWER_STATE);
+
+      Config.CDClk := CDClk;
+   end Set_CDClk;
+
+   procedure Initialize is
    begin
       Registers.Set_Mask
         (Register    => Registers.NDE_RSTWRN_OPT,
@@ -246,10 +321,6 @@ package body HW.GFX.GMA.Power_And_Clocks_Skylake is
       PD_On (PW1);
       PD_On (MISC_IO);
 
-      Registers.Write
-        (Register    => Registers.CDCLK_CTL,
-         Value       => CDCLK_CTL_CD_FREQ_SELECT_337_5MHZ or
-                        CDCLK_CTL_CD_FREQ_DECIMAL (337, True));
       -- TODO: Set to preferred eDP rate:
       -- Registers.Unset_And_Set_Mask
       --   (Register    => Registers.DPLL_CTRL1,
@@ -262,33 +333,32 @@ package body HW.GFX.GMA.Power_And_Clocks_Skylake is
         (Register    => Registers.LCPLL1_CTL,
          Mask        => LCPLL1_CTL_PLL_LOCK);
 
-      PCode.Mailbox_Request
-        (MBox        => SKL_PCODE_CDCLK_CONTROL,
-         Command     => SKL_CDCLK_PREPARE_FOR_CHANGE,
-         Reply_Mask  => SKL_CDCLK_READY_FOR_CHANGE,
-         Wait_Ready  => True,
-         Success     => Success);
-
-      pragma Debug (not Success, Debug.Put_Line
-        ("ERROR: PCODE not ready for frequency change."));
-
-      if Success then
-         PCode.Mailbox_Write
-           (MBox        => SKL_PCODE_CDCLK_CONTROL,
-            Command     => 16#0000_0000#);   -- 0 - 337.5MHz
-                                             -- 1 - 450.0MHz
-                                             -- 2 - 540.0MHz
-                                             -- 3 - 675.0MHz
-         Registers.Set_Mask
-           (Register    => Registers.DBUF_CTL,
-            Mask        => DBUF_CTL_DBUF_POWER_REQUEST);
-         Registers.Wait_Set_Mask
-           (Register    => Registers.DBUF_CTL,
-            Mask        => DBUF_CTL_DBUF_POWER_STATE);
-      end if;
+      Get_Cur_CDClk (Config.CDClk);
+      Get_Max_CDClk (Config.Max_CDClk);
+      Set_CDClk (Config.Default_CDClk_Freq);
 
       Config.Raw_Clock := Config.Default_RawClk_Freq;
    end Initialize;
+
+   procedure Limit_Dotclocks
+     (Configs        : in out Pipe_Configs;
+      CDClk_Switch   :    out Boolean)
+   is
+   begin
+      Config_Helpers.Limit_Dotclocks (Configs, Config.Max_CDClk);
+      CDClk_Switch :=
+         Config.CDClk /= Normalize_CDClk
+           (Config_Helpers.Highest_Dotclock (Configs));
+   end Limit_Dotclocks;
+
+   procedure Update_CDClk (Configs : in out Pipe_Configs)
+   is
+      New_CDClk : constant Frequency_Type :=
+         Config_Helpers.Highest_Dotclock (Configs);
+   begin
+      Set_CDClk (New_CDClk);
+      Config_Helpers.Limit_Dotclocks (Configs, Config.CDClk);
+   end Update_CDClk;
 
    procedure Power_Set_To (Configs : Pipe_Configs) is
    begin

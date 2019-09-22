@@ -146,6 +146,7 @@ is
       NDE_RSTWRN_OPT,
       BLC_PWM_CPU_CTL2,
       BLC_PWM_CPU_CTL,
+      DFSM,
       HTOTAL_A,
       HBLANK_A,
       HSYNC_A,
@@ -1460,6 +1461,7 @@ is
       PCH_HDMID             => 16#0e_1160# / Register_Width,
 
       -- Intel Registers
+      DFSM                  => 16#05_1000# / Register_Width,
       CPU_VGACNTRL          => 16#04_1000# / Register_Width,
       GMCH_VGACNTRL         => 16#07_1400# / Register_Width,
       FUSE_STATUS           => 16#04_2000# / Register_Width,
