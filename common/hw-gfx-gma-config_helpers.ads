@@ -39,6 +39,18 @@ is
                     Reason => "Needed for older compiler versions");
    use type HW.Pos32;
    pragma Warnings (GNAT, On, """Integer_32"" is already use-visible *");
+
+   -- Validate just enough to satisfy Pipe_Setup pre conditions.
+   function Valid_FB
+     (FB    : Framebuffer_Type;
+      Mode  : Mode_Type)
+      return Boolean is
+     (Rotated_Width (FB) <= Mode.H_Visible and
+      Rotated_Height (FB) <= Mode.V_Visible and
+      (FB.Offset = VGA_PLANE_FRAMEBUFFER_OFFSET or
+       FB.Height + FB.Start_Y <= FB.V_Stride));
+
+   -- Also validate that we only use supported values / features.
    function Validate_Config
      (FB                : Framebuffer_Type;
       Mode              : Mode_Type;
@@ -46,11 +58,6 @@ is
       Scaler_Available  : Boolean)
       return Boolean
    with
-      Post =>
-        (if Validate_Config'Result then
-            Rotated_Width (FB) <= Mode.H_Visible and
-            Rotated_Height (FB) <= Mode.V_Visible and
-            (FB.Offset = VGA_PLANE_FRAMEBUFFER_OFFSET or
-             FB.Height + FB.Start_Y <= FB.V_Stride));
+      Post => (if Validate_Config'Result then Valid_FB (FB, Mode));
 
 end HW.GFX.GMA.Config_Helpers;

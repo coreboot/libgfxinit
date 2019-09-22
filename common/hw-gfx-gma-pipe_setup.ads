@@ -13,6 +13,7 @@
 --
 
 with HW.GFX.GMA.Config;
+with HW.GFX.GMA.Config_Helpers;
 with HW.GFX.GMA.Registers;
 
 use type HW.Int32;
@@ -26,11 +27,7 @@ is
       Framebuffer : Framebuffer_Type;
       Cursor      : Cursor_Type)
    with
-      Pre =>
-         Rotated_Width (Framebuffer) <= Port_Cfg.Mode.H_Visible and
-         Rotated_Height (Framebuffer) <= Port_Cfg.Mode.V_Visible and
-         (Framebuffer.Offset = VGA_PLANE_FRAMEBUFFER_OFFSET or
-          Framebuffer.Height + Framebuffer.Start_Y <= Framebuffer.V_Stride);
+      Pre => Config_Helpers.Valid_FB (Framebuffer, Port_Cfg.Mode);
 
    procedure Off (Pipe : Pipe_Index);
 
@@ -43,11 +40,7 @@ is
       Mode        : Mode_Type;
       Framebuffer : Framebuffer_Type)
    with
-      Pre =>
-         Rotated_Width (Framebuffer) <= Mode.H_Visible and
-         Rotated_Height (Framebuffer) <= Mode.V_Visible and
-         (Framebuffer.Offset = VGA_PLANE_FRAMEBUFFER_OFFSET or
-          Framebuffer.Height + Framebuffer.Start_Y <= Framebuffer.V_Stride);
+      Pre => Config_Helpers.Valid_FB (Framebuffer, Mode);
 
    procedure Update_Cursor
      (Pipe     : Pipe_Index;
