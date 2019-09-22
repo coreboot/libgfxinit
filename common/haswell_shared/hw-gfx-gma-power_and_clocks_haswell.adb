@@ -1,5 +1,6 @@
 --
 -- Copyright (C) 2014-2018 secunet Security Networks AG
+-- Copyright (C) 2019 Nico Huber <nico.h@gmx.de>
 --
 -- This program is free software; you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -21,6 +22,30 @@ with HW.GFX.GMA.PCode;
 with HW.GFX.GMA.Registers;
 
 package body HW.GFX.GMA.Power_And_Clocks_Haswell is
+
+   LCPLL_CTL_CD_FREQ_SEL_MASK          : constant := 3 * 2 ** 26;
+   LCPLL_CTL_CD_FREQ_SEL_450_MHZ       : constant := 0 * 2 ** 26;
+   LCPLL_CTL_CD_FREQ_SEL_HSW_ALTERNATE : constant := 1 * 2 ** 26;
+   LCPLL_CTL_CD_FREQ_SEL_BDW_540_MHZ   : constant := 1 * 2 ** 26;
+   LCPLL_CTL_CD_FREQ_SEL_BDW_337_5_MHZ : constant := 2 * 2 ** 26;
+   LCPLL_CTL_CD_FREQ_SEL_BDW_675_MHZ   : constant := 3 * 2 ** 26;
+   LCPLL_CTL_CD_SOURCE_SELECT_FCLK     : constant := 1 * 2 ** 21;
+   LCPLL_CTL_CD_SOURCE_FCLK_DONE       : constant := 1 * 2 ** 19;
+
+   function LCPLL_CTL_CD_FREQ_SEL_BDW (CDClk : Config.CDClk_Range) return Word32
+   is
+     (case CDClk is
+         when 675_000_000 => LCPLL_CTL_CD_FREQ_SEL_BDW_675_MHZ,
+         when 540_000_000 => LCPLL_CTL_CD_FREQ_SEL_BDW_540_MHZ,
+         when 450_000_000 => LCPLL_CTL_CD_FREQ_SEL_450_MHZ,
+         when others      => LCPLL_CTL_CD_FREQ_SEL_BDW_337_5_MHZ);
+
+   FUSE_STRAP_DISPLAY_CDCLK_LIMIT      : constant := 1 * 2 ** 24;
+
+   HSW_PCODE_DE_WRITE_FREQ             : constant := 16#17#;
+   BDW_PCODE_DISPLAY_FREQ_CHANGE       : constant := 16#18#;
+
+   ----------------------------------------------------------------------------
 
    PWR_WELL_CTL_ENABLE_REQUEST   : constant := 1 * 2 ** 31;
    PWR_WELL_CTL_DISABLE_REQUEST  : constant := 0 * 2 ** 31;
@@ -197,12 +222,148 @@ package body HW.GFX.GMA.Power_And_Clocks_Haswell is
       IPS_Off;
    end Pre_All_Off;
 
-   procedure Initialize is
+   function Normalize_CDClk (CDClk : in Int64) return Config.CDClk_Range is
+     (   if CDClk <= 337_500_000 then 337_500_000
+      elsif CDClk <= 450_000_000 then 450_000_000
+      elsif CDClk <= 540_000_000 then 540_000_000
+                                 else 675_000_000);
+
+   procedure Get_Cur_CDClk (CDClk : out Config.CDClk_Range)
+   is
+      LCPLL_CTL : Word32;
+   begin
+      Registers.Read (Registers.LCPLL_CTL, LCPLL_CTL);
+      CDClk :=
+        (if Config.Has_Broadwell_CDClk then
+           (case LCPLL_CTL and LCPLL_CTL_CD_FREQ_SEL_MASK is
+               when LCPLL_CTL_CD_FREQ_SEL_BDW_540_MHZ    => 540_000_000,
+               when LCPLL_CTL_CD_FREQ_SEL_BDW_337_5_MHZ  => 337_500_000,
+               when LCPLL_CTL_CD_FREQ_SEL_BDW_675_MHZ    => 675_000_000,
+               when others                               => 450_000_000)
+         else
+           (case LCPLL_CTL and LCPLL_CTL_CD_FREQ_SEL_MASK is
+               when LCPLL_CTL_CD_FREQ_SEL_HSW_ALTERNATE =>
+                 (if    Config.Is_ULX  then 337_500_000
+                  elsif Config.Is_ULT  then 450_000_000
+                                       else 540_000_000),
+               when others => 450_000_000));
+   end Get_Cur_CDClk;
+
+   procedure Get_Max_CDClk (CDClk : out Config.CDClk_Range)
+   is
+      FUSE_STRAP : Word32;
+   begin
+      if Config.Has_Broadwell_CDClk then
+         Registers.Read (Registers.FUSE_STRAP, FUSE_STRAP);
+         CDClk :=
+           (if (FUSE_STRAP and FUSE_STRAP_DISPLAY_CDCLK_LIMIT) /= 0 then
+               450_000_000
+            elsif Config.Is_ULX then
+               450_000_000
+            elsif Config.Is_ULT then
+               540_000_000
+            else
+               675_000_000);
+      else
+         -- We may never switch CDClk on Haswell. So from our point
+         -- of view, the CDClk we start with is the maximum.
+         Get_Cur_CDClk (CDClk);
+      end if;
+   end Get_Max_CDClk;
+
+   procedure Set_CDClk (CDClk_In : Frequency_Type)
+   is
+      CDClk : constant Config.CDClk_Range :=
+         Normalize_CDClk (Frequency_Type'Min (CDClk_In, Config.Max_CDClk));
+      Success : Boolean;
+   begin
+      if not Config.Can_Switch_CDClk then
+         return;
+      end if;
+
+      PCode.Mailbox_Write
+        (MBox        => BDW_PCODE_DISPLAY_FREQ_CHANGE,
+         Command     => 0,
+         Wait_Ready  => True,
+         Success     => Success);
+
+      if not Success then
+         pragma Debug (Debug.Put_Line
+           ("ERROR: PCODE didn't acknowledge frequency change."));
+         return;
+      end if;
+
+      Registers.Set_Mask
+        (Register => Registers.LCPLL_CTL,
+         Mask     => LCPLL_CTL_CD_SOURCE_SELECT_FCLK);
+      Registers.Wait_Set_Mask
+        (Register => Registers.LCPLL_CTL,
+         Mask     => LCPLL_CTL_CD_SOURCE_FCLK_DONE);
+
+      Registers.Unset_And_Set_Mask
+        (Register    => Registers.LCPLL_CTL,
+         Mask_Unset  => LCPLL_CTL_CD_FREQ_SEL_MASK,
+         Mask_Set    => LCPLL_CTL_CD_FREQ_SEL_BDW (CDClk));
+      Registers.Posting_Read (Registers.LCPLL_CTL);
+
+      Registers.Unset_Mask
+        (Register => Registers.LCPLL_CTL,
+         Mask     => LCPLL_CTL_CD_SOURCE_SELECT_FCLK);
+      Registers.Wait_Unset_Mask
+        (Register => Registers.LCPLL_CTL,
+         Mask     => LCPLL_CTL_CD_SOURCE_FCLK_DONE);
+
+      PCode.Mailbox_Write
+        (MBox        => HSW_PCODE_DE_WRITE_FREQ,
+         Command     => (case CDClk is
+                           when 675_000_000 => 3,
+                           when 540_000_000 => 1,
+                           when 450_000_000 => 0,
+                           when others      => 2));
+
+      Registers.Write
+        (Register => Registers.CDCLK_FREQ,
+         Value    => Word32 (Div_Round_Closest (CDClk, 1_000_000) - 1));
+
+      Config.CDClk := CDClk;
+   end Set_CDClk;
+
+   procedure Initialize
+   is
+      CDClk : Config.CDClk_Range;
    begin
       -- HSW: disable power down well
       PDW_Off;
+
+      Get_Cur_CDClk (CDClk);
+      Config.CDClk := CDClk;
+      Get_Max_CDClk (CDClk);
+      Config.Max_CDClk := CDClk;
+      Set_CDClk (Config.Default_CDClk_Freq);
+
       Config.Raw_Clock := Config.Default_RawClk_Freq;
    end Initialize;
+
+   procedure Limit_Dotclocks
+     (Configs        : in out Pipe_Configs;
+      CDClk_Switch   :    out Boolean)
+   is
+   begin
+      Config_Helpers.Limit_Dotclocks (Configs, Config.Max_CDClk);
+      CDClk_Switch :=
+         Config.Can_Switch_CDClk and then
+         Config.CDClk /= Normalize_CDClk
+           (Config_Helpers.Highest_Dotclock (Configs));
+   end Limit_Dotclocks;
+
+   procedure Update_CDClk (Configs : in out Pipe_Configs)
+   is
+      New_CDClk : constant Frequency_Type :=
+         Config_Helpers.Highest_Dotclock (Configs);
+   begin
+      Set_CDClk (New_CDClk);
+      Config_Helpers.Limit_Dotclocks (Configs, Config.CDClk);
+   end Update_CDClk;
 
    procedure Power_Set_To (Configs : Pipe_Configs) is
    begin

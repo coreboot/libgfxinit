@@ -92,6 +92,7 @@ is
       CPU_VGACNTRL,
       FUSE_STATUS,
       ILK_DISPLAY_CHICKEN2,
+      FUSE_STRAP,
       DSPCLK_GATE_D,
       FBA_CFB_BASE,
       FBC_CTL,
@@ -141,6 +142,7 @@ is
       TRANSA_CLK_SEL,
       TRANSB_CLK_SEL,
       TRANSC_CLK_SEL,
+      CDCLK_FREQ,
       NDE_RSTWRN_OPT,
       BLC_PWM_CPU_CTL2,
       BLC_PWM_CPU_CTL,
@@ -710,6 +712,7 @@ is
       FDI_RXC_TUSIZE1,
       QUIRK_F2060,
       TRANSC_CHICKEN2,
+      LCPLL_CTL,
       BXT_P_CR_GT_DISP_PWRON,
       GT_MAILBOX,
       GT_MAILBOX_DATA,
@@ -1263,6 +1266,9 @@ is
       PORT_CLK_SEL_DDID     => 16#04_610c# / Register_Width,
       PORT_CLK_SEL_DDIE     => 16#04_6110# / Register_Width,
 
+      -- Haswell LCPLL registers
+      LCPLL_CTL             => 16#13_0040# / Register_Width,
+
       -- Skylake I_boost configuration
       DISPIO_CR_TX_BMU_CR0  => 16#06_c00c# / Register_Width,
 
@@ -1279,6 +1285,7 @@ is
 
       -- CD CLK register
       CDCLK_CTL             => 16#04_6000# / Register_Width,
+      CDCLK_FREQ            => 16#04_6200# / Register_Width,
 
       -- Skylake LCPLL registers
       LCPLL1_CTL            => 16#04_6010# / Register_Width,
@@ -1456,6 +1463,7 @@ is
       CPU_VGACNTRL          => 16#04_1000# / Register_Width,
       GMCH_VGACNTRL         => 16#07_1400# / Register_Width,
       FUSE_STATUS           => 16#04_2000# / Register_Width,
+      FUSE_STRAP            => 16#04_2014# / Register_Width,
       FBA_CFB_BASE          => 16#04_3200# / Register_Width,
       IPS_CTL               => 16#04_3408# / Register_Width,
       ARB_CTL               => 16#04_5000# / Register_Width,

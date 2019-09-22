@@ -205,8 +205,11 @@ private package HW.GFX.GMA.Config is
 
    Has_FDI_RX_Power_Down         : <genbool> := Gen_Haswell;
 
+   ---------- Clocks: -----------
    Has_GMCH_RawClk               : <genbool> := Gen_G45;
    Has_GMCH_Mobile_VCO           : <g45bool> := GMCH_GM45;
+   Has_Broadwell_CDClk           : <hswbool> := CPU_Broadwell;
+   Can_Switch_CDClk              : <hswbool> := Broadwell_On;
 
    ----------- DDI: -------------
    End_EDP_Training_Late         : <genbool> := Gen_Haswell;

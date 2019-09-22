@@ -232,7 +232,7 @@ package body HW.GFX.GMA.DP_Aux_Request is
       DP_AUX_CTL_2x_Clock : constant Word32 :=
         (if Config.Has_PCH_Aux_Channels then
            (if Port = DP_A then
-               Word32 ((Config.Default_CDClk_Freq + 1_000_000) / 2_000_000)
+               Word32 ((Config.CDClk + 1_000_000) / 2_000_000)
             else
                Word32 ((Config.Raw_Clock + 1_000_000) / 2_000_000))
          elsif Config.Has_GMCH_RawClk then

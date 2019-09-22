@@ -12,6 +12,8 @@
 -- GNU General Public License for more details.
 --
 
+with HW.GFX.GMA.Config_Helpers;
+
 private package HW.GFX.GMA.Power_And_Clocks_Haswell is
 
    procedure PSR_Off;
@@ -20,6 +22,16 @@ private package HW.GFX.GMA.Power_And_Clocks_Haswell is
    procedure Post_All_Off is null;
 
    procedure Initialize;
+
+   procedure Limit_Dotclocks
+     (Configs        : in out Pipe_Configs;
+      CDClk_Switch   :    out Boolean)
+   with
+      Post => Config_Helpers.Stable_FB (Configs'Old, Configs);
+   procedure Update_CDClk (Configs : in out Pipe_Configs)
+   with
+      Post => Config_Helpers.Stable_FB (Configs'Old, Configs);
+   procedure Enable_CDClk is null;
 
    procedure Power_Set_To (Configs : Pipe_Configs);
    procedure Power_Up (Old_Configs, New_Configs : Pipe_Configs);
