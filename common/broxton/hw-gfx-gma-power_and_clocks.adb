@@ -217,15 +217,26 @@ package body HW.GFX.GMA.Power_And_Clocks is
 
    CDClk_Ref : constant := 19_200_000;
 
+   function Normalize_CDClk (CDClk : in Int64) return Config.CDClk_Range is
+     (if    CDClk <= CDClk_Ref    then CDClk_Ref
+      elsif CDClk <= 144_000_000  then 144_000_000
+      elsif CDClk <= 288_000_000  then 288_000_000
+      elsif CDClk <= 384_000_000  then 384_000_000
+      elsif CDClk <= 576_000_000  then 576_000_000
+                                  else 624_000_000);
+
+   procedure Get_Cur_CDClk (CDClk : out Config.CDClk_Range)
+   is
+      CDCLK_CTL : Word32;
+   begin
+      Registers.Read (Registers.CDCLK_CTL, CDCLK_CTL);
+      CDCLK_CTL := CDCLK_CTL and CDCLK_CTL_CD_FREQ_DECIMAL_MASK;
+      CDClk := Normalize_CDClk (Int64 (CDCLK_CTL) * 500_000 + 1_000_000);
+   end Get_Cur_CDClk;
+
    procedure Set_CDClk (Freq_In : Frequency_Type)
    is
-      Freq : constant Frequency_Type :=
-        (if    Freq_In  = CDClk_Ref    then CDClk_Ref
-         elsif Freq_In <= 144_000_000  then 144_000_000
-         elsif Freq_In <= 288_000_000  then 288_000_000
-         elsif Freq_In <= 384_000_000  then 384_000_000
-         elsif Freq_In <= 576_000_000  then 576_000_000
-                                       else 624_000_000);
+      Freq : constant Config.CDClk_Range := Normalize_CDClk (Freq_In);
       VCO : constant Int64 :=
          CDClk_Ref *
            (if Freq = CDClk_Ref then
@@ -287,6 +298,8 @@ package body HW.GFX.GMA.Power_And_Clocks is
       PCode.Mailbox_Write
         (MBox     => BXT_PCODE_CDCLK_CONTROL,
          Command  => Word64 ((Freq + (25_000_000 - 1)) / 25_000_000));
+
+      Config.CDClk := Freq;
    end Set_CDClk;
 
    ----------------------------------------------------------------------------
@@ -325,6 +338,8 @@ package body HW.GFX.GMA.Power_And_Clocks is
       Wait_Set_Mask (FUSE_STATUS, FUSE_STATUS_PG0_DIST_STATUS);
       PW_On (PW1);
 
+      Config.Max_CDClk := 624_000_000;
+      Get_Cur_CDClk (Config.CDClk);
       Set_CDClk (Config.Default_CDClk_Freq);
 
       Set_Mask (DBUF_CTL, DBUF_CTL_DBUF_POWER_REQUEST);
@@ -332,5 +347,33 @@ package body HW.GFX.GMA.Power_And_Clocks is
 
       Config.Raw_Clock := Config.Default_RawClk_Freq;
    end Initialize;
+
+   procedure Limit_Dotclocks
+     (Configs        : in out Pipe_Configs;
+      CDClk_Switch   :    out Boolean)
+   is
+   begin
+      Config_Helpers.Limit_Dotclocks (Configs, Config.Max_CDClk);
+      CDClk_Switch :=
+         Config.CDClk /= Normalize_CDClk
+           (Config_Helpers.Highest_Dotclock (Configs));
+   end Limit_Dotclocks;
+
+   procedure Update_CDClk (Configs : in out Pipe_Configs)
+   is
+      New_CDClk : constant Frequency_Type :=
+         Config_Helpers.Highest_Dotclock (Configs);
+   begin
+      Set_CDClk (New_CDClk);
+      Config_Helpers.Limit_Dotclocks (Configs, Config.CDClk);
+   end Update_CDClk;
+
+   procedure Enable_CDClk is
+   begin
+      -- CDClk_Ref means we have CDClk effectively disabled
+      if Config.CDClk = CDClk_Ref then
+         Set_CDClk (Config.Default_CDClk_Freq);
+      end if;
+   end Enable_CDClk;
 
 end HW.GFX.GMA.Power_And_Clocks;
