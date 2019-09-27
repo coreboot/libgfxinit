@@ -223,6 +223,7 @@ is
          Display_Controller.Null_Scaler_Reservation;
 
       Update_Power   : Boolean := False;
+      Update_CDClk : Boolean;
       Old_Configs,
       New_Configs    : Pipe_Configs;
 
@@ -280,6 +281,10 @@ is
                  (New_Configs (P).Framebuffer, New_Configs (P).Mode));
       end loop;
 
+      -- limit dotclocks to maximum CDClk, if we are about
+      -- to switch CDClk, all pipes have to be disabled
+      Power_And_Clocks.Limit_Dotclocks (New_Configs, Update_CDClk);
+
       -- disable all pipes that changed or had a hot-plug event
       for Pipe in Pipe_Index loop
          declare
@@ -290,7 +295,10 @@ is
             if Cur_Config.Port /= Disabled then
                Check_HPD (Cur_Config.Port, Unplug_Detected);
 
-               if Full_Update (Cur_Config, New_Config) or Unplug_Detected then
+               if Update_CDClk or
+                  Unplug_Detected or
+                  Full_Update (Cur_Config, New_Config)
+               then
                   Disable_Output (Pipe, Cur_Config);
                   Cur_Config.Port := Disabled;
                   Update_Power := True;
@@ -298,6 +306,11 @@ is
             end if;
          end;
       end loop;
+
+      -- switch CDClk if necessary and possible, limit dotclocks accordingly
+      if Update_CDClk then
+         Power_And_Clocks.Update_CDClk (New_Configs);
+      end if;
 
       -- enable all pipes that changed and should be active
       for Pipe in Pipe_Index loop

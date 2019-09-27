@@ -63,12 +63,13 @@ is
 
       for I in 1 .. 2 loop
          if Config_Helpers.To_Display_Type (Port) = DP then
-            -- May need power to read edid
+            -- May need power and CDClk to read EDID
             declare
                Temp_Configs : Pipe_Configs := Cur_Configs;
             begin
                Temp_Configs (Primary).Port := Port;
                Power_And_Clocks.Power_Up (Cur_Configs, Temp_Configs);
+               Power_And_Clocks.Enable_CDClk;
             end;
 
             declare
