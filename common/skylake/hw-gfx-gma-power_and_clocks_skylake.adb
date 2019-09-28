@@ -18,6 +18,7 @@ with HW.Time;
 with HW.Debug;
 with HW.GFX.GMA.Config;
 with HW.GFX.GMA.Registers;
+with HW.GFX.GMA.PCode;
 with HW.GFX.GMA.Power_And_Clocks_Haswell;
 
 use type HW.Word64;
@@ -86,8 +87,6 @@ package body HW.GFX.GMA.Power_And_Clocks_Skylake is
    SKL_CDCLK_PREPARE_FOR_CHANGE        : constant := 3;
    SKL_CDCLK_READY_FOR_CHANGE          : constant := 1;
 
-   GT_MAILBOX_READY                    : constant := 1 * 2 ** 31;
-
    function CDCLK_CTL_CD_FREQ_DECIMAL
      (Freq        : Pos16;
       Plus_Half   : Boolean)
@@ -95,22 +94,6 @@ package body HW.GFX.GMA.Power_And_Clocks_Skylake is
    begin
       return Word32 (2 * (Pos32 (Freq) - 1)) or (if Plus_Half then 1 else 0);
    end CDCLK_CTL_CD_FREQ_DECIMAL;
-
-   ----------------------------------------------------------------------------
-
-   procedure GT_Mailbox_Write (MBox : Word32; Value : Word64) is
-   begin
-      pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
-
-      Registers.Wait_Unset_Mask (Registers.GT_MAILBOX, GT_MAILBOX_READY);
-      Registers.Write
-        (Registers.GT_MAILBOX_DATA, Word32 (Value and 16#ffff_ffff#));
-      Registers.Write
-        (Registers.GT_MAILBOX_DATA_1, Word32 (Shift_Right (Value, 32)));
-      Registers.Write (Registers.GT_MAILBOX, GT_MAILBOX_READY or MBox);
-
-      Registers.Wait_Unset_Mask (Registers.GT_MAILBOX, GT_MAILBOX_READY);
-   end GT_Mailbox_Write;
 
    ----------------------------------------------------------------------------
 
@@ -251,10 +234,7 @@ package body HW.GFX.GMA.Power_And_Clocks_Skylake is
 
    procedure Initialize
    is
-      CDClk_Change_Timeout : Time.T;
-      Timed_Out : Boolean;
-
-      MBox_Data0 : Word32;
+      Success : Boolean;
    begin
       Registers.Set_Mask
         (Register    => Registers.NDE_RSTWRN_OPT,
@@ -282,29 +262,20 @@ package body HW.GFX.GMA.Power_And_Clocks_Skylake is
         (Register    => Registers.LCPLL1_CTL,
          Mask        => LCPLL1_CTL_PLL_LOCK);
 
-      CDClk_Change_Timeout := Time.MS_From_Now (3);
-      Timed_Out := False;
-      loop
-         GT_Mailbox_Write
-           (MBox        => SKL_PCODE_CDCLK_CONTROL,
-            Value       => SKL_CDCLK_PREPARE_FOR_CHANGE);
-         Registers.Read (Registers.GT_MAILBOX_DATA, MBox_Data0);
-         if (MBox_Data0 and SKL_CDCLK_READY_FOR_CHANGE) /= 0 then
-            -- Ignore timeout if we succeeded anyway.
-            Timed_Out := False;
-            exit;
-         end if;
-         exit when Timed_Out;
+      PCode.Mailbox_Request
+        (MBox        => SKL_PCODE_CDCLK_CONTROL,
+         Command     => SKL_CDCLK_PREPARE_FOR_CHANGE,
+         Reply_Mask  => SKL_CDCLK_READY_FOR_CHANGE,
+         Wait_Ready  => True,
+         Success     => Success);
 
-         Timed_Out := Time.Timed_Out (CDClk_Change_Timeout);
-      end loop;
-      pragma Debug (Timed_Out, Debug.Put_Line
-        ("ERROR: PCODE not ready for frequency change after 3ms."));
+      pragma Debug (not Success, Debug.Put_Line
+        ("ERROR: PCODE not ready for frequency change."));
 
-      if not Timed_Out then
-         GT_Mailbox_Write
+      if Success then
+         PCode.Mailbox_Write
            (MBox        => SKL_PCODE_CDCLK_CONTROL,
-            Value       => 16#0000_0000#);   -- 0 - 337.5MHz
+            Command     => 16#0000_0000#);   -- 0 - 337.5MHz
                                              -- 1 - 450.0MHz
                                              -- 2 - 540.0MHz
                                              -- 3 - 675.0MHz

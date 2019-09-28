@@ -17,6 +17,7 @@ with GNAT.Source_Info;
 with HW.Time;
 with HW.Debug;
 with HW.GFX.GMA.Config;
+with HW.GFX.GMA.PCode;
 with HW.GFX.GMA.Registers;
 
 package body HW.GFX.GMA.Power_And_Clocks_Haswell is
@@ -55,8 +56,6 @@ package body HW.GFX.GMA.Power_And_Clocks_Haswell is
    IPS_CTL_ENABLE          : constant := 1 * 2 ** 31;
    DISPLAY_IPS_CONTROL     : constant := 16#19#;
 
-   GT_MAILBOX_READY        : constant := 1 * 2 ** 31;
-
    ----------------------------------------------------------------------------
 
    procedure PSR_Off
@@ -88,18 +87,6 @@ package body HW.GFX.GMA.Power_And_Clocks_Haswell is
 
    ----------------------------------------------------------------------------
 
-   procedure GT_Mailbox_Write (MBox : Word32; Value : Word32) is
-   begin
-      pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
-
-      Registers.Wait_Unset_Mask (Registers.GT_MAILBOX, GT_MAILBOX_READY);
-      Registers.Write (Registers.GT_MAILBOX_DATA, Value);
-      Registers.Write (Registers.GT_MAILBOX, GT_MAILBOX_READY or MBox);
-
-      Registers.Wait_Unset_Mask (Registers.GT_MAILBOX, GT_MAILBOX_READY);
-      Registers.Write (Registers.GT_MAILBOX_DATA, 0);
-   end GT_Mailbox_Write;
-
    procedure IPS_Off
    is
       Enabled : Boolean;
@@ -110,7 +97,7 @@ package body HW.GFX.GMA.Power_And_Clocks_Haswell is
          Registers.Is_Set_Mask (Registers.IPS_CTL, IPS_CTL_ENABLE, Enabled);
          if Enabled then
             if Config.Has_IPS_CTL_Mailbox then
-               GT_Mailbox_Write (DISPLAY_IPS_CONTROL, 0);
+               PCode.Mailbox_Write (DISPLAY_IPS_CONTROL, 0, Wait_Ready => True);
                Registers.Wait_Unset_Mask
                  (Register => Registers.IPS_CTL,
                   Mask     => IPS_CTL_ENABLE,

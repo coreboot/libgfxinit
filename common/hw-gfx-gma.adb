@@ -21,6 +21,7 @@ pragma Elaborate_All (HW.PCI.Dev);
 with HW.GFX.GMA.Config;
 with HW.GFX.GMA.Config_Helpers;
 with HW.GFX.GMA.Registers;
+with HW.GFX.GMA.PCode;
 with HW.GFX.GMA.Power_And_Clocks;
 with HW.GFX.GMA.Panel;
 with HW.GFX.GMA.PLLs;
@@ -39,6 +40,7 @@ package body HW.GFX.GMA
      (State =>
         (Dev.Address_State,
          Registers.Address_State,
+         PCode.Mailbox_Ready,
          PLLs.State, Panel.Panel_State,
          Cur_Configs, Allocated_PLLs,
          HPD_Delay, Wait_For_HPD,
@@ -376,6 +378,7 @@ is
            (Config.Variable,
             Dev.Address_State,
             Registers.Address_State,
+            PCode.Mailbox_Ready,
             PLLs.State, Panel.Panel_State,
             Cur_Configs, Allocated_PLLs,
             HPD_Delay, Wait_For_HPD,
@@ -435,6 +438,7 @@ is
       pragma Debug (Debug.Set_Register_Write_Delay (Write_Delay));
 
       Linear_FB_Base := 0;
+      PCode.Mailbox_Ready := False;
       Wait_For_HPD := HPD_Type'(others => False);
       HPD_Delay := HPD_Delay_Type'(others => Now);
       Allocated_PLLs := (others => PLLs.Invalid);

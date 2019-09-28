@@ -17,6 +17,7 @@ with GNAT.Source_Info;
 with HW.Debug;
 with HW.GFX.GMA.Config;
 with HW.GFX.GMA.Registers;
+with HW.GFX.GMA.PCode;
 with HW.GFX.GMA.Power_And_Clocks_Haswell;
 with HW.GFX.GMA.DDI_Phy;
 
@@ -242,10 +243,19 @@ package body HW.GFX.GMA.Power_And_Clocks is
             when others => CDCLK_CD2X_DIV_SEL_1);  -- for CDClk = CDClk_Ref
       CDCLK_CD2X_SSA_Precharge : constant Word32 :=
         (if Freq >= 500_000_000 then CDCLK_CD2X_SSA_PRECHARGE_ENABLE else 0);
+
+      Success : Boolean;
    begin
-      Power_And_Clocks_Haswell.GT_Mailbox_Write
+      PCode.Mailbox_Write
         (MBox        => BXT_PCODE_CDCLK_CONTROL,
-         Value       => BXT_CDCLK_PREPARE_FOR_CHANGE);
+         Command     => BXT_CDCLK_PREPARE_FOR_CHANGE,
+         Wait_Ready  => True,
+         Success     => Success);
+      if not Success then
+         pragma Debug (Debug.Put_Line
+           ("ERROR: PCODE didn't acknowledge frequency change."));
+         return;
+      end if;
 
       Write
         (Register => BXT_DE_PLL_ENABLE,
@@ -274,9 +284,9 @@ package body HW.GFX.GMA.Power_And_Clocks is
                      CDCLK_CD2X_SSA_Precharge or
                      CDCLK_CTL_CD_FREQ_DECIMAL (Freq));
 
-      Power_And_Clocks_Haswell.GT_Mailbox_Write
-        (MBox        => BXT_PCODE_CDCLK_CONTROL,
-         Value       => Word32 ((Freq + (25_000_000 - 1)) / 25_000_000));
+      PCode.Mailbox_Write
+        (MBox     => BXT_PCODE_CDCLK_CONTROL,
+         Command  => Word64 ((Freq + (25_000_000 - 1)) / 25_000_000));
    end Set_CDClk;
 
    ----------------------------------------------------------------------------
