@@ -57,9 +57,21 @@ private package HW.GFX.GMA.Config is
 
    ----------------------------------------------------------------------------
 
+   -- On older generations dot clocks are limited to 90% of
+   -- the CDClk rate. To ease proofs, we limit CDClk's range.
+   CDClk_Min : constant Frequency_Type :=
+     (case Gen is
+         when G45 .. Ironlake => Frequency_Type'First * 100 / 90 + 1,
+         when others          => Frequency_Type'First);
+   subtype CDClk_Range is Frequency_Type range CDClk_Min .. Frequency_Type'Last;
+
+   ----------------------------------------------------------------------------
+
    type Valid_Port_Array is array (Port_Type) of Boolean;
    type Variable_Config is record
       Valid_Port     : Valid_Port_Array;
+      CDClk          : CDClk_Range;
+      Max_CDClk      : CDClk_Range;
       Raw_Clock      : Frequency_Type;
       Dyn_CPU        : Gen_CPU_Type;
       Dyn_CPU_Var    : Gen_CPU_Variant;
@@ -67,6 +79,8 @@ private package HW.GFX.GMA.Config is
 
    Initial_Settings : constant Variable_Config :=
      (Valid_Port     => (others => False),
+      CDClk          => CDClk_Range'First,
+      Max_CDClk      => CDClk_Range'First,
       Raw_Clock      => Frequency_Type'First,
       Dyn_CPU        => Gen_CPU_Type'First,
       Dyn_CPU_Var    => Gen_CPU_Variant'First);
@@ -74,6 +88,8 @@ private package HW.GFX.GMA.Config is
    Variable : Variable_Config with Part_Of => GMA.State;
 
    Valid_Port  : Valid_Port_Array renames Variable.Valid_Port;
+   CDClk       : CDClk_Range renames Variable.CDClk;
+   Max_CDClk   : CDClk_Range renames Variable.Max_CDClk;
    Raw_Clock   : Frequency_Type renames Variable.Raw_Clock;
    CPU         : Gen_CPU_Type renames Variable.Dyn_CPU;
    CPU_Var     : Gen_CPU_Variant renames Variable.Dyn_CPU_Var;
@@ -271,7 +287,7 @@ private package HW.GFX.GMA.Config is
 
    ----------------------------------------------------------------------------
 
-   Default_CDClk_Freq : <ilkhswvar> Frequency_Type :=
+   Default_CDClk_Freq : <ilkhswvar> CDClk_Range :=
      (if    Gen_G45                          then 320_000_000  -- unused
       elsif CPU_Ironlake                     then 450_000_000
       elsif CPU_Sandybridge or CPU_Ivybridge then 400_000_000
@@ -279,7 +295,7 @@ private package HW.GFX.GMA.Config is
       elsif Gen_Haswell                      then 450_000_000
       elsif Gen_Broxton                      then 288_000_000
       elsif Gen_Skylake                      then 337_500_000
-                                             else Frequency_Type'First);
+                                             else CDClk_Range'First);
 
    Default_RawClk_Freq : <hswvar> Frequency_Type :=
      (if    Gen_G45        then 100_000_000  -- unused, depends on FSB
