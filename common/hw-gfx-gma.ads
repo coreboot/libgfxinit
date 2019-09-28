@@ -15,6 +15,7 @@
 
 with HW.Config;
 with HW.Time;
+with HW.PCI;
 with HW.Port_IO;
 with HW.GFX.Framebuffer_Filler;
 
@@ -229,6 +230,14 @@ is
    procedure Dump_Configs (Configs : Pipe_Configs);
 
 private
+
+   PCI_Usable : Boolean with Part_Of => State;
+   use type HW.PCI.Index;
+   procedure PCI_Read16 (Value : out Word16; Offset : HW.PCI.Index)
+   with
+      Pre => PCI_Usable and Offset mod 2 = 0;
+
+   ----------------------------------------------------------------------------
 
    -- For the default framebuffer setup (see below) with 90 degree rotations,
    -- we expect the offset which is used for the final scanout to be above

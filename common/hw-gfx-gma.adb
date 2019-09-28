@@ -38,7 +38,8 @@ use type HW.Int32;
 package body HW.GFX.GMA
    with Refined_State =>
      (State =>
-        (Dev.Address_State,
+        (PCI_Usable,
+         Dev.Address_State,
          Registers.Address_State,
          PCode.Mailbox_Ready,
          PLLs.State, Panel.Panel_State,
@@ -384,7 +385,8 @@ is
         (Input => (Time.State),
          In_Out => (Dev.PCI_State, Registers.Register_State, Port_IO.State),
          Output =>
-           (Config.Variable,
+           (PCI_Usable,
+            Config.Variable,
             Dev.Address_State,
             Registers.Address_State,
             PCode.Mailbox_Ready,
@@ -446,6 +448,7 @@ is
 
       pragma Debug (Debug.Set_Register_Write_Delay (Write_Delay));
 
+      PCI_Usable := False;
       Linear_FB_Base := 0;
       PCode.Mailbox_Ready := False;
       Wait_For_HPD := HPD_Type'(others => False);
@@ -470,6 +473,7 @@ is
             Dev.Map (PCI_GTT_Base, PCI.Res0, Offset => MMIO_GTT_Offset);
             if PCI_MMIO_Base /= 0 and PCI_GTT_Base /= 0 then
                Registers.Set_Register_Base (PCI_MMIO_Base, PCI_GTT_Base);
+               PCI_Usable := True;
             else
                pragma Debug (Debug.Put_Line
                  ("ERROR: Couldn't map resoure0."));
@@ -933,5 +937,12 @@ is
          end if;
       end loop;
    end Dump_Configs;
+
+   ----------------------------------------------------------------------------
+
+   procedure PCI_Read16 (Value : out Word16; Offset : HW.PCI.Index) is
+   begin
+      Dev.Read16 (Value, Offset);
+   end PCI_Read16;
 
 end HW.GFX.GMA;
