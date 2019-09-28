@@ -70,6 +70,8 @@ is
       UCGCTL1,
       UCGCTL2,
       GMCH_CLKCFG,
+      GMCH_HPLLVCO_MOBILE,
+      GMCH_HPLLVCO,
       VCS_RING_BUFFER_TAIL,
       VCS_RING_BUFFER_HEAD,
       VCS_RING_BUFFER_STRT,
@@ -1617,7 +1619,9 @@ is
 
       -- MCHBAR Mirror
 
-      GMCH_CLKCFG           => 16#01_0c00# / Register_Width);
+      GMCH_CLKCFG           => 16#01_0c00# / Register_Width,
+      GMCH_HPLLVCO_MOBILE   => 16#01_0c0f# / Register_Width,
+      GMCH_HPLLVCO          => 16#01_0c38# / Register_Width);
 
    subtype Registers_Index is Registers_Invalid_Index range
       Registers_Invalid_Index'Succ (Invalid_Register) ..

@@ -125,6 +125,7 @@ private package HW.GFX.GMA.Config is
    Broxton_On        : <genbool> := Gen >= Broxton;
    Skylake_On        : <genbool> := Gen >= Skylake;
 
+   GMCH_GM45         : <g45bool> := Gen_G45 and then CPU = GM45;
    CPU_Ironlake      : <ilkbool> := Gen_Ironlake and then CPU = Ironlake;
    CPU_Sandybridge   : <ilkbool> := Gen_Ironlake and then CPU = Sandybridge;
    CPU_Ivybridge     : <ilkbool> := Gen_Ironlake and then CPU = Ivybridge;
@@ -205,6 +206,7 @@ private package HW.GFX.GMA.Config is
    Has_FDI_RX_Power_Down         : <genbool> := Gen_Haswell;
 
    Has_GMCH_RawClk               : <genbool> := Gen_G45;
+   Has_GMCH_Mobile_VCO           : <g45bool> := GMCH_GM45;
 
    ----------- DDI: -------------
    End_EDP_Training_Late         : <genbool> := Gen_Haswell;
