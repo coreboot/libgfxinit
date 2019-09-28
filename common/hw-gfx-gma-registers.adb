@@ -286,18 +286,20 @@ is
 
    ----------------------------------------------------------------------------
 
-   -- TODO: Should have Success parameter
+   pragma Warnings (GNATprove, Off, "unused assignment to ""Ignored_Success""");
+
    -- Wait for the bits in @Register@ indicated by @Mask@ to be of @Value@
    procedure Wait
-     (Register : Registers_Index;
-      Mask     : Word32;
-      Value    : Word32;
-      TOut_MS  : Natural := Default_Timeout_MS;
-      Verbose  : Boolean := False)
+     (Register : in     Registers_Index;
+      Mask     : in     Word32;
+      Value    : in     Word32;
+      TOut_MS  : in     Natural := Default_Timeout_MS;
+      Verbose  : in     Boolean := False;
+      Success  :    out Boolean)
    is
       Current : Word32;
       Timeout : Time.T;
-      Timed_Out : Boolean;
+      Timed_Out : Boolean := False;
    begin
       pragma Debug (Debug.Put (GNAT.Source_Info.Enclosing_Entity & ":  "));
       pragma Debug (Debug.Put_Word32 (Value));
@@ -310,43 +312,80 @@ is
 
       Timeout := Time.MS_From_Now (TOut_MS);
       loop
-         Timed_Out := Time.Timed_Out (Timeout);
          Read (Register, Current, Verbose);
          if (Current and Mask) = Value then
+            -- Ignore timeout if we succeeded anyway.
+            Timed_Out := False;
             exit;
          end if;
          pragma Debug (Timed_Out, Debug.Put (GNAT.Source_Info.Enclosing_Entity));
          pragma Debug (Timed_Out, Debug.Put_Line (": Timed Out!"));
          exit when Timed_Out;
+
+         Timed_Out := Time.Timed_Out (Timeout);
       end loop;
+
+      Success := not Timed_Out;
+   end Wait;
+
+   procedure Wait
+     (Register : Registers_Index;
+      Mask     : Word32;
+      Value    : Word32;
+      TOut_MS  : Natural := Default_Timeout_MS;
+      Verbose  : Boolean := False)
+   is
+      Ignored_Success : Boolean;
+   begin
+      Wait (Register, Mask, Value, TOut_MS, Verbose, Ignored_Success);
    end Wait;
 
    ----------------------------------------------------------------------------
 
-   -- TODO: Should have Success parameter
    -- Wait for all bits in @Register@ indicated by @Mask@ to be set
    procedure Wait_Set_Mask
      (Register : in     Registers_Index;
       Mask     : in     Word32;
       TOut_MS  : in     Natural := Default_Timeout_MS;
-      Verbose  : in     Boolean := False)
-   is
+      Verbose  : in     Boolean := False;
+      Success  :    out Boolean) is
    begin
-      Wait (Register, Mask, Mask, TOut_MS, Verbose);
+      Wait (Register, Mask, Mask, TOut_MS, Verbose, Success);
+   end Wait_Set_Mask;
+
+   procedure Wait_Set_Mask
+     (Register : Registers_Index;
+      Mask     : Word32;
+      TOut_MS  : Natural := Default_Timeout_MS;
+      Verbose  : Boolean := False)
+   is
+      Ignored_Success : Boolean;
+   begin
+      Wait (Register, Mask, Mask, TOut_MS, Verbose, Ignored_Success);
    end Wait_Set_Mask;
 
    ----------------------------------------------------------------------------
 
-   -- TODO: Should have Success parameter
    -- Wait for bits in @Register@ indicated by @Mask@ to be clear
+   procedure Wait_Unset_Mask
+     (Register   : in     Registers_Index;
+      Mask       : in     Word32;
+      TOut_MS    : in     Natural := Default_Timeout_MS;
+      Verbose    : in     Boolean := False;
+      Success    :    out Boolean) is
+   begin
+      Wait (Register, Mask, 0, TOut_MS, Verbose, Success);
+   end;
+
    procedure Wait_Unset_Mask
      (Register : Registers_Index;
       Mask     : Word32;
-      TOut_MS  : in     Natural := Default_Timeout_MS;
-      Verbose  : in     Boolean := False)
+      TOut_MS  : Natural := Default_Timeout_MS;
+      Verbose  : Boolean := False)
    is
+      Ignored_Success : Boolean;
    begin
-      Wait (Register, Mask, 0, TOut_MS, Verbose);
+      Wait (Register, Mask, 0, TOut_MS, Verbose, Ignored_Success);
    end Wait_Unset_Mask;
 
    ----------------------------------------------------------------------------

@@ -1687,6 +1687,13 @@ is
    pragma Warnings (GNATprove, Off, "unused initial value of ""Verbose""",
                     Reason => "Only used on debugging path");
    procedure Wait
+     (Register : in     Registers_Index;
+      Mask     : in     Word32;
+      Value    : in     Word32;
+      TOut_MS  : in     Natural := Default_Timeout_MS;
+      Verbose  : in     Boolean := False;
+      Success  :    out Boolean);
+   procedure Wait
      (Register : Registers_Index;
       Mask     : Word32;
       Value    : Word32;
@@ -1694,16 +1701,28 @@ is
       Verbose  : Boolean := False);
 
    procedure Wait_Set_Mask
-      (Register : Registers_Index;
-       Mask     : Word32;
-       TOut_MS  : Natural := Default_Timeout_MS;
-       Verbose  : Boolean := False);
+     (Register : in     Registers_Index;
+      Mask     : in     Word32;
+      TOut_MS  : in     Natural := Default_Timeout_MS;
+      Verbose  : in     Boolean := False;
+      Success  :    out Boolean);
+   procedure Wait_Set_Mask
+     (Register : Registers_Index;
+      Mask     : Word32;
+      TOut_MS  : Natural := Default_Timeout_MS;
+      Verbose  : Boolean := False);
 
    procedure Wait_Unset_Mask
-      (Register : Registers_Index;
-       Mask     : Word32;
-       TOut_MS  : Natural := Default_Timeout_MS;
-       Verbose  : Boolean := False);
+     (Register : in     Registers_Index;
+      Mask     : in     Word32;
+      TOut_MS  : in     Natural := Default_Timeout_MS;
+      Verbose  : in     Boolean := False;
+      Success  :    out Boolean);
+   procedure Wait_Unset_Mask
+     (Register : Registers_Index;
+      Mask     : Word32;
+      TOut_MS  : Natural := Default_Timeout_MS;
+      Verbose  : Boolean := False);
    pragma Warnings (GNATprove, On, "unused initial value of ""Verbose""");
 
    procedure Set_Mask
