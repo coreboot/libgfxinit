@@ -51,7 +51,18 @@ package body HW.GFX.GMA.Power_And_Clocks_Ironlake is
          Time.U_Delay (20);   -- DMI latency
       end if;
 
+      Config.CDClk := Config.Default_CDClk_Freq;
+      Config.Max_CDClk := Config.Default_CDClk_Freq;
       Config.Raw_Clock := Config.Default_RawClk_Freq;
    end Initialize;
+
+   procedure Limit_Dotclocks
+     (Configs        : in out Pipe_Configs;
+      CDClk_Switch   :    out Boolean)
+   is
+   begin
+      Config_Helpers.Limit_Dotclocks (Configs, Config.CDClk * 90 / 100);
+      CDClk_Switch := False;
+   end Limit_Dotclocks;
 
 end HW.GFX.GMA.Power_And_Clocks_Ironlake;

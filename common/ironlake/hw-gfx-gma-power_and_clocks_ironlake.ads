@@ -12,9 +12,21 @@
 -- GNU General Public License for more details.
 --
 
+with HW.GFX.GMA.Config_Helpers;
+
 private package HW.GFX.GMA.Power_And_Clocks_Ironlake is
 
    procedure Initialize;
+
+   procedure Limit_Dotclocks
+     (Configs        : in out Pipe_Configs;
+      CDClk_Switch   :    out Boolean)
+   with
+      Post =>
+         not CDClk_Switch and
+         Config_Helpers.Stable_FB (Configs'Old, Configs);
+   procedure Update_CDClk (Configs : in out Pipe_Configs) is null;
+   procedure Enable_CDClk is null;
 
    procedure Pre_All_Off is null;
 
