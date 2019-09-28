@@ -27,7 +27,7 @@ private package HW.GFX.GMA.Config is
          when Skylake   => Skylake);
    CPU_Last : constant CPU_Type :=
      (case Gen is
-         when G45       => G45,
+         when G45       => GM45,
          when Ironlake  => Ivybridge,
          when Haswell   => Broadwell,
          when Broxton   => Broxton,
@@ -407,8 +407,8 @@ private package HW.GFX.GMA.Config is
    function Is_GPU (Device_Id : Word16; CPU : CPU_Type; CPU_Var : CPU_Variant)
       return Boolean is
      (case CPU is
-         when G45          => (Device_Id and 16#ff02#) = 16#2e02# or
-                              (Device_Id and 16#fffe#) = 16#2a42#,
+         when G45          => (Device_Id and 16#ff02#) = 16#2e02#,
+         when GM45         => (Device_Id and 16#fffe#) = 16#2a42#,
          when Ironlake     => (Device_Id and 16#fff3#) = 16#0042#,
          when Sandybridge  => (Device_Id and 16#ffc2#) = 16#0102#,
          when Ivybridge    => (Device_Id and 16#ffc3#) = 16#0142#,

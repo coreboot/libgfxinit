@@ -37,6 +37,7 @@ is
 
    type CPU_Type is
      (G45,
+      GM45,
       Ironlake,
       Sandybridge,
       Ivybridge,

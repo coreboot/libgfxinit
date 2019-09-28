@@ -54,9 +54,10 @@ CONFIG_GFX_GMA_INTERNAL_PORT	:= $(call strip_quotes,$(CONFIG_GFX_GMA_INTERNAL_PO
 CONFIG_GFX_GMA_ANALOG_I2C_PORT	:= $(call strip_quotes,$(CONFIG_GFX_GMA_ANALOG_I2C_PORT))
 
 _GEN_NONCONST := $(strip \
+		 $(if $(filter G45,$(CONFIG_GFX_GMA_GENERATION)),g45, \
 		 $(if $(filter Ironlake,$(CONFIG_GFX_GMA_GENERATION)),ilk, \
 		 $(if $(filter Haswell,$(CONFIG_GFX_GMA_GENERATION)),hsw,  \
-		 $(if $(filter Skylake,$(CONFIG_GFX_GMA_GENERATION)),skl))))
+		 $(if $(filter Skylake,$(CONFIG_GFX_GMA_GENERATION)),skl)))))
 # GNATprove (GPL 2017) doesn't realize when a boolean expression
 # that depends both on static values and variables can be evalu-
 # ated at compile time (e.g. `False and then Variable` is always
@@ -76,9 +77,9 @@ $(hw-gfx-gma-config-ads): $(dir)/hw-gfx-gma-config.ads.template $(cnf)
 	    -e's/<<DEFAULT_MMIO_BASE>>/$(CONFIG_GFX_GMA_DEFAULT_MMIO)/' \
 	    -e'/constant Gen_CPU\(_Var\)\?/d' \
 	    -e's/<genbool>/constant Boolean/' \
-	    -e's/<\(\(ilk\|hsw\|skl\)\(...\)\?\)bool>/<\1var> Boolean/' \
+	    -e's/<\(\(g45\|ilk\|hsw\|skl\)\(...\)\?\)bool>/<\1var> Boolean/' \
 	    $(if $(_GEN_NONCONST),-e's/<\(...\)\?$(_GEN_NONCONST)\(...\)\?var>/<cpufunc>/') \
-	    -e's/<\(ilk\|hsw\|skl\)\(...\)\?var>/$(_GEN_CONST_TARGET)/' \
+	    -e's/<\(g45\|ilk\|hsw\|skl\)\(...\)\?var>/$(_GEN_CONST_TARGET)/' \
 	    -e's/\(.*: *<cpufunc>.*:=\) *\(.*\);/\1\n     (\2);/' \
 	    -e's/\([^ ]\+\) *: *<cpufunc> \+\([^ ]*\) *:=/function \1 return \2 is/' \
 	    -e's/<cpunull>//' \
@@ -94,8 +95,8 @@ $(hw-gfx-gma-config-ads): $(dir)/hw-gfx-gma-config.ads.template $(cnf)
 	    -e's/<<DEFAULT_MMIO_BASE>>/$(CONFIG_GFX_GMA_DEFAULT_MMIO)/' \
 	    -e":s$$(printf '\n ')/,$$/{N;s/,\n.*Dyn_CPU\(_Var\)\?[^,)]*//;ts$$(printf '\n ')P;D;}" \
 	    -e'/Dyn_CPU\(_Var\)\?/d' \
-	    -e's/<\(gen\|\(ilk\|hsw\|skl\)\(...\)\?\)bool>/constant Boolean/' \
-	    -e's/<\(\(ilk\|hsw\|skl\)\(...\)\?\)var>/constant/' \
+	    -e's/<\(gen\|\(g45\|ilk\|hsw\|skl\)\(...\)\?\)bool>/constant Boolean/' \
+	    -e's/<\(\(g45\|ilk\|hsw\|skl\)\(...\)\?\)var>/constant/' \
 	    -e's/<cpunull>/ is null/' \
 	    $< >$@
 endif
