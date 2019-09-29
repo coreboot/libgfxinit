@@ -24,7 +24,6 @@ with
    Abstract_State =>
      (State,
       Init_State,
-      Config_State,
       (Device_State with External)),
    Initializes => Init_State
 is
@@ -105,7 +104,7 @@ is
    with
       Global =>
         (In_Out => (Device_State, Port_IO.State),
-         Output => (State, Init_State, Config_State),
+         Output => (State, Init_State),
          Input  => (Time.State)),
       Post => Success = Is_Initialized;
    function Is_Initialized return Boolean
@@ -116,7 +115,7 @@ is
    procedure Power_Up_VGA
    with
       Global =>
-        (Input => (State, Config_State, Time.State),
+        (Input => (State, Time.State),
          In_Out => (Device_State),
          Proof_In => (Init_State)),
       Pre => Is_Initialized;
@@ -126,24 +125,17 @@ is
    procedure Update_Outputs (Configs : Pipe_Configs)
    with
       Global =>
-        (Input => (Config_State, Time.State),
+        (Input => (Time.State),
          In_Out => (State, Device_State, Port_IO.State),
          Proof_In => (Init_State)),
       Pre => Is_Initialized;
 
-   pragma Warnings (GNATprove, Off, "no check message justified by this",
-                    Reason => "see Annotate aspects.");
    procedure Update_Cursor (Pipe : Pipe_Index; Cursor : Cursor_Type)
    with
       Global =>
-        (Input => (Config_State),
-         In_Out => (State, Device_State),
+        (In_Out => (State, Device_State),
          Proof_In => (Init_State)),
-      Pre => Is_Initialized,
-      Annotate =>
-        (GNATprove, Intentional,
-         "global input ""GMA.Config_State"" of ""Update_Cursor"" not read",
-         "Reading of Config_State depends on the platform configuration.");
+      Pre => Is_Initialized;
 
    procedure Place_Cursor
      (Pipe : Pipe_Index;
@@ -151,14 +143,9 @@ is
       Y : Cursor_Pos)
    with
       Global =>
-        (Input => (Config_State),
-         In_Out => (State, Device_State),
+        (In_Out => (State, Device_State),
          Proof_In => (Init_State)),
-      Pre => Is_Initialized,
-      Annotate =>
-        (GNATprove, Intentional,
-         "global input ""GMA.Config_State"" of ""Place_Cursor"" not read",
-         "Reading of Config_State depends on the platform configuration.");
+      Pre => Is_Initialized;
 
    procedure Move_Cursor
      (Pipe : Pipe_Index;
@@ -166,14 +153,9 @@ is
       Y : Cursor_Pos)
    with
       Global =>
-        (Input => (Config_State),
-         In_Out => (State, Device_State),
+        (In_Out => (State, Device_State),
          Proof_In => (Init_State)),
-      Pre => Is_Initialized,
-      Annotate =>
-        (GNATprove, Intentional,
-         "global input ""GMA.Config_State"" of ""Move_Cursor"" not read",
-         "Reading of Config_State depends on the platform configuration.");
+      Pre => Is_Initialized;
 
    ----------------------------------------------------------------------------
 
@@ -183,7 +165,7 @@ is
       Valid          : Boolean)
    with
       Global =>
-        (Input => Config_State,
+        (Input => State,
          In_Out => Device_State, Proof_In => Init_State),
       Pre => Is_Initialized;
 
@@ -193,7 +175,7 @@ is
       GTT_Page       : in     GTT_Range)
    with
       Global =>
-        (Input => Config_State,
+        (Input => State,
          In_Out => Device_State, Proof_In => Init_State),
       Pre => Is_Initialized;
 
@@ -203,8 +185,7 @@ is
       Success  :    out Boolean)
    with
       Global =>
-        (Input => Config_State,
-         In_Out =>
+        (In_Out =>
            (State, Device_State,
             Framebuffer_Filler.State, Framebuffer_Filler.Base_Address),
          Proof_In => (Init_State)),
@@ -213,15 +194,9 @@ is
    procedure Map_Linear_FB (Linear_FB : out Word64; FB : in Framebuffer_Type)
    with
       Global =>
-        (Input => Config_State,
-         In_Out => (State, Device_State),
+        (In_Out => (State, Device_State),
          Proof_In => (Init_State)),
-      Pre => Is_Initialized and HW.Config.Dynamic_MMIO,
-      Annotate =>
-        (GNATprove, Intentional,
-         "global input ""GMA.Config_State"" of ""Map_Linear_FB"" not read",
-         "Reading of Config_State depends on the platform configuration.");
-   pragma Warnings (GNATprove, On, "no check message justified by this");
+      Pre => Is_Initialized and HW.Config.Dynamic_MMIO;
 
    ----------------------------------------------------------------------------
 

@@ -71,7 +71,7 @@ private package HW.GFX.GMA.Config is
       Dyn_CPU        => Gen_CPU_Type'First,
       Dyn_CPU_Var    => Gen_CPU_Variant'First);
 
-   Variable : Variable_Config with Part_Of => GMA.Config_State;
+   Variable : Variable_Config with Part_Of => GMA.State;
 
    Valid_Port  : Valid_Port_Array renames Variable.Valid_Port;
    Raw_Clock   : Frequency_Type renames Variable.Raw_Clock;

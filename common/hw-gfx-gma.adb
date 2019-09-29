@@ -38,7 +38,8 @@ use type HW.Int32;
 package body HW.GFX.GMA
    with Refined_State =>
      (State =>
-        (PCI_Usable,
+        (Config.Variable,
+         PCI_Usable,
          Dev.Address_State,
          Registers.Address_State,
          PCode.Mailbox_Ready,
@@ -47,7 +48,6 @@ package body HW.GFX.GMA
          HPD_Delay, Wait_For_HPD,
          Linear_FB_Base),
       Init_State => Initialized,
-      Config_State => (Config.Variable),
       Device_State =>
         (Dev.PCI_State, Registers.Register_State, Registers.GTT_State))
 is

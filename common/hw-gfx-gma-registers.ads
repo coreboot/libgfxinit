@@ -1763,7 +1763,7 @@ is
         (GTT_State =>+ (Config.Variable, GTT_Page, Device_Address, Valid)),
       Annotate =>
         (GNATprove, Intentional,
-         """GMA.Config_State"" of ""Write_GTT"" not read",
+         """GMA.State"" of ""Write_GTT"" not read",
          "Reading of Config_State depends on the platform configuration.");
 
    procedure Read_GTT
@@ -1779,7 +1779,7 @@ is
            (Config.Variable, GTT_State, GTT_Page)),
       Annotate =>
         (GNATprove, Intentional,
-         """GMA.Config_State"" of ""Read_GTT"" not read",
+         """GMA.State"" of ""Read_GTT"" not read",
          "Reading of Config_State depends on the platform configuration.");
    pragma Warnings (GNATprove, On, "no check message justified by this");
 
