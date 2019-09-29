@@ -35,4 +35,6 @@ is
       Max_Pipe    : in     Pipe_Index := Pipe_Index'Last;
       Keep_Power  : in     Boolean := False);
 
+   procedure Hotplug_Events (Ports : out Port_List);
+
 end HW.GFX.GMA.Display_Probing;

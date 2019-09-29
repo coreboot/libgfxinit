@@ -19,6 +19,7 @@ with HW.GFX.GMA.Config_Helpers;
 with HW.GFX.GMA.I2C;
 with HW.GFX.GMA.DP_Aux_Ch;
 with HW.GFX.GMA.Panel;
+with HW.GFX.GMA.Port_Detect;
 with HW.GFX.GMA.Power_And_Clocks;
 
 with HW.Debug;
@@ -214,5 +215,21 @@ is
          Panel.Off;
       end if;
    end Scan_Ports;
+
+   procedure Hotplug_Events (Ports : out Port_List)
+   is
+      I : Port_List_Range := Port_List_Range'First;
+      Detected : Boolean;
+   begin
+      Ports := (others => Disabled);
+      for P in Active_Port_Type loop
+         Port_Detect.Hotplug_Detect (P, Detected);
+         if Detected then
+            Ports (I) := P;
+            exit when I = Port_List_Range'Last;
+            I := Port_List_Range'Succ (I);
+         end if;
+      end loop;
+   end Hotplug_Events;
 
 end HW.GFX.GMA.Display_Probing;
