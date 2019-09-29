@@ -17,6 +17,7 @@ is
 
    Primary_Delay_MS     : constant := 8_000;
    Secondary_Delay_MS   : constant := 4_000;
+   HP_Delay_MS          : constant :=   500;
    Seed                 : constant := 12345;
 
    package Rand_P is new Ada.Numerics.Discrete_Random (Natural);
@@ -373,8 +374,10 @@ is
    end Prepare_Configs;
 
    procedure Script_Cursors
-     (Pipes    : in out GMA.Pipe_Configs;
-      Time_MS  : in     Natural)
+     (Pipes          : in out GMA.Pipe_Configs;
+      Hotplug_List   :    out Display_Probing.Port_List;
+      Total_Deadline : in     Time.T;
+      Time_MS        : in     Natural)
    is
       type Corner is (UL, UR, LR, LL);
       type Cursor_Script_Entry is record
@@ -388,9 +391,11 @@ is
          (LL,  16, -16), (LL,  16, -16), (LL,  16, -16), (LL,   0,  32), (LL,  16, -16));
 
       Deadline : constant Time.T := Time.MS_From_Now (Time_MS);
+      HP_Deadline : Time.T := Time.MS_From_Now (HP_Delay_MS);
       Timed_Out : Boolean := False;
       Cnt : Word32 := 0;
    begin
+      Hotplug_List := (others => Disabled);
       loop
          for Pipe in Pipe_Index loop
             exit when Pipes (Pipe).Port = GMA.Disabled;
@@ -414,6 +419,18 @@ is
                GMA.Place_Cursor (Pipe, C.Center_X, C.Center_Y);
             end;
          end loop;
+
+         Timed_Out := Time.Timed_Out (HP_Deadline);
+         if Timed_Out then
+            HP_Deadline := Time.MS_From_Now (HP_Delay_MS);
+            GMA.Display_Probing.Hotplug_Events (Hotplug_List);
+            if Hotplug_List (Hotplug_List'First) /= Disabled then
+               return;
+            end if;
+         end if;
+
+         Timed_Out := Time.Timed_Out (Total_Deadline);
+         exit when Timed_Out;
          Timed_Out := Time.Timed_Out (Deadline);
          exit when Timed_Out;
          Time.M_Delay (160);
@@ -432,9 +449,11 @@ is
    Cursor_Infos : array (Pipe_Index) of Cursor_Info;
 
    procedure Move_Cursors
-     (Pipes    : in out GMA.Pipe_Configs;
-      Time_MS  : in     Natural;
-      Gen      : in     Rand_P.Generator)
+     (Pipes          : in out GMA.Pipe_Configs;
+      Hotplug_List   :    out Display_Probing.Port_List;
+      Total_Deadline : in     Time.T;
+      Time_MS        : in     Natural;
+      Gen            : in     Rand_P.Generator)
    is
       procedure Select_New_Cursor
         (P  : in     Pipe_Index;
@@ -458,9 +477,11 @@ is
       end Select_New_Cursor;
 
       Deadline : constant Time.T := Time.MS_From_Now (Time_MS);
+      HP_Deadline : Time.T := Time.MS_From_Now (HP_Delay_MS);
       Timed_Out : Boolean := False;
       Cnt : Word32 := 0;
    begin
+      Hotplug_List := (others => Disabled);
       for Pipe in Pipe_Index loop
          exit when Pipes (Pipe).Port = GMA.Disabled;
          Select_New_Cursor (Pipe, Pipes (Pipe).Cursor, Cursor_Infos (Pipe));
@@ -502,12 +523,109 @@ is
                end if;
             end;
          end loop;
+
+         Timed_Out := Time.Timed_Out (HP_Deadline);
+         if Timed_Out then
+            HP_Deadline := Time.MS_From_Now (HP_Delay_MS);
+            GMA.Display_Probing.Hotplug_Events (Hotplug_List);
+            if Hotplug_List (Hotplug_List'First) /= Disabled then
+               return;
+            end if;
+         end if;
+
+         Timed_Out := Time.Timed_Out (Total_Deadline);
+         exit when Timed_Out;
          Timed_Out := Time.Timed_Out (Deadline);
          exit when Timed_Out;
          Time.M_Delay (16);   -- ~60 fps
          Cnt := Cnt + 1;
       end loop;
    end Move_Cursors;
+
+   procedure Run_The_Show (Deadline : Time.T; Gen : Rand_P.Generator)
+   is
+      Timed_Out : Boolean;
+      Hotplug_List : GMA.Display_Probing.Port_List;
+
+      New_Pipes : GMA.Pipe_Configs := Pipes;
+
+      function Rand_Div (Num : Position_Type) return Position_Type is
+        (case Rand (Gen) mod 4 is
+            when 3 => Rand (Gen) mod Num / 3,
+            when 2 => Rand (Gen) mod Num / 2,
+            when 1 => Rand (Gen) mod Num,
+            when others => 0);
+   begin
+      for Pipe in GMA.Pipe_Index loop
+         if Pipes (Pipe).Port /= GMA.Disabled then
+            Test_Screen
+              (Framebuffer => Pipes (Pipe).Framebuffer,
+               Pipe        => Pipe);
+         end if;
+         for Size in Cursor_Size loop
+            Draw_Cursor (Pipe, Cursors (Pipe) (Size));
+         end loop;
+      end loop;
+
+      Cursor_Infos :=
+        (others =>
+           (Color    => Pipe_Index'Val (Rand (Gen) mod 3),
+            Size     => Cursor_Size'Val (Rand (Gen) mod 3),
+            X_Velo   => 3 * Cursor_Rand (Gen),
+            Y_Velo   => 3 * Cursor_Rand (Gen),
+            others   => Cursor_Rand (Gen)));
+
+      Script_Cursors (Pipes, Hotplug_List, Deadline, Primary_Delay_MS);
+      if Hotplug_List (Hotplug_List'First) /= Disabled then
+         return;
+      end if;
+      Timed_Out := Time.Timed_Out (Deadline);
+      if Timed_Out then
+         return;
+      end if;
+
+      Rand_P.Reset (Gen, Seed);
+      loop
+         GMA.Display_Probing.Hotplug_Events (Hotplug_List);
+         if Hotplug_List (Hotplug_List'First) /= Disabled then
+            return;
+         end if;
+         New_Pipes := Pipes;
+         for Pipe in GMA.Pipe_Index loop
+            exit when Pipes (Pipe).Port = Disabled;
+            declare
+               New_FB : Framebuffer_Type renames
+                  New_Pipes (Pipe).Framebuffer;
+               Cursor : Cursor_Type renames New_Pipes (Pipe).Cursor;
+               Width : constant Width_Type :=
+                  Pipes (Pipe).Framebuffer.Width;
+               Height : constant Height_Type :=
+                  Pipes (Pipe).Framebuffer.Height;
+            begin
+               New_FB.Start_X := Position_Type'Min
+                 (Width - 320, Rand_Div (Width));
+               New_FB.Start_Y := Position_Type'Min
+                 (Height - 320, Rand_Div (Height));
+               New_FB.Width := Width_Type'Max
+                 (320, Width - New_FB.Start_X - Rand_Div (Width));
+               New_FB.Height := Height_Type'Max
+                 (320, Height - New_FB.Start_Y - Rand_Div (Height));
+
+               Cursor.Center_X := Rotated_Width (New_FB) / 2;
+               Cursor.Center_Y := Rotated_Height (New_FB) / 2;
+               GMA.Update_Cursor (Pipe, Cursor);
+            end;
+         end loop;
+         GMA.Dump_Configs (New_Pipes);
+         GMA.Update_Outputs (New_Pipes);
+         Move_Cursors
+           (New_Pipes, Hotplug_List, Deadline, Secondary_Delay_MS, Gen);
+         exit when Hotplug_List (Hotplug_List'First) /= Disabled;
+
+         Timed_Out := Time.Timed_Out (Deadline);
+         exit when Timed_Out;
+      end loop;
+   end Run_The_Show;
 
    procedure Print_Usage
    is
@@ -534,6 +652,10 @@ is
       Initialized : Boolean;
 
       Gen : Rand_P.Generator;
+
+      Deadline : Time.T;
+      Timed_Out : Boolean;
+      Hotplug_List : GMA.Display_Probing.Port_List;
 
       function iopl (level : Interfaces.C.int) return Interfaces.C.int;
       pragma Import (C, iopl, "iopl");
@@ -582,87 +704,41 @@ is
       if Initialized then
          Backup_GTT;
 
-         Prepare_Configs (Rotation, Gen);
+         Deadline := Time.MS_From_Now (Delay_MS);
+         loop
+            Prepare_Configs (Rotation, Gen);
 
-         GMA.Update_Outputs (Pipes);
+            GMA.Update_Outputs (Pipes);
 
-         for Pipe in GMA.Pipe_Index loop
-            if Pipes (Pipe).Port /= GMA.Disabled then
-               Backup_Screen (Pipes (Pipe).Framebuffer);
-               Test_Screen
-                 (Framebuffer => Pipes (Pipe).Framebuffer,
-                  Pipe        => Pipe);
-            end if;
-            for Size in Cursor_Size loop
-               Draw_Cursor (Pipe, Cursors (Pipe) (Size));
-            end loop;
-         end loop;
-
-         Cursor_Infos :=
-           (others =>
-              (Color    => Pipe_Index'Val (Rand (Gen) mod 3),
-               Size     => Cursor_Size'Val (Rand (Gen) mod 3),
-               X_Velo   => 3 * Cursor_Rand (Gen),
-               Y_Velo   => 3 * Cursor_Rand (Gen),
-               others   => Cursor_Rand (Gen)));
-
-         if Delay_MS < Primary_Delay_MS + Secondary_Delay_MS then
-            Script_Cursors (Pipes, Delay_MS);
-         else -- getting bored?
-            Script_Cursors (Pipes, Primary_Delay_MS);
-            Delay_MS := Delay_MS - Primary_Delay_MS;
-            declare
-               New_Pipes : GMA.Pipe_Configs := Pipes;
-
-               function Rand_Div (Num : Position_Type) return Position_Type is
-                 (case Rand (Gen) mod 4 is
-                     when 3 => Rand (Gen) mod Num / 3,
-                     when 2 => Rand (Gen) mod Num / 2,
-                     when 1 => Rand (Gen) mod Num,
-                     when others => 0);
-            begin
-               Rand_P.Reset (Gen, Seed);
-               while Delay_MS >= Secondary_Delay_MS loop
-                  New_Pipes := Pipes;
-                  for Pipe in GMA.Pipe_Index loop
-                     exit when Pipes (Pipe).Port = Disabled;
-                     declare
-                        New_FB : Framebuffer_Type renames
-                           New_Pipes (Pipe).Framebuffer;
-                        Cursor : Cursor_Type renames New_Pipes (Pipe).Cursor;
-                        Width : constant Width_Type :=
-                           Pipes (Pipe).Framebuffer.Width;
-                        Height : constant Height_Type :=
-                           Pipes (Pipe).Framebuffer.Height;
-                     begin
-                        New_FB.Start_X := Position_Type'Min
-                          (Width - 320, Rand_Div (Width));
-                        New_FB.Start_Y := Position_Type'Min
-                          (Height - 320, Rand_Div (Height));
-                        New_FB.Width := Width_Type'Max
-                          (320, Width - New_FB.Start_X - Rand_Div (Width));
-                        New_FB.Height := Height_Type'Max
-                          (320, Height - New_FB.Start_Y - Rand_Div (Height));
-
-                        Cursor.Center_X := Rotated_Width (New_FB) / 2;
-                        Cursor.Center_Y := Rotated_Height (New_FB) / 2;
-                        GMA.Update_Cursor (Pipe, Cursor);
-                     end;
-                  end loop;
-                  GMA.Dump_Configs (New_Pipes);
-                  GMA.Update_Outputs (New_Pipes);
-                  Move_Cursors (New_Pipes, Secondary_Delay_MS, Gen);
-                  Delay_MS := Delay_MS - Secondary_Delay_MS;
+            if not (for all P in Pipe_Index => Pipes (P).Port = Disabled) then
+               for Pipe in GMA.Pipe_Index loop
+                  if Pipes (Pipe).Port /= GMA.Disabled then
+                     Backup_Screen (Pipes (Pipe).Framebuffer);
+                  end if;
                end loop;
-               Move_Cursors (New_Pipes, Delay_MS, Gen);
-            end;
-         end if;
 
-         for Pipe in GMA.Pipe_Index loop
-            if Pipes (Pipe).Port /= GMA.Disabled then
-               Restore_Screen (Pipes (Pipe).Framebuffer);
+               Run_The_Show (Deadline, Gen);
+
+               for Pipe in GMA.Pipe_Index loop
+                  if Pipes (Pipe).Port /= GMA.Disabled then
+                     Restore_Screen (Pipes (Pipe).Framebuffer);
+                  end if;
+               end loop;
+            else
+               loop
+                  Time.M_Delay (HP_Delay_MS);
+                  GMA.Display_Probing.Hotplug_Events (Hotplug_List);
+                  exit when Hotplug_List (Hotplug_List'First) /= Disabled;
+
+                  Timed_Out := Time.Timed_Out (Deadline);
+                  exit when Timed_Out;
+               end loop;
             end if;
+
+            Timed_Out := Time.Timed_Out (Deadline);
+            exit when Timed_Out;
          end loop;
+
          Restore_GTT;
       end if;
    end Main;
