@@ -88,7 +88,7 @@ is
                elsif Port_Cfg.PCH_Port in PCH_HDMI_Port then
                   PCH.HDMI.On (Port_Cfg, FDI_Port);
                elsif Port_Cfg.PCH_Port in PCH_DP_Port then
-                  PCH.DP.On (Port_Cfg, Success);
+                  PCH.DP.On (Port_Cfg, FDI_Port, Success);
                end if;
             end if;
          end;

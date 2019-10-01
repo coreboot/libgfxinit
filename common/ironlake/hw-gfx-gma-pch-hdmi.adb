@@ -72,14 +72,35 @@ is
 
    procedure Off (Port : PCH_HDMI_Port)
    is
+      With_Transcoder_B_Enabled : Boolean := False;
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
+
+      if not Config.Has_Trans_DP_Ctl then
+         -- Ensure transcoder select isn't set to B,
+         -- disabled HDMI may block DP otherwise.
+         Registers.Is_Set_Mask
+           (Register => PCH_HDMI (Port),
+            Mask     => PCH_HDMI_ENABLE or
+                        PCH_TRANSCODER_SELECT (FDI_B),
+            Result   => With_Transcoder_B_Enabled);
+      end if;
 
       Registers.Unset_And_Set_Mask
          (Register   => PCH_HDMI (Port),
           Mask_Unset => PCH_HDMI_MASK,
           Mask_Set   => PCH_HDMI_HSYNC_ACTIVE_HIGH or
                         PCH_HDMI_VSYNC_ACTIVE_HIGH);
+      Registers.Posting_Read (PCH_HDMI (Port));
+
+      if not Config.Has_Trans_DP_Ctl and then With_Transcoder_B_Enabled then
+         -- Reenable with transcoder A selected to switch.
+         Registers.Set_Mask (PCH_HDMI (Port), PCH_HDMI_ENABLE);
+         Registers.Posting_Read (PCH_HDMI (Port));
+         Registers.Unset_Mask (PCH_HDMI (Port), PCH_HDMI_ENABLE);
+         Registers.Posting_Read (PCH_HDMI (Port));
+      end if;
+
    end Off;
 
    procedure All_Off

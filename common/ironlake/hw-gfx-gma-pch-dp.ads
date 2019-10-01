@@ -17,6 +17,7 @@ is
 
    procedure On
      (Port_Cfg : in     Port_Config;
+      FDI_Port : in     FDI_Port_Type;
       Success  :    out Boolean)
    with
       Pre => Port_Cfg.PCH_Port in PCH_DP_Port;

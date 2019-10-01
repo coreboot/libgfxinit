@@ -34,14 +34,24 @@ package body HW.GFX.GMA.PCH.DP is
    DP_CTL_PREEMPH_LEVEL_SET_SHIFT      : constant :=          22;
    DP_CTL_PREEMPH_LEVEL_SET_MASK       : constant := 7 * 2 ** 22;
    DP_CTL_PORT_WIDTH_SHIFT             : constant :=          19;
+   DP_CTL_ENHANCED_FRAMING_ENABLE      : constant := 1 * 2 ** 18;
    DP_CTL_PORT_REVERSAL                : constant := 1 * 2 ** 15;
-   DP_CTL_LINK_TRAIN_MASK              : constant := 7 * 2 **  8;
-   DP_CTL_LINK_TRAIN_PAT1              : constant := 0 * 2 **  8;
-   DP_CTL_LINK_TRAIN_PAT2              : constant := 1 * 2 **  8;
-   DP_CTL_LINK_TRAIN_IDLE              : constant := 2 * 2 **  8;
-   DP_CTL_LINK_TRAIN_NORMAL            : constant := 3 * 2 **  8;
    DP_CTL_AUDIO_OUTPUT_ENABLE          : constant := 1 * 2 **  6;
    DP_CTL_PORT_DETECT                  : constant := 1 * 2 **  2;
+
+   function DP_CTL_LINK_TRAIN_SHIFT return Natural is
+     (if Config.Has_Trans_DP_Ctl then 8 else 28);
+
+   function DP_CTL_LINK_TRAIN_MASK return Word32 is
+     (if Config.Has_Trans_DP_Ctl then 7 * 2 ** 8 else 3 * 2 ** 28);
+
+   function DP_CTL_LINK_TRAIN (Pat : DP_Info.Training_Pattern) return Word32 is
+     (case Pat is
+         when DP_Info.TP_1      => Shift_Left (0, DP_CTL_LINK_TRAIN_SHIFT),
+         when DP_Info.TP_2      => Shift_Left (1, DP_CTL_LINK_TRAIN_SHIFT),
+         when DP_Info.TP_3      => Shift_Left (1, DP_CTL_LINK_TRAIN_SHIFT),
+         when DP_Info.TP_Idle   => Shift_Left (2, DP_CTL_LINK_TRAIN_SHIFT),
+         when DP_Info.TP_None   => Shift_Left (3, DP_CTL_LINK_TRAIN_SHIFT));
 
    function DP_CTL_VSWING_LEVEL_SET
      (VS : DP_Info.DP_Voltage_Swing)
@@ -67,14 +77,6 @@ package body HW.GFX.GMA.PCH.DP is
         (Word32 (Lane_Count_As_Integer (Lane_Count)) - 1,
          DP_CTL_PORT_WIDTH_SHIFT);
    end DP_CTL_PORT_WIDTH;
-
-   type DP_CTL_LINK_TRAIN_Array is array (DP_Info.Training_Pattern) of Word32;
-   DP_CTL_LINK_TRAIN : constant DP_CTL_LINK_TRAIN_Array :=
-     (DP_Info.TP_1      => DP_CTL_LINK_TRAIN_PAT1,
-      DP_Info.TP_2      => DP_CTL_LINK_TRAIN_PAT2,
-      DP_Info.TP_3      => DP_CTL_LINK_TRAIN_PAT2,
-      DP_Info.TP_Idle   => DP_CTL_LINK_TRAIN_IDLE,
-      DP_Info.TP_None   => DP_CTL_LINK_TRAIN_NORMAL);
 
    ----------------------------------------------------------------------------
 
@@ -134,17 +136,43 @@ package body HW.GFX.GMA.PCH.DP is
 
    procedure Off (Port : PCH_DP_Port)
    is
+      With_Transcoder_B_Enabled : Boolean := False;
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
+
+      if not Config.Has_Trans_DP_Ctl then
+         -- Ensure transcoder select isn't set to B,
+         -- disabled DP may block HDMI otherwise.
+         Registers.Is_Set_Mask
+           (Register => DP_CTL (Port),
+            Mask     => DP_CTL_DISPLAY_PORT_ENABLE or
+                        PCH_TRANSCODER_SELECT (FDI_B),
+            Result   => With_Transcoder_B_Enabled);
+      end if;
 
       Registers.Unset_And_Set_Mask
         (Register    => DP_CTL (Port),
          Mask_Unset  => DP_CTL_LINK_TRAIN_MASK,
-         Mask_Set    => DP_CTL_LINK_TRAIN_IDLE);
+         Mask_Set    => DP_CTL_LINK_TRAIN (DP_Info.TP_Idle));
       Registers.Posting_Read (DP_CTL (Port));
 
-      Registers.Write (DP_CTL (Port), 0);
+      Registers.Unset_Mask (DP_CTL (Port), DP_CTL_DISPLAY_PORT_ENABLE);
       Registers.Posting_Read (DP_CTL (Port));
+
+      if not Config.Has_Trans_DP_Ctl and then With_Transcoder_B_Enabled then
+         -- Reenable with transcoder A selected to switch.
+         Registers.Unset_And_Set_Mask
+           (Register    => DP_CTL (Port),
+            Mask_Unset  => PCH_TRANSCODER_SELECT_MASK or
+                           DP_CTL_LINK_TRAIN_MASK,
+            Mask_Set    => DP_CTL_DISPLAY_PORT_ENABLE or
+                           PCH_TRANSCODER_SELECT (FDI_A) or
+                           DP_CTL_LINK_TRAIN (DP_Info.TP_1));
+         Registers.Posting_Read (DP_CTL (Port));
+         Registers.Unset_Mask (DP_CTL (Port), DP_CTL_DISPLAY_PORT_ENABLE);
+         Registers.Posting_Read (DP_CTL (Port));
+      end if;
+
    end Off;
    pragma Warnings (GNATprove, On, "unused variable ""Port""");
    pragma Warnings (GNATprove, On, "unused variable ""Link""");
@@ -153,6 +181,7 @@ package body HW.GFX.GMA.PCH.DP is
 
    procedure On
      (Port_Cfg : in     Port_Config;
+      FDI_Port : in     FDI_Port_Type;
       Success  :    out Boolean)
    is
       function To_DP (Port : PCH_DP_Port) return DP_Port
@@ -176,14 +205,23 @@ package body HW.GFX.GMA.PCH.DP is
          Set_Pattern       => Set_Training_Pattern,
          Set_Signal_Levels => Set_Signal_Levels,
          Off               => Off);
+
+      DP_CTL_Transcoder_Select : constant Word32 :=
+        (if Config.Has_Trans_DP_Ctl
+         then 0 else PCH_TRANSCODER_SELECT (FDI_Port));
+      DP_CTL_Enhanced_Framing : constant Word32 :=
+        (if Config.Has_Trans_DP_Ctl
+         then 0 else DP_CTL_ENHANCED_FRAMING_ENABLE);
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
       Registers.Write
         (Register => DP_CTL (Port_Cfg.PCH_Port),
          Value    => DP_CTL_DISPLAY_PORT_ENABLE or
+                     DP_CTL_Transcoder_Select or
                      DP_CTL_PORT_WIDTH (Port_Cfg.DP.Lane_Count) or
-                     DP_CTL_LINK_TRAIN_PAT1);
+                     DP_CTL_Enhanced_Framing or
+                     DP_CTL_LINK_TRAIN (DP_Info.TP_1));
 
       Training.Train_DP
         (Port     => Port_Cfg.PCH_Port,
