@@ -135,7 +135,7 @@ package body HW.GFX.GMA.PCH.VGA is
          Mask     => SBI_SSCCTL_DISABLE);
 
       Aux_Div     := 16#0000_0000#;
-      Div_Sel     := Word32 (Refclock / Mode.Dotclock - 2);
+      Div_Sel     := Word32 (Refclock / Mode.Dotclock) - 2;
       Phase_Inc   := Word32 ((Refclock * 64) / Mode.Dotclock) and 16#0000_003f#;
       Phase_Dir   := 16#0000_0000#;
 

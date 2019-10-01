@@ -66,7 +66,7 @@ package HW.GFX is
       Rotation => No_Rotation,
       Offset   => 0);
 
-   subtype Frequency_Type is Pos64 range 19_200_000 .. 624_000_000;
+   subtype Frequency_Type is Pos64 range 1_000_000 .. 2_500_000_000;
 
    type DP_Lane_Count is (DP_Lane_Count_1, DP_Lane_Count_2, DP_Lane_Count_4);
    subtype DP_Lane_Count_Type is Pos64 range 1 .. 4;

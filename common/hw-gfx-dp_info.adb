@@ -93,28 +93,11 @@ package body HW.GFX.DP_Info is
    with
       Depends => ((Link, Success) => (Link, Mode))
    is
-      function Link_Pixel_Per_Second
-        (Link_Rate : DP_Bandwidth)
-         return Positive
-      with
-         Post => Pos64 (Link_Pixel_Per_Second'Result) <=
-                  ((DP_Symbol_Rate_Type'Last * 8) / 3) / BPC_Type'First
-      is
-      begin
-         -- Link_Rate is brutto with 8/10 bit symbols; three colors
-         pragma Assert (Positive (DP_Symbol_Rate (Link_Rate)) <= (Positive'Last / 8) * 3);
-         pragma Assert ((Int64 (DP_Symbol_Rate (Link_Rate)) * 8) / 3
-                        >= Int64 (BPC_Type'Last));
-         return Positive
-           (((Int64 (DP_Symbol_Rate (Link_Rate)) * 8) / 3)
-            / Int64 (Mode.BPC));
-      end Link_Pixel_Per_Second;
-
-      Count : Natural;
+      Lane_Pixel_Per_Second : constant Pos64 :=
+        (((DP_Symbol_Rate (Link.Bandwidth) * 8) / 3) / Mode.BPC);
+      Count : constant Pos64 :=
+         Div_Round_Up (Mode.Dotclock, Lane_Pixel_Per_Second);
    begin
-      Count := Link_Pixel_Per_Second (Link.Bandwidth);
-      Count := (Positive (Mode.Dotclock) + Count - 1) / Count;
-
       Success := True;
       case Count is
          when 1      => Link.Lane_Count := DP_Lane_Count_1;
@@ -184,8 +167,8 @@ package body HW.GFX.DP_Info is
       DATA_N_MAX : constant := 16#800000#;
       LINK_N_MAX : constant := 16#100000#;
 
-      subtype Calc_M_Type is Int64 range 0 .. 2 ** 36;
-      subtype Calc_N_Type is Int64 range 0 .. 2 ** 36;
+      subtype Calc_M_Type is Int64 range 0 .. 2 ** 38;
+      subtype Calc_N_Type is Int64 range 0 .. 2 ** 38;
       subtype N_Rounded_Type is Int64 range
          0 .. Int64'Max (DATA_N_MAX, LINK_N_MAX);
 
