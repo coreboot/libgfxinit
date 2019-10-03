@@ -322,7 +322,10 @@ private package HW.GFX.GMA.Config is
 
    -- FIXME: Unknown for Broxton, Linux' i915 contains a fixme too :-D
    HDMI_Max_Clock_24bpp : constant Frequency_Type :=
-     (if Haswell_On then 300_000_000 else 225_000_000);
+     (case Gen is
+         when Generation'First .. G45     => 165_000_000,
+         when Ironlake                    => 225_000_000,
+         when Haswell .. Generation'Last  => 300_000_000);
 
    ----------------------------------------------------------------------------
 
