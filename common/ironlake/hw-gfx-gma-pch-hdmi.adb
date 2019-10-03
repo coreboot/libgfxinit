@@ -66,6 +66,10 @@ is
                         PCH_TRANSCODER_SELECT (FDI_Port) or
                         PCH_HDMI_SDVO_ENCODING_HDMI or
                         Polarity);
+      Registers.Posting_Read (PCH_HDMI (Port_Cfg.PCH_Port));
+      -- Set enable a second time, hardware may miss the first.
+      Registers.Set_Mask (PCH_HDMI (Port_Cfg.PCH_Port), PCH_HDMI_ENABLE);
+      Registers.Posting_Read (PCH_HDMI (Port_Cfg.PCH_Port));
    end On;
 
    ----------------------------------------------------------------------------
@@ -95,6 +99,9 @@ is
 
       if not Config.Has_Trans_DP_Ctl and then With_Transcoder_B_Enabled then
          -- Reenable with transcoder A selected to switch.
+         Registers.Set_Mask (PCH_HDMI (Port), PCH_HDMI_ENABLE);
+         Registers.Posting_Read (PCH_HDMI (Port));
+         -- Set enable a second time, hardware may miss the first.
          Registers.Set_Mask (PCH_HDMI (Port), PCH_HDMI_ENABLE);
          Registers.Posting_Read (PCH_HDMI (Port));
          Registers.Unset_Mask (PCH_HDMI (Port), PCH_HDMI_ENABLE);
