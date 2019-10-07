@@ -81,6 +81,10 @@ package HW.GFX.DP_Info is
       Port     : in     T;
       Success  :    out Boolean);
 
+   procedure Read_eDP_Rates
+     (Link     : in out DP_Link;
+      Port     : in     T);
+
    procedure Preferred_Link_Setting
      (Link        : in out DP_Link;
       Mode        : in     Mode_Type;

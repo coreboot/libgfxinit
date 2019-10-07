@@ -51,6 +51,10 @@ package body HW.GFX.GMA.Connector_Info is
             Port     => DP_Port,
             Success  => Success);
          if Success then
+            DP_Info.Read_eDP_Rates
+              (Link     => Port_Cfg.DP,
+               Port     => DP_Port);
+
             DP_Info.Preferred_Link_Setting
               (Link     => Port_Cfg.DP,
                Mode     => Port_Cfg.Mode,

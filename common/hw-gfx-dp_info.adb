@@ -20,6 +20,7 @@ with GNAT.Source_Info;
 with HW.GFX.DP_Defs;
 
 use type HW.Word8;
+use type HW.Word16;
 
 package body HW.GFX.DP_Info is
 
@@ -85,6 +86,93 @@ package body HW.GFX.DP_Info is
          pragma Debug (Debug.New_Line);
       end if;
    end Read_Caps;
+
+   function Read_LE16
+     (Raw_Payload : DP_Defs.Aux_Payload;
+      Offset      : DP_Defs.Aux_Payload_Index)
+      return Word16
+   with
+      Pre => Offset < DP_Defs.Aux_Payload_Index'Last
+   is
+   begin
+      return Shift_Left (Word16 (Raw_Payload (Offset + 1)), 8) or
+             Word16 (Raw_Payload (Offset));
+   end Read_LE16;
+
+   procedure Read_eDP_Rates
+     (Link     : in out DP_Link;
+      Port     : in     T)
+   is
+      Data : DP_Defs.Aux_Payload;
+      Length : DP_Defs.Aux_Payload_Length;
+      Max_Rate : Natural;
+      Success  : Boolean;
+
+      Caps_Size : constant := 3;
+      Rates_Size : constant := 16;
+      eDP_Rev_1_4 : constant := 3;
+   begin
+      pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
+
+      Length := Caps_Size;
+      Aux_Ch.Aux_Read
+          (Port    => Port,
+          Address  => 16#00700#,
+          Length   => Length,
+          Data     => Data,
+          Success  => Success);
+      Success := Success and Length = Caps_Size;
+      if not Success or Data (0) < eDP_Rev_1_4 then
+         return;
+      end if;
+
+      Length := Rates_Size;
+      Aux_Ch.Aux_Read
+        (Port     => Port,
+         Address  => 16#00010#,
+         Length   => Length,
+         Data     => Data,
+         Success  => Success);
+      Success := Success and Length = Rates_Size;
+      if not Success then
+         return;
+      end if;
+
+      pragma Debug (Debug.New_Line);
+      pragma Debug (Debug.Put_Line ("DPCD eDP 1.4+ link rates:"));
+
+      -- TODO: support individual link rates (storing them all)
+
+      Max_Rate := Natural'First;
+      for I in 0 .. Length / 2 - 1 loop
+         pragma Loop_Invariant (Max_Rate <= Natural (Word16'Last));
+         declare
+            Rate : constant Word16 := Read_LE16 (Data, I * 2);
+         begin
+            exit when Rate = 0; -- prematurely exit the loop
+            pragma Debug (Debug.Put (" - "));
+            pragma Debug (Debug.Put_Int8 (Int8 (I)));
+            pragma Debug (Debug.Put (": "));
+            pragma Debug (Debug.Put_Word16 (Rate));
+            pragma Debug (Debug.New_Line);
+            if Natural (Rate) > Max_Rate then
+               Max_Rate := Natural (Rate);
+            end if;
+         end;
+      end loop;
+      pragma Debug (Debug.New_Line);
+
+      -- convert to KHz
+      Max_Rate := Max_Rate * 20;
+
+      if Max_Rate >= 540_000 then
+         Link.Receiver_Caps.Max_Link_Rate := DP_Bandwidth_5_4;
+      elsif Max_Rate >= 270_000 then
+         Link.Receiver_Caps.Max_Link_Rate := DP_Bandwidth_2_7;
+      elsif Max_Rate >= 162_000 then
+         Link.Receiver_Caps.Max_Link_Rate := DP_Bandwidth_1_62;
+      end if;
+   end Read_eDP_Rates;
 
    procedure Minimum_Lane_Count
      (Link        : in out DP_Link;
