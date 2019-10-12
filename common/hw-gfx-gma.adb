@@ -703,8 +703,11 @@ is
    function Stolen_Size_Gen6 (GGC : Word16) return Stolen_Size_Range is
      (Stolen_Size_Range (Shift_Right (GGC, 3) and 16#1f#) * 32 * 2 ** 20);
 
+   function GGMS_Gen8 (GGC : Word16) return Natural is
+     (Natural (Shift_Right (GGC, 6) and 16#03#));
    function GTT_Size_Gen8 (GGC : Word16) return Natural is
-     (Natural (Shift_Right (GGC, 6) and 16#03#) * 2 ** 20);
+     (if GGMS_Gen8 (GGC) /= 0 then
+         Natural (Shift_Left (Word32'(1), 20 + GGMS_Gen8 (GGC))) else 0);
 
    function GMS_Gen8 (GGC : Word16) return Stolen_Size_Range is
      (Stolen_Size_Range (Shift_Right (GGC, 8) and 16#ff#));
