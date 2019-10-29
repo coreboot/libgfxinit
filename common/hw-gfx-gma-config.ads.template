@@ -430,6 +430,17 @@ private package HW.GFX.GMA.Config is
    function Is_Coffee_Lake (Device_Id : Word16) return Boolean is
      ((Device_Id and 16#fff0#) = 16#3e90#);
 
+   function Is_Comet_Lake_U (Device_Id : Word16) return Boolean is
+     ((Device_Id and 16#ff9f#) = 16#9b01# or
+      (Device_Id and 16#ff9f#) = 16#9b8a# or
+      (Device_Id and 16#ff9f#) = 16#9b8c#);
+   function Is_Comet_Lake (Device_Id : Word16) return Boolean is
+     ((Device_Id and 16#ff8f#) = 16#9b82# or
+      (Device_Id and 16#ff8f#) = 16#9b84# or
+      (Device_Id and 16#ff8f#) = 16#9b85# or
+      (Device_Id and 16#ff8f#) = 16#9b86# or
+      (Device_Id and 16#ff8f#) = 16#9b88#);
+
    function Is_GPU (Device_Id : Word16; CPU : CPU_Type; CPU_Var : CPU_Variant)
       return Boolean is
      (case CPU is
@@ -454,10 +465,12 @@ private package HW.GFX.GMA.Config is
          when Kabylake     => (case CPU_Var is
                                  when Normal =>
                                     Is_Kaby_Lake (Device_Id) or
-                                    Is_Coffee_Lake (Device_Id),
+                                    Is_Coffee_Lake (Device_Id) or
+                                    Is_Comet_Lake (Device_Id),
                                  when ULT    =>
                                     Is_Kaby_Lake_U (Device_Id) or
-                                    Is_Coffee_Lake_U (Device_Id),
+                                    Is_Coffee_Lake_U (Device_Id) or
+                                    Is_Comet_Lake_U (Device_Id),
                                  when ULX    =>
                                     Is_Kaby_Lake_Y (Device_Id) or
                                     Is_Kaby_Lake_Y_AML (Device_Id) or
