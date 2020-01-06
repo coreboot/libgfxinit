@@ -76,6 +76,11 @@ is
    PCH_PP_CONTROL_POWER_DOWN_ON_RESET  : constant := 16#00_0001# * 2 **  1;
    PCH_PP_CONTROL_TARGET_ON            : constant := 16#00_0001# * 2 **  0;
 
+   BXT_PP_CONTROL_PWR_CYC_DELAY_SHIFT  : constant :=                     4;
+   BXT_PP_CONTROL_PWR_CYC_DELAY_MASK   : constant := 16#00_001f# * 2 **  4;
+   function BXT_PP_CONTROL_PWR_CYC_DELAY (US : Natural) return Word32 is
+     (Shift_Left (Div_Round_Up32 (US, 100_000) + 1, BXT_PP_CONTROL_PWR_CYC_DELAY_SHIFT));
+
    PCH_PP_ON_DELAYS_PORT_SELECT_MASK   : constant := 16#00_0003# * 2 ** 30;
    PCH_PP_ON_DELAYS_PORT_SELECT_LVDS   : constant := 16#00_0000# * 2 ** 30;
    PCH_PP_ON_DELAYS_PORT_SELECT_DP_A   : constant := 16#00_0001# * 2 ** 30;
@@ -206,7 +211,12 @@ is
          Delays_US (BL_Off_To_Power_Down) := 100 * Natural
            (Power_Delay and PCH_PP_OFF_DELAYS_BL_OFF_PWR_DOWN_MASK);
 
-         Registers.Read (Panel_PP_Regs.DIVISOR, Power_Delay);
+         if Config.Has_PP_Divisor_Reg then
+            Registers.Read (Panel_PP_Regs.DIVISOR, Power_Delay);
+         else
+            Registers.Read (Panel_PP_Regs.CONTROL, Power_Delay);
+            Power_Delay := Shift_Right (Power_Delay, BXT_PP_CONTROL_PWR_CYC_DELAY_SHIFT);
+         end if;
          if (Power_Delay and PCH_PP_DIVISOR_PWR_CYC_DELAY_MASK) > 1 then
             Delays_US (Power_Cycle_Delay) := 100_000 * (Natural
               (Power_Delay and PCH_PP_DIVISOR_PWR_CYC_DELAY_MASK) - 1);
@@ -247,11 +257,19 @@ is
                            PCH_PP_OFF_DELAYS_BL_OFF_PWR_DOWN
                              (Delays_US (BL_Off_To_Power_Down)));
 
-         Registers.Unset_And_Set_Mask
-           (Register    => Panel_PP_Regs.DIVISOR,
-            Mask_Unset  => PCH_PP_DIVISOR_PWR_CYC_DELAY_MASK,
-            Mask_Set    => PCH_PP_DIVISOR_PWR_CYC_DELAY
-                             (Delays_US (Power_Cycle_Delay)));
+         if Config.Has_PP_Divisor_Reg then
+            Registers.Unset_And_Set_Mask
+              (Register    => Panel_PP_Regs.DIVISOR,
+               Mask_Unset  => PCH_PP_DIVISOR_PWR_CYC_DELAY_MASK,
+               Mask_Set    => PCH_PP_DIVISOR_PWR_CYC_DELAY
+                                (Delays_US (Power_Cycle_Delay)));
+         else
+            Registers.Unset_And_Set_Mask
+              (Register    => Panel_PP_Regs.CONTROL,
+               Mask_Unset  => BXT_PP_CONTROL_PWR_CYC_DELAY_MASK,
+               Mask_Set    => BXT_PP_CONTROL_PWR_CYC_DELAY
+                                (Delays_US (Power_Cycle_Delay)));
+         end if;
       end if;
 
       if Config.Has_PP_Write_Protection then
