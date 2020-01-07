@@ -76,7 +76,7 @@ is
             declare
                DP_Port : constant GMA.DP_Port :=
                  (case Port is
-                     when Internal  => DP_A,
+                     when eDP       => DP_A,
                      when DP1       => DP_B,
                      when DP2       => DP_C,
                      when DP3       => DP_D,
@@ -118,7 +118,7 @@ is
       Success := Config.Valid_Port (Port);
 
       if Success then
-         if Port = Internal then
+         if Port in Internal_Port_Type then
             Panel.Wait_On;
          end if;
          Read_EDID (Raw_EDID, Port, Success);
@@ -176,7 +176,7 @@ is
       -- Turn panel on early to probe other ports during the power on delay.
       for Idx in Port_List_Range loop
          exit when Ports (Idx) = Disabled;
-         if Ports (Idx) = Internal then
+         if Ports (Idx) in Internal_Port_Type then
             Panel.On (Wait => False);
             Probe_Internal := True;
             exit;
@@ -211,7 +211,9 @@ is
       end if;
 
       -- Turn panel power off if probing failed.
-      if Probe_Internal and not Port_Configured (Configs, Internal) then
+      if Probe_Internal and not
+         (Port_Configured (Configs, eDP) or Port_Configured (Configs, LVDS))
+      then
          Panel.Off;
       end if;
    end Scan_Ports;

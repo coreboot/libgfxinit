@@ -55,7 +55,8 @@ is
 
    procedure Initialize
    is
-      Internal_Detected,
+      LVDS_Detected,
+      eDP_Detected,
       HDMI_Detected,
       DP_Detected : Boolean;
 
@@ -71,23 +72,19 @@ is
    begin
       Config.Valid_Port (Analog) := True;
 
-      case Config.Internal_Display is
-         when LVDS =>
-            -- PCH_LVDS
-            Registers.Is_Set_Mask
-              (Register => Registers.PCH_LVDS,
-               Mask     => PCH_LVDS_PORT_DETECTED,
-               Result   => Internal_Detected);
-         when DP =>
-            -- eDP
-            Registers.Is_Set_Mask
-              (Register => Registers.DP_CTL_A,
-               Mask     => DP_PORT_DETECTED,
-               Result   => Internal_Detected);
-         when None =>
-            Internal_Detected := False;
-      end case;
-      Config.Valid_Port (Internal) := Internal_Detected;
+      -- PCH_LVDS
+      Registers.Is_Set_Mask
+        (Register => Registers.PCH_LVDS,
+         Mask     => PCH_LVDS_PORT_DETECTED,
+         Result   => LVDS_Detected);
+      Config.Valid_Port (LVDS) := LVDS_Detected;
+
+      -- eDP
+      Registers.Is_Set_Mask
+        (Register => Registers.DP_CTL_A,
+         Mask     => DP_PORT_DETECTED,
+         Result   => eDP_Detected);
+      Config.Valid_Port (eDP) := eDP_Detected;
 
       -- PCH_HDMI_[BCD], PCH_DP_[BCD] share hotplug registers
       for PCH_Port in PCH_HDMI_Port loop

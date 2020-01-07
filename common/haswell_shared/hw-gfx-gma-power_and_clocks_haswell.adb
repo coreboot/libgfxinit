@@ -203,9 +203,9 @@ package body HW.GFX.GMA.Power_And_Clocks_Haswell is
    begin
       return
          (Config.Use_PDW_For_EDP_Scaling and then
-          (Primary.Port = Internal and Requires_Scaling (Primary)))
+          (Primary.Port = eDP and Requires_Scaling (Primary)))
          or
-         (Primary.Port /= Disabled and Primary.Port /= Internal)
+         (Primary.Port /= Disabled and Primary.Port /= eDP)
          or
          Checked_Configs (Secondary).Port /= Disabled
          or

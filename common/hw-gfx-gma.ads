@@ -51,7 +51,8 @@ is
 
    type Port_Type is
      (Disabled,
-      Internal,
+      LVDS,
+      eDP,
       DP1,
       DP2,
       DP3,
@@ -61,6 +62,7 @@ is
       Analog);
    subtype Active_Port_Type is Port_Type
       range Port_Type'Succ (Disabled) .. Port_Type'Last;
+   subtype Internal_Port_Type is Port_Type range LVDS .. eDP;
 
    type Cursor_Mode is (No_Cursor, ARGB_Cursor);
    type Cursor_Size is (Cursor_64x64, Cursor_128x128, Cursor_256x256);

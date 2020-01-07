@@ -87,41 +87,37 @@ is
          Config.Valid_Port (Analog) := not (DDI_A_X4 or DAC_Disabled);
       end if;
 
-      if Config.Internal_Is_EDP then
-         -- DDI_A
-         if Config.Has_Presence_Straps then
-            Registers.Is_Set_Mask
-              (Register => Registers.DDI_BUF_CTL_A,
-               Mask     => DDI_PORT_DETECTED (DIGI_A),
-               Result   => Internal_Detected);
-         else
-            Internal_Detected := True; -- XXX: Linux' i915 contains a fixme.
-         end if;
-         if Internal_Detected then
-            if Config.Has_HOTPLUG_CTL then
-               Registers.Set_Mask
-                 (Register => Registers.HOTPLUG_CTL,
-                  Mask     => HOTPLUG_CTL_DDI_A_HPD_INPUT_ENABLE or
-                              HOTPLUG_CTL_DDI_A_HPD_STATUS);   -- clear status
-               if Config.Has_SHOTPLUG_CTL_A then
-                  -- Have to enable south hotplug too on SoCs.
-                  Registers.Unset_And_Set_Mask
-                    (Register    => Registers.SHOTPLUG_CTL,
-                     Mask_Unset  => SHOTPLUG_CTL_DETECT_MASK,
-                     Mask_Set    => SHOTPLUG_CTL_HPD_INPUT_ENABLE (DIGI_A));
-               end if;
-            else
+      -- DDI_A
+      if Config.Has_Presence_Straps then
+         Registers.Is_Set_Mask
+           (Register => Registers.DDI_BUF_CTL_A,
+            Mask     => DDI_PORT_DETECTED (DIGI_A),
+            Result   => Internal_Detected);
+      else
+         Internal_Detected := True; -- XXX: Linux' i915 contains a fixme.
+      end if;
+      if Internal_Detected then
+         if Config.Has_HOTPLUG_CTL then
+            Registers.Set_Mask
+              (Register => Registers.HOTPLUG_CTL,
+               Mask     => HOTPLUG_CTL_DDI_A_HPD_INPUT_ENABLE or
+                           HOTPLUG_CTL_DDI_A_HPD_STATUS);   -- clear status
+            if Config.Has_SHOTPLUG_CTL_A then
+               -- Have to enable south hotplug too on SoCs.
                Registers.Unset_And_Set_Mask
                  (Register    => Registers.SHOTPLUG_CTL,
                   Mask_Unset  => SHOTPLUG_CTL_DETECT_MASK,
-                  Mask_Set    => SHOTPLUG_CTL_HPD_INPUT_ENABLE (DIGI_A) or
-                                 SHOTPLUG_CTL_HPD_STATUS (DIGI_A));  -- clear
+                  Mask_Set    => SHOTPLUG_CTL_HPD_INPUT_ENABLE (DIGI_A));
             end if;
+         else
+            Registers.Unset_And_Set_Mask
+              (Register    => Registers.SHOTPLUG_CTL,
+               Mask_Unset  => SHOTPLUG_CTL_DETECT_MASK,
+               Mask_Set    => SHOTPLUG_CTL_HPD_INPUT_ENABLE (DIGI_A) or
+                              SHOTPLUG_CTL_HPD_STATUS (DIGI_A));  -- clear
          end if;
-      else
-         Internal_Detected := False;
       end if;
-      Config.Valid_Port (Internal) := Internal_Detected;
+      Config.Valid_Port (eDP) := Internal_Detected;
 
       -- DDI_[BCD]
       for Port in Ext_Digital_Port range

@@ -146,8 +146,6 @@ private package HW.GFX.GMA.Config is
    Have_HDMI_Buf_Override  : constant Boolean := DDI_HDMI_Buffer_Translation >= 0;
    Default_MMIO_Base_Set   : constant Boolean := Default_MMIO_Base /= 0;
 
-   Has_Internal_Display    : constant Boolean := Internal_Display /= None;
-   Internal_Is_LVDS        : constant Boolean := Internal_Display = LVDS;
    Internal_Is_EDP         : constant Boolean := Internal_Display = DP;
    Have_DVI_I              : constant Boolean := Analog_I2C_Port /= PCH_DAC;
 
@@ -265,7 +263,8 @@ private package HW.GFX.GMA.Config is
    type FDI_Per_Port is array (Port_Type) of Boolean;
    Is_FDI_Port : <hswvar> FDI_Per_Port :=
      (Disabled       => False,
-      Internal       => Gen_Ironlake and Internal_Is_LVDS,
+      eDP            => False,
+      LVDS           => Gen_Ironlake,
       DP1 .. HDMI3   => Gen_Ironlake,
       Analog         => Has_PCH_DAC);
 

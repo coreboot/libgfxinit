@@ -32,13 +32,14 @@ is
         (case Config.Gen is
             when G45 =>                -- everything on GMCH
                (case Port is
-                   when Internal     => LVDS,
+                   when LVDS         => LVDS,
+                   when eDP          => DIGI_A, -- n/a, actually
                    when HDMI1 | DP1  => DIGI_B,
                    when HDMI2 | DP2  => DIGI_C,
                    when HDMI3 | DP3  => DIGI_D,
                    when Analog       => VGA),
             when Ironlake =>           -- everything but eDP through FDI/PCH
-              (if Config.Internal_Is_EDP and then Port = Internal then
+              (if Port = eDP then
                   DIGI_A
                else
                  (case Pipe is   -- FDIs are fixed to the CPU pipe
@@ -47,7 +48,8 @@ is
                      when Tertiary  => DIGI_D)),
             when others =>             -- everything but VGA directly on CPU
               (case Port is
-                  when Internal     => DIGI_A,  -- LVDS not available
+                  when LVDS         => LVDS,    -- n/a, actually
+                  when eDP          => DIGI_A,
                   when HDMI1 | DP1  => DIGI_B,
                   when HDMI2 | DP2  => DIGI_C,
                   when HDMI3 | DP3  => DIGI_D,
@@ -59,7 +61,8 @@ is
    begin
       return
         (case Port is
-            when Internal  => PCH_LVDS,   -- will be ignored if Internal is DP
+            when LVDS      => PCH_LVDS,
+            when eDP       => PCH_LVDS,   -- n/a, actually
             when Analog    => PCH_DAC,
             when HDMI1     => PCH_HDMI_B,
             when HDMI2     => PCH_HDMI_C,
@@ -74,7 +77,8 @@ is
    begin
       return Display_Type'
         (case Port is
-            when Internal        => Config.Internal_Display,
+            when LVDS            => LVDS,
+            when eDP             => DP,
             when Analog          => VGA,
             when HDMI1 .. HDMI3  => HDMI,
             when DP1 .. DP3      => DP);

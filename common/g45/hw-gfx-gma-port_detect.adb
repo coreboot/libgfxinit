@@ -74,7 +74,7 @@ is
 
    begin
       Config.Valid_Port (Analog) := True;
-      Config.Valid_Port (Internal) := Config.Internal_Is_LVDS;
+      Config.Valid_Port (LVDS)   := Config.GMCH_GM45;
       for HDMI_Port in GMCH_HDMI_Port loop
          Registers.Is_Set_Mask
            (Register => GMCH_HDMI (HDMI_Port),

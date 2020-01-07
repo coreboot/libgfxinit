@@ -42,7 +42,7 @@ package body HW.GFX.GMA.Power_And_Clocks_Ironlake is
                      PCH_DREF_CONTROL_120MHZ_SSC_MODULATION_EN);
       Registers.Posting_Read (Registers.PCH_DREF_CONTROL);
       Time.U_Delay (1);
-      if Config.Internal_Is_EDP then   -- TODO: check for presence
+      if Config.Valid_Port (eDP) then
          -- always use spread spectrum clock for CPU output
          Registers.Set_Mask
            (Register => Registers.PCH_DREF_CONTROL,

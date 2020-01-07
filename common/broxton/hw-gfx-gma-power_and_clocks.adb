@@ -157,9 +157,9 @@ package body HW.GFX.GMA.Power_And_Clocks is
    is
    begin
       return (case PD is
-         when DDI_A     => Configs (Primary).Port = Internal or
-                           Configs (Secondary).Port = Internal or
-                           Configs (Tertiary).Port = Internal,
+         when DDI_A     => Configs (Primary).Port = eDP or
+                           Configs (Secondary).Port = eDP or
+                           Configs (Tertiary).Port = eDP,
          when DDI_BC    => Configs (Primary).Port = HDMI1 or
                            Configs (Primary).Port = DP1 or
                            Configs (Secondary).Port = HDMI1 or
@@ -173,7 +173,7 @@ package body HW.GFX.GMA.Power_And_Clocks is
                            Configs (Tertiary).Port = HDMI2 or
                            Configs (Tertiary).Port = DP2,
          when PW2       => (Configs (Primary).Port /= Disabled and
-                            Configs (Primary).Port /= Internal) or
+                            Configs (Primary).Port /= eDP) or
                            Configs (Secondary).Port /= Disabled or
                            Configs (Tertiary).Port /= Disabled);
    end Need_PD;

@@ -57,7 +57,8 @@ is
    type Port_Name_Array is array (Port_Type) of Port_Name;
    Port_Names : constant Port_Name_Array :=
      (Disabled => "Disabled",
-      Internal => "Internal",
+      LVDS     => "LVDS    ",
+      eDP      => "eDP     ",
       DP1      => "DP1     ",
       DP2      => "DP2     ",
       DP3      => "DP3     ",
@@ -178,7 +179,7 @@ is
            ("Enabled port " & Port_Names (Pipe_Cfg.Port)));
       else
          Wait_For_HPD (Pipe_Cfg.Port) := True;
-         if Pipe_Cfg.Port = Internal then
+         if Pipe_Cfg.Port in Internal_Port_Type then
             Panel.Off;
          end if;
       end if;
@@ -236,7 +237,7 @@ is
             Cur_Config.Mode /= New_Config.Mode
             or else
             (Config.Use_PDW_For_EDP_Scaling and then
-             (Cur_Config.Port = Internal and
+             (Cur_Config.Port = eDP and
               Requires_Scaling (Cur_Config) /= Requires_Scaling (New_Config)))
             or else
             (Config.Has_GMCH_PFIT_CONTROL and then

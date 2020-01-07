@@ -178,9 +178,9 @@ package body HW.GFX.GMA.Power_And_Clocks_Skylake is
    is
    begin
       return (case PD is
-         when DDI_AE    => Configs (Primary).Port = Internal or
-                           Configs (Secondary).Port = Internal or
-                           Configs (Tertiary).Port = Internal,
+         when DDI_AE    => Configs (Primary).Port = eDP or
+                           Configs (Secondary).Port = eDP or
+                           Configs (Tertiary).Port = eDP,
          when DDI_B     => Configs (Primary).Port = HDMI1 or
                            Configs (Primary).Port = DP1 or
                            Configs (Secondary).Port = HDMI1 or
@@ -200,7 +200,7 @@ package body HW.GFX.GMA.Power_And_Clocks_Skylake is
                            Configs (Tertiary).Port = HDMI3 or
                            Configs (Tertiary).Port = DP3,
          when PW2       => (Configs (Primary).Port /= Disabled and
-                            Configs (Primary).Port /= Internal) or
+                            Configs (Primary).Port /= eDP) or
                            Configs (Secondary).Port /= Disabled or
                            Configs (Tertiary).Port /= Disabled);
    end Need_PD;
