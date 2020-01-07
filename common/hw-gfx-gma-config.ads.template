@@ -43,7 +43,7 @@ private package HW.GFX.GMA.Config is
 
    CPU_Var : constant Gen_CPU_Variant := <<CPU_VARIANT>>;
 
-   Internal_Display : constant Internal_Type := <<INTERNAL_PORT>>;
+   Panel_1_Port : constant Port_Type := <<PANEL_1_PORT>>;
 
    Analog_I2C_Port : constant PCH_Port := <<ANALOG_I2C_PORT>>;
 
@@ -146,7 +146,6 @@ private package HW.GFX.GMA.Config is
    Have_HDMI_Buf_Override  : constant Boolean := DDI_HDMI_Buffer_Translation >= 0;
    Default_MMIO_Base_Set   : constant Boolean := Default_MMIO_Base /= 0;
 
-   Internal_Is_EDP         : constant Boolean := Internal_Display = DP;
    Have_DVI_I              : constant Boolean := Analog_I2C_Port /= PCH_DAC;
 
    Has_Presence_Straps           : <genbool> := not Gen_Broxton;

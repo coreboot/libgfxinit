@@ -217,11 +217,13 @@ is
 
       if Override_Delays then
          if Config.Has_PP_Port_Select then
-            if Config.Internal_Is_EDP then
-               Port_Select := PCH_PP_ON_DELAYS_PORT_SELECT_DP_A;
-            else
-               Port_Select := PCH_PP_ON_DELAYS_PORT_SELECT_LVDS;
-            end if;
+            Port_Select :=
+              (case Config.Panel_1_Port is
+                  when LVDS         => PCH_PP_ON_DELAYS_PORT_SELECT_LVDS,
+                  when eDP          => PCH_PP_ON_DELAYS_PORT_SELECT_DP_A,
+                  when DP2 | HDMI2  => PCH_PP_ON_DELAYS_PORT_SELECT_DP_C,
+                  when DP3 | HDMI3  => PCH_PP_ON_DELAYS_PORT_SELECT_DP_D,
+                  when others       => 0);
          else
             Port_Select := 0;
          end if;
