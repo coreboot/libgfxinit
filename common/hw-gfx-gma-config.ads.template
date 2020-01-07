@@ -43,7 +43,8 @@ private package HW.GFX.GMA.Config is
 
    CPU_Var : constant Gen_CPU_Variant := <<CPU_VARIANT>>;
 
-   Panel_1_Port : constant Port_Type := <<PANEL_1_PORT>>;
+   Panel_Ports : constant array (Valid_Panels) of Port_Type :=
+     (Panel_1 => <<PANEL_1_PORT>>);
 
    Analog_I2C_Port : constant PCH_Port := <<ANALOG_I2C_PORT>>;
 

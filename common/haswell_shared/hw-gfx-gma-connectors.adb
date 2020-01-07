@@ -60,9 +60,7 @@ package body HW.GFX.GMA.Connectors is
       if Port_Cfg.Port in Digital_Port then
          DDI.Post_On (Port_Cfg);
 
-         if Port_Cfg.Port = DIGI_A then
-            Panel.Backlight_On;
-         end if;
+         Panel.Backlight_On (Port_Cfg.Panel);
          Success := True;
       else
          Success := False; -- Should not happen
@@ -76,10 +74,8 @@ package body HW.GFX.GMA.Connectors is
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
-      if Port_Cfg.Port = DIGI_A then
-         Panel.Backlight_Off;
-         Panel.Off;
-      end if;
+      Panel.Backlight_Off (Port_Cfg.Panel);
+      Panel.Off (Port_Cfg.Panel);
    end Pre_Off;
 
    procedure Post_Off (Port_Cfg : Port_Config)
@@ -96,8 +92,10 @@ package body HW.GFX.GMA.Connectors is
    procedure Pre_All_Off
    is
    begin
-      Panel.Backlight_Off;
-      Panel.Off;
+      for P in Valid_Panels loop
+         Panel.Backlight_Off (P);
+         Panel.Off (P);
+      end loop;
    end Pre_All_Off;
 
    procedure Post_All_Off

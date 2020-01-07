@@ -70,7 +70,7 @@ is
 
       if Port_Cfg.Port = DIGI_A then
          EDP.Pre_Training;
-         Panel.On (Wait => True);
+         Panel.On (Port_Cfg.Panel, Wait => True);
          EDP.Post_On (Port_Cfg.DP, Success);
       elsif Port_Cfg.Port in FDI.GPU_FDI_Port then
          declare
@@ -97,8 +97,8 @@ is
       end if;
 
       if Success and Is_Internal (Port_Cfg) then
-         Panel.On (Wait => False);
-         Panel.Backlight_On;
+         Panel.On (Port_Cfg.Panel, Wait => False);
+         Panel.Backlight_On (Port_Cfg.Panel);
       end if;
    end Post_On;
 
@@ -110,8 +110,8 @@ is
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
       if Is_Internal (Port_Cfg) then
-         Panel.Backlight_Off;
-         Panel.Off;
+         Panel.Backlight_Off (Port_Cfg.Panel);
+         Panel.Off (Port_Cfg.Panel);
       end if;
    end Pre_Off;
 
@@ -154,8 +154,10 @@ is
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
-      Panel.Backlight_Off;
-      Panel.Off;
+      for P in Valid_Panels loop
+         Panel.Backlight_Off (P);
+         Panel.Off (P);
+      end loop;
    end Pre_All_Off;
 
    procedure Post_All_Off

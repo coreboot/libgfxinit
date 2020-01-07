@@ -253,11 +253,15 @@ private
    subtype PCH_HDMI_Port is PCH_Port range PCH_HDMI_B .. PCH_HDMI_D;
    subtype PCH_DP_Port is PCH_Port range PCH_DP_B .. PCH_DP_D;
 
+   type Panel_Control is (No_Panel, Panel_1);
+   subtype Valid_Panels is Panel_Control range Panel_1 .. Panel_1;
+
    type Port_Config is
       record
          Port     : GPU_Port;
          PCH_Port : GMA.PCH_Port;
          Display  : Display_Type;
+         Panel    : Panel_Control;
          Mode     : Mode_Type;
          Is_FDI   : Boolean;
          FDI      : DP_Link;

@@ -38,12 +38,10 @@ package body HW.GFX.GMA.Connector_Info is
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
       if Port_Cfg.Display = DP then
-         if Port_Cfg.Port = DIGI_A then
-            if GMA.Config.Use_PP_VDD_Override then
-               Panel.VDD_Override;
-            else
-               Panel.On;
-            end if;
+         if GMA.Config.Use_PP_VDD_Override then
+            Panel.VDD_Override (Port_Cfg.Panel);
+         else
+            Panel.On (Port_Cfg.Panel);
          end if;
 
          DP_Info.Read_Caps

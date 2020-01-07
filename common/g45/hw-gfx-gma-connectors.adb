@@ -29,12 +29,6 @@ is
    procedure Post_Reset_Off is null;
    procedure Initialize is null;
 
-   function Is_Internal (Port_Cfg : Port_Config) return Boolean
-   is
-   begin
-      return Port_Cfg.Port = LVDS;
-   end Is_Internal;
-
    ----------------------------------------------------------------------------
 
    procedure Pre_On
@@ -69,10 +63,8 @@ is
          end if;
       end if;
 
-      if Is_Internal (Port_Cfg) then
-         Panel.On (Wait => False);
-         Panel.Backlight_On;
-      end if;
+      Panel.On (Port_Cfg.Panel, Wait => False);
+      Panel.Backlight_On (Port_Cfg.Panel);
    end Post_On;
 
    ----------------------------------------------------------------------------
@@ -82,10 +74,8 @@ is
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
-      if Is_Internal (Port_Cfg) then
-         Panel.Backlight_Off;
-         Panel.Off;
-      end if;
+      Panel.Backlight_Off (Port_Cfg.Panel);
+      Panel.Off (Port_Cfg.Panel);
    end Pre_Off;
 
    procedure Post_Off (Port_Cfg : Port_Config)
@@ -110,8 +100,10 @@ is
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
-      Panel.Backlight_Off;
-      Panel.Off;
+      for P in Valid_Panels loop
+         Panel.Backlight_Off (P);
+         Panel.Off (P);
+      end loop;
    end Pre_All_Off;
 
    procedure Post_All_Off

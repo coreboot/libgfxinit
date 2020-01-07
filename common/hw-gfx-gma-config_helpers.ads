@@ -13,6 +13,7 @@
 --
 
 with HW;
+with HW.GFX.GMA.Config;
 
 private package HW.GFX.GMA.Config_Helpers
 is
@@ -25,6 +26,8 @@ is
    function To_PCH_Port (Port : Active_Port_Type) return PCH_Port;
 
    function To_Display_Type (Port : Active_Port_Type) return Display_Type;
+
+   function To_Panel (Port : Active_Port_Type) return Panel_Control;
 
    procedure Fill_Port_Config
      (Port_Cfg :    out Port_Config;

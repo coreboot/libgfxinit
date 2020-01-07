@@ -40,22 +40,22 @@ is
 
    ----------------------------------------------------------------------------
 
-   procedure VDD_Override;
+   procedure VDD_Override (Panel : Panel_Control);
 
-   procedure On (Wait : Boolean := True);
+   procedure On (Panel : Panel_Control; Wait : Boolean := True);
 
-   procedure Wait_On;
+   procedure Wait_On (Panel : Panel_Control);
 
-   procedure Off;
+   procedure Off (Panel : Panel_Control);
 
    ----------------------------------------------------------------------------
 
-   procedure Backlight_On;
+   procedure Backlight_On (Panel : Panel_Control);
 
-   procedure Backlight_Off;
+   procedure Backlight_Off (Panel : Panel_Control);
 
-   procedure Set_Backlight (Level : Word16);
+   procedure Set_Backlight (Panel : Panel_Control; Level : Word16);
 
-   procedure Get_Max_Backlight (Level : out Word16);
+   procedure Get_Max_Backlight (Panel : Panel_Control; Level : out Word16);
 
 end HW.GFX.GMA.Panel;

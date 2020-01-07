@@ -218,7 +218,7 @@ is
       if Override_Delays then
          if Config.Has_PP_Port_Select then
             Port_Select :=
-              (case Config.Panel_1_Port is
+              (case Config.Panel_Ports (Panel_1) is
                   when LVDS         => PCH_PP_ON_DELAYS_PORT_SELECT_LVDS,
                   when eDP          => PCH_PP_ON_DELAYS_PORT_SELECT_DP_A,
                   when DP2 | HDMI2  => PCH_PP_ON_DELAYS_PORT_SELECT_DP_C,
@@ -269,21 +269,29 @@ is
 
    ----------------------------------------------------------------------------
 
-   procedure VDD_Override is
+   procedure VDD_Override (Panel : Panel_Control) is
    begin
+      if Panel not in Valid_Panels then
+         return;
+      end if;
+
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
       -- Yeah, We could do, what we are supposed to do here. But OTOH, we
       -- are should wait for the full Power Up Delay, which we would have
       -- to do later again. And just powering on the display seems to work
       -- too. Also this function vanished on newer hardware.
-      On;
+      On (Panel);
    end VDD_Override;
 
-   procedure On (Wait : Boolean := True)
+   procedure On (Panel : Panel_Control; Wait : Boolean := True)
    is
       Was_On : Boolean;
    begin
+      if Panel not in Valid_Panels then
+         return;
+      end if;
+
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
       Registers.Is_Set_Mask (Panel_PP_Regs.CONTROL, PCH_PP_CONTROL_TARGET_ON, Was_On);
@@ -296,12 +304,16 @@ is
          Power_Up_Timer := Time.US_From_Now (Delays_US (Power_Up_Delay));
       end if;
       if Wait then
-         Wait_On;
+         Wait_On (Panel);
       end if;
    end On;
 
-   procedure Wait_On is
+   procedure Wait_On (Panel : Panel_Control) is
    begin
+      if Panel not in Valid_Panels then
+         return;
+      end if;
+
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
       Time.Delay_Until (Power_Up_Timer);
@@ -313,10 +325,14 @@ is
       Registers.Unset_Mask (Panel_PP_Regs.CONTROL, PCH_PP_CONTROL_VDD_OVERRIDE);
    end Wait_On;
 
-   procedure Off
+   procedure Off (Panel : Panel_Control)
    is
       Was_On : Boolean;
    begin
+      if Panel not in Valid_Panels then
+         return;
+      end if;
+
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
       Registers.Is_Set_Mask (Panel_PP_Regs.CONTROL, PCH_PP_CONTROL_TARGET_ON, Was_On);
@@ -338,8 +354,12 @@ is
 
    ----------------------------------------------------------------------------
 
-   procedure Backlight_On is
+   procedure Backlight_On (Panel : Panel_Control) is
    begin
+      if Panel not in Valid_Panels then
+         return;
+      end if;
+
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
       Registers.Set_Mask
@@ -347,8 +367,12 @@ is
           Mask       => PCH_PP_CONTROL_BACKLIGHT_ENABLE);
    end Backlight_On;
 
-   procedure Backlight_Off is
+   procedure Backlight_Off (Panel : Panel_Control) is
    begin
+      if Panel not in Valid_Panels then
+         return;
+      end if;
+
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
       Registers.Unset_Mask
@@ -356,8 +380,12 @@ is
          Mask       => PCH_PP_CONTROL_BACKLIGHT_ENABLE);
    end Backlight_Off;
 
-   procedure Set_Backlight (Level : Word16) is
+   procedure Set_Backlight (Panel : Panel_Control; Level : Word16) is
    begin
+      if Panel not in Valid_Panels then
+         return;
+      end if;
+
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
       Registers.Unset_And_Set_Mask
@@ -366,10 +394,15 @@ is
          Mask_Set    => Word32 (Level));
    end Set_Backlight;
 
-   procedure Get_Max_Backlight (Level : out Word16)
+   procedure Get_Max_Backlight (Panel : Panel_Control; Level : out Word16)
    is
       Reg : Word32;
    begin
+      if Panel not in Valid_Panels then
+         Level := 0;
+         return;
+      end if;
+
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
       Registers.Read (Registers.BLC_PWM_PCH_CTL2, Reg);

@@ -12,7 +12,6 @@
 -- GNU General Public License for more details.
 --
 
-with HW.GFX.GMA.Config;
 with HW.GFX.GMA.Connector_Info;
 with HW.GFX.GMA.DP_Info;
 with HW.GFX.GMA.Registers;
@@ -83,6 +82,17 @@ is
             when HDMI1 .. HDMI3  => HDMI,
             when DP1 .. DP3      => DP);
    end To_Display_Type;
+
+   function To_Panel (Port : Active_Port_Type) return Panel_Control
+   is
+   begin
+      for P in Valid_Panels loop
+         if Port = Config.Panel_Ports (P) then
+            return P;
+         end if;
+      end loop;
+      return No_Panel;
+   end To_Panel;
 
    function Highest_Dotclock (Configs : Pipe_Configs) return Frequency_Type
    is
@@ -171,6 +181,7 @@ is
            (Port     => To_GPU_Port (Pipe, Port),
             PCH_Port => To_PCH_Port (Port),
             Display  => To_Display_Type (Port),
+            Panel    => To_Panel (Port),
             Mode     => Mode,
             Is_FDI   => Config.Is_FDI_Port (Port),
             FDI      => Default_DP,
@@ -206,6 +217,7 @@ is
            (Port     => GPU_Port'First,
             PCH_Port => PCH_Port'First,
             Display  => Display_Type'First,
+            Panel    => No_Panel,
             Mode     => Invalid_Mode,
             Is_FDI   => False,
             FDI      => Default_DP,

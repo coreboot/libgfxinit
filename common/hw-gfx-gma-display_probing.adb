@@ -118,9 +118,7 @@ is
       Success := Config.Valid_Port (Port);
 
       if Success then
-         if Port in Internal_Port_Type then
-            Panel.Wait_On;
-         end if;
+         Panel.Wait_On (Config_Helpers.To_Panel (Port));
          Read_EDID (Raw_EDID, Port, Success);
       end if;
 
@@ -162,7 +160,7 @@ is
       Max_Pipe    : in     Pipe_Index := Pipe_Index'Last;
       Keep_Power  : in     Boolean := False)
    is
-      Probe_Internal : Boolean := False;
+      Probed_Panels : array (Valid_Panels) of Boolean := (others => False);
 
       Port_Idx : Port_List_Range := Port_List_Range'First;
       Success  : Boolean;
@@ -176,11 +174,14 @@ is
       -- Turn panel on early to probe other ports during the power on delay.
       for Idx in Port_List_Range loop
          exit when Ports (Idx) = Disabled;
-         if Ports (Idx) in Internal_Port_Type then
-            Panel.On (Wait => False);
-            Probe_Internal := True;
-            exit;
-         end if;
+         declare
+            P : constant Panel_Control := Config_Helpers.To_Panel (Ports (Idx));
+         begin
+            if P /= No_Panel then
+               Panel.On (P, Wait => False);
+               Probed_Panels (P) := True;
+            end if;
+         end;
       end loop;
 
       for Pipe in Pipe_Index range
@@ -211,11 +212,13 @@ is
       end if;
 
       -- Turn panel power off if probing failed.
-      if Probe_Internal and not
-         (Port_Configured (Configs, eDP) or Port_Configured (Configs, LVDS))
-      then
-         Panel.Off;
-      end if;
+      for P in Valid_Panels loop
+         if Probed_Panels (P) and not
+            Port_Configured (Configs, Config.Panel_Ports (P))
+         then
+            Panel.Off (P);
+         end if;
+      end loop;
    end Scan_Ports;
 
    procedure Hotplug_Events (Ports : out Port_List)

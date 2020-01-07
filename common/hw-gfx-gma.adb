@@ -179,9 +179,7 @@ is
            ("Enabled port " & Port_Names (Pipe_Cfg.Port)));
       else
          Wait_For_HPD (Pipe_Cfg.Port) := True;
-         if Pipe_Cfg.Port in Internal_Port_Type then
-            Panel.Off;
-         end if;
+         Panel.Off (Config_Helpers.To_Panel (Pipe_Cfg.Port));
       end if;
    end Enable_Output;
 
