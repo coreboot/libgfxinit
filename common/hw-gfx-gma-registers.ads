@@ -614,8 +614,16 @@ is
       PCH_PP_ON_DELAYS,
       PCH_PP_OFF_DELAYS,
       PCH_PP_DIVISOR,
+      BXT_PP_STATUS_2,
+      BXT_PP_CONTROL_2,
+      BXT_PP_ON_DELAYS_2,
+      BXT_PP_OFF_DELAYS_2,
       BLC_PWM_PCH_CTL1,
       BLC_PWM_PCH_CTL2,
+      BXT_BLC_PWM_DUTY_1,
+      BXT_BLC_PWM_CTL_2,
+      BXT_BLC_PWM_FREQ_2,
+      BXT_BLC_PWM_DUTY_2,
       TRANS_HTOTAL_A,
       TRANS_HBLANK_A,
       TRANS_HSYNC_A,
@@ -1428,13 +1436,23 @@ is
       GMCH_PP_OFF_DELAYS    => 16#06_120c# / Register_Width,
       GMCH_PP_DIVISOR       => 16#06_1210# / Register_Width,
       GMCH_PFIT_CONTROL     => 16#06_1230# / Register_Width,
-      PCH_PP_STATUS         => 16#0c_7200# / Register_Width,
-      PCH_PP_CONTROL        => 16#0c_7204# / Register_Width,
-      PCH_PP_ON_DELAYS      => 16#0c_7208# / Register_Width,
-      PCH_PP_OFF_DELAYS     => 16#0c_720c# / Register_Width,
+      PCH_PP_STATUS         => 16#0c_7200# / Register_Width, -- aliased with BXT_PP_STATUS_1
+      PCH_PP_CONTROL        => 16#0c_7204# / Register_Width, -- aliased with BXT_PP_CONTROL_1
+      PCH_PP_ON_DELAYS      => 16#0c_7208# / Register_Width, -- aliased with BXT_PP_ON_DELAYS_1
+      PCH_PP_OFF_DELAYS     => 16#0c_720c# / Register_Width, -- aliased with BXT_PP_OFF_DELAYS_1
       PCH_PP_DIVISOR        => 16#0c_7210# / Register_Width,
+      BXT_PP_STATUS_2       => 16#0c_7300# / Register_Width,
+      BXT_PP_CONTROL_2      => 16#0c_7304# / Register_Width,
+      BXT_PP_ON_DELAYS_2    => 16#0c_7308# / Register_Width,
+      BXT_PP_OFF_DELAYS_2   => 16#0c_730c# / Register_Width,
       BLC_PWM_CPU_CTL       => 16#04_8254# / Register_Width,
-      BLC_PWM_PCH_CTL2      => 16#0c_8254# / Register_Width,
+      BLC_PWM_CPU_CTL2      => 16#04_8250# / Register_Width,
+      BLC_PWM_PCH_CTL1      => 16#0c_8250# / Register_Width, -- aliased with BXT_BLC_PWM_CTL_1
+      BLC_PWM_PCH_CTL2      => 16#0c_8254# / Register_Width, -- aliased with BXT_BLC_PWM_FREQ_1
+      BXT_BLC_PWM_DUTY_1    => 16#0c_8258# / Register_Width,
+      BXT_BLC_PWM_CTL_2     => 16#0c_8350# / Register_Width,
+      BXT_BLC_PWM_FREQ_2    => 16#0c_8354# / Register_Width,
+      BXT_BLC_PWM_DUTY_2    => 16#0c_8358# / Register_Width,
 
       -- GMCH LVDS Connector Registers
       GMCH_LVDS             => 16#06_1180# / Register_Width,
@@ -1472,8 +1490,6 @@ is
       DBUF_CTL              => 16#04_5008# / Register_Width,
       NDE_RSTWRN_OPT        => 16#04_6408# / Register_Width,
       PCH_DREF_CONTROL      => 16#0c_6200# / Register_Width,
-      BLC_PWM_PCH_CTL1      => 16#0c_8250# / Register_Width,
-      BLC_PWM_CPU_CTL2      => 16#04_8250# / Register_Width,
       PCH_DPLL_SEL          => 16#0c_7000# / Register_Width,
       GT_MAILBOX            => 16#13_8124# / Register_Width,
       GT_MAILBOX_DATA       => 16#13_8128# / Register_Width,
@@ -1655,6 +1671,8 @@ is
    CURACNTR             : constant Registers_Index := CUR_CTL_A;
    CURABASE             : constant Registers_Index := CUR_BASE_A;
    CURAPOS              : constant Registers_Index := CUR_POS_A;
+   BXT_BLC_PWM_CTL_1    : constant Registers_Index := BLC_PWM_PCH_CTL1;
+   BXT_BLC_PWM_FREQ_1   : constant Registers_Index := BLC_PWM_PCH_CTL2;
 
    ---------------------------------------------------------------------------
 
