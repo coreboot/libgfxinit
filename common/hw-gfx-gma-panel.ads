@@ -54,8 +54,8 @@ is
 
    procedure Backlight_Off (Panel : Panel_Control);
 
-   procedure Set_Backlight (Panel : Panel_Control; Level : Word16);
+   procedure Set_Backlight (Panel : Panel_Control; Level : Word32);
 
-   procedure Get_Max_Backlight (Panel : Panel_Control; Level : out Word16);
+   procedure Get_Max_Backlight (Panel : Panel_Control; Level : out Word32);
 
 end HW.GFX.GMA.Panel;

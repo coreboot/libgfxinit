@@ -182,6 +182,7 @@ private package HW.GFX.GMA.Config is
    Use_PP_VDD_Override           : <genbool> := Up_To_Ironlake;
    Has_PCH_Panel_Power           : <genbool> := Ironlake_On;
    Has_PP_Divisor_Reg            : <genbool> := not Gen_Broxton;
+   Has_New_Backlight_Control     : <genbool> := Gen_Broxton;
 
    ----------- PCH/FDI: ---------
    Has_PCH                       : <genbool> := not Gen_Broxton and not Gen_G45;

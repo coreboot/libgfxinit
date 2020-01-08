@@ -155,7 +155,10 @@ is
    PCH_BLC_PWM_CTL1_PHASE_IN_INCREMENT : constant := 16#00_00ff# * 2 **  0;
 
    PCH_BLC_PWM_CTL2_BL_MOD_FREQ_MASK   : constant := 16#00_ffff# * 2 ** 16;
+   PCH_BLC_PWM_CTL2_BL_MOD_FREQ_SHIFT  : constant :=                    16;
    PCH_BLC_PWM_CTL2_BL_DUTY_CYC_MASK   : constant := 16#00_ffff# * 2 **  0;
+
+   BXT_BLC_PWM_CTL_ENABLE              : constant := 16#00_0001# * 2 ** 31;
 
    ----------------------------------------------------------------------------
 
@@ -380,9 +383,15 @@ is
 
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
-      Registers.Set_Mask
-         (Register   => Panel_PP_Regs.CONTROL,
-          Mask       => PCH_PP_CONTROL_BACKLIGHT_ENABLE);
+      if Config.Has_New_Backlight_Control then
+         Registers.Set_Mask
+           (Register => Registers.BXT_BLC_PWM_CTL_1,
+            Mask     => BXT_BLC_PWM_CTL_ENABLE);
+      else
+         Registers.Set_Mask
+           (Register => Panel_PP_Regs.CONTROL,
+            Mask     => PCH_PP_CONTROL_BACKLIGHT_ENABLE);
+      end if;
    end Backlight_On;
 
    procedure Backlight_Off (Panel : Panel_Control) is
@@ -393,12 +402,18 @@ is
 
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
-      Registers.Unset_Mask
-        (Register   => Panel_PP_Regs.CONTROL,
-         Mask       => PCH_PP_CONTROL_BACKLIGHT_ENABLE);
+      if Config.Has_New_Backlight_Control then
+         Registers.Unset_Mask
+           (Register => Registers.BXT_BLC_PWM_CTL_1,
+            Mask     => BXT_BLC_PWM_CTL_ENABLE);
+      else
+         Registers.Unset_Mask
+           (Register => Panel_PP_Regs.CONTROL,
+            Mask     => PCH_PP_CONTROL_BACKLIGHT_ENABLE);
+      end if;
    end Backlight_Off;
 
-   procedure Set_Backlight (Panel : Panel_Control; Level : Word16) is
+   procedure Set_Backlight (Panel : Panel_Control; Level : Word32) is
    begin
       if Panel not in Valid_Panels then
          return;
@@ -406,15 +421,17 @@ is
 
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
-      Registers.Unset_And_Set_Mask
-        (Register    => Registers.BLC_PWM_CPU_CTL,
-         Mask_Unset  => CPU_BLC_PWM_DATA_BL_DUTY_CYC_MASK,
-         Mask_Set    => Word32 (Level));
+      if Config.Has_New_Backlight_Control then
+         Registers.Write (Registers.BXT_BLC_PWM_DUTY_1, Level);
+      else
+         Registers.Unset_And_Set_Mask
+           (Register    => Registers.BLC_PWM_CPU_CTL,
+            Mask_Unset  => CPU_BLC_PWM_DATA_BL_DUTY_CYC_MASK,
+            Mask_Set    => Level);
+      end if;
    end Set_Backlight;
 
-   procedure Get_Max_Backlight (Panel : Panel_Control; Level : out Word16)
-   is
-      Reg : Word32;
+   procedure Get_Max_Backlight (Panel : Panel_Control; Level : out Word32) is
    begin
       if Panel not in Valid_Panels then
          Level := 0;
@@ -423,9 +440,12 @@ is
 
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
-      Registers.Read (Registers.BLC_PWM_PCH_CTL2, Reg);
-      Level := Word16
-        (Shift_Right (Reg and PCH_BLC_PWM_CTL2_BL_MOD_FREQ_MASK, 16));
+      if Config.Has_New_Backlight_Control then
+         Registers.Read (Registers.BXT_BLC_PWM_FREQ_1, Level);
+      else
+         Registers.Read (Registers.BLC_PWM_PCH_CTL2, Level);
+         Level := Shift_Right (Level, PCH_BLC_PWM_CTL2_BL_MOD_FREQ_SHIFT);
+      end if;
    end Get_Max_Backlight;
 
 end HW.GFX.GMA.Panel;
