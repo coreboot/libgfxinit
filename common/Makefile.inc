@@ -47,10 +47,13 @@ gfxinit-y += hw-gfx.ads
 gfxinit-y += hw-gfx-framebuffer_filler.adb
 gfxinit-y += hw-gfx-framebuffer_filler.ads
 
+CONFIG_GFX_GMA_PANEL_2_PORT	?= Disabled
+
 CONFIG_GFX_GMA_GENERATION	:= $(call strip_quotes,$(CONFIG_GFX_GMA_GENERATION))
 CONFIG_GFX_GMA_CPU		:= $(call strip_quotes,$(CONFIG_GFX_GMA_CPU))
 CONFIG_GFX_GMA_CPU_VARIANT	:= $(call strip_quotes,$(CONFIG_GFX_GMA_CPU_VARIANT))
 CONFIG_GFX_GMA_PANEL_1_PORT	:= $(call strip_quotes,$(CONFIG_GFX_GMA_PANEL_1_PORT))
+CONFIG_GFX_GMA_PANEL_2_PORT	:= $(call strip_quotes,$(CONFIG_GFX_GMA_PANEL_2_PORT))
 CONFIG_GFX_GMA_ANALOG_I2C_PORT	:= $(call strip_quotes,$(CONFIG_GFX_GMA_ANALOG_I2C_PORT))
 
 _GEN_NONCONST := $(strip \
@@ -73,6 +76,7 @@ $(hw-gfx-gma-config-ads): $(dir)/hw-gfx-gma-config.ads.template $(cnf)
 	printf "    GENERATE   $(patsubst /%,%,$(subst $(obj)/,,$@))\n"
 	sed -e's/<<GEN>>/$(CONFIG_GFX_GMA_GENERATION)/' \
 	    -e's/<<PANEL_1_PORT>>/$(CONFIG_GFX_GMA_PANEL_1_PORT)/' \
+	    -e's/<<PANEL_2_PORT>>/$(CONFIG_GFX_GMA_PANEL_2_PORT)/' \
 	    -e's/<<ANALOG_I2C_PORT>>/$(CONFIG_GFX_GMA_ANALOG_I2C_PORT)/' \
 	    -e's/<<DEFAULT_MMIO_BASE>>/$(CONFIG_GFX_GMA_DEFAULT_MMIO)/' \
 	    -e'/constant Gen_CPU\(_Var\)\?/d' \
@@ -91,6 +95,7 @@ $(hw-gfx-gma-config-ads): $(dir)/hw-gfx-gma-config.ads.template $(cnf)
 	    -e's/<<CPU>>/$(CONFIG_GFX_GMA_CPU)/' \
 	    -e's/<<CPU_VARIANT>>/$(CONFIG_GFX_GMA_CPU_VARIANT)/' \
 	    -e's/<<PANEL_1_PORT>>/$(CONFIG_GFX_GMA_PANEL_1_PORT)/' \
+	    -e's/<<PANEL_2_PORT>>/$(CONFIG_GFX_GMA_PANEL_2_PORT)/' \
 	    -e's/<<ANALOG_I2C_PORT>>/$(CONFIG_GFX_GMA_ANALOG_I2C_PORT)/' \
 	    -e's/<<DEFAULT_MMIO_BASE>>/$(CONFIG_GFX_GMA_DEFAULT_MMIO)/' \
 	    -e":s$$(printf '\n ')/,$$/{N;s/,\n.*Dyn_CPU\(_Var\)\?[^,)]*//;ts$$(printf '\n ')P;D;}" \

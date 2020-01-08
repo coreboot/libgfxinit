@@ -38,7 +38,7 @@ is
       BL_Off_To_Power_Down =>  50_000,
       Power_Cycle_Delay    => 510_000);
 
-   Delays_US : Panel_Power_Delays;
+   Delays_US : array (Valid_Panels) of Panel_Power_Delays;
 
    ----------------------------------------------------------------------------
 
@@ -53,8 +53,9 @@ is
    -- and the hardware power sequencer. The latter option would be less error
    -- prone, as the hardware might just don't work as expected.
 
-   Power_Cycle_Timer : Time.T;
-   Power_Up_Timer    : Time.T;
+   type Panel_Times is array (Valid_Panels) of Time.T;
+   Power_Cycle_Timer : Panel_Times;
+   Power_Up_Timer    : Panel_Times;
 
    ----------------------------------------------------------------------------
 
@@ -97,18 +98,28 @@ is
       DIVISOR    : Registers.Registers_Index;
    end record;
 
-   Panel_PP_Regs : constant PP_Regs := (if Config.Has_PCH_Panel_Power then
-     (STATUS     => Registers.PCH_PP_STATUS,
-      CONTROL    => Registers.PCH_PP_CONTROL,
-      ON_DELAYS  => Registers.PCH_PP_ON_DELAYS,
-      OFF_DELAYS => Registers.PCH_PP_OFF_DELAYS,
-      DIVISOR    => Registers.PCH_PP_DIVISOR)
-   else
-     (STATUS     => Registers.GMCH_PP_STATUS,
-      CONTROL    => Registers.GMCH_PP_CONTROL,
-      ON_DELAYS  => Registers.GMCH_PP_ON_DELAYS,
-      OFF_DELAYS => Registers.GMCH_PP_OFF_DELAYS,
-      DIVISOR    => Registers.GMCH_PP_DIVISOR));
+   PP : constant array (Valid_Panels) of PP_Regs :=
+     (if Config.Has_PCH_Panel_Power then
+        (Panel_1 =>
+           (STATUS     => Registers.PCH_PP_STATUS,
+            CONTROL    => Registers.PCH_PP_CONTROL,
+            ON_DELAYS  => Registers.PCH_PP_ON_DELAYS,
+            OFF_DELAYS => Registers.PCH_PP_OFF_DELAYS,
+            DIVISOR    => Registers.PCH_PP_DIVISOR),
+         Panel_2 =>
+           (STATUS     => Registers.BXT_PP_STATUS_2,
+            CONTROL    => Registers.BXT_PP_CONTROL_2,
+            ON_DELAYS  => Registers.BXT_PP_ON_DELAYS_2,
+            OFF_DELAYS => Registers.BXT_PP_OFF_DELAYS_2,
+            DIVISOR    => Registers.PCH_PP_DIVISOR))  -- won't be used
+
+      else
+        (Panel_1 .. Panel_2 =>
+           (STATUS     => Registers.GMCH_PP_STATUS,
+            CONTROL    => Registers.GMCH_PP_CONTROL,
+            ON_DELAYS  => Registers.GMCH_PP_ON_DELAYS,
+            OFF_DELAYS => Registers.GMCH_PP_OFF_DELAYS,
+            DIVISOR    => Registers.GMCH_PP_DIVISOR)));
 
    function PCH_PP_ON_DELAYS_PWR_UP (US : Natural) return Word32 is
    begin
@@ -160,6 +171,22 @@ is
 
    BXT_BLC_PWM_CTL_ENABLE              : constant := 16#00_0001# * 2 ** 31;
 
+   type BLC_Regs is record
+      CTL   : Registers.Registers_Index;
+      FREQ  : Registers.Registers_Index;
+      DUTY  : Registers.Registers_Index;
+   end record;
+
+   BLC : constant array (Valid_Panels) of BLC_Regs :=
+     (Panel_1 =>
+        (CTL   => Registers.BXT_BLC_PWM_CTL_1,
+         FREQ  => Registers.BXT_BLC_PWM_FREQ_1,
+         DUTY  => Registers.BXT_BLC_PWM_DUTY_1),
+      Panel_2 =>
+        (CTL   => Registers.BXT_BLC_PWM_CTL_2,
+         FREQ  => Registers.BXT_BLC_PWM_FREQ_2,
+         DUTY  => Registers.BXT_BLC_PWM_DUTY_2));
+
    ----------------------------------------------------------------------------
 
    procedure Static_Init
@@ -168,11 +195,12 @@ is
         (Output => (Power_Cycle_Timer, Power_Up_Timer, Delays_US),
          Input  => (Time.State))
    is
+      Now : constant Time.T := Time.Now;
    begin
-      Power_Cycle_Timer := Time.Now;
+      Power_Cycle_Timer := (others => Now);
       Power_Up_Timer    := Power_Cycle_Timer;
 
-      Delays_US := Default_EDP_Delays_US;
+      Delays_US := (others => Default_EDP_Delays_US);
    end Static_Init;
 
    ----------------------------------------------------------------------------
@@ -189,7 +217,7 @@ is
       end loop;
    end Check_PP_Delays;
 
-   procedure Setup_PP_Sequencer (Default_Delays : Boolean := False)
+   procedure Setup_PP_Sequencer (Panel : Valid_Panels; Default_Delays : Boolean)
    is
       Power_Delay, Port_Select : Word32;
 
@@ -197,35 +225,34 @@ is
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
-      Static_Init;
-
       if Default_Delays then
          Override_Delays := True;
       else
-         Registers.Read (Panel_PP_Regs.ON_DELAYS, Power_Delay);
-         Delays_US (Power_Up_Delay) := 100 * Natural
+         Registers.Read (PP (Panel).ON_DELAYS, Power_Delay);
+         Delays_US (Panel) (Power_Up_Delay) := 100 * Natural
            (Shift_Right (Power_Delay and PCH_PP_ON_DELAYS_PWR_UP_MASK, 16));
-         Delays_US (Power_Up_To_BL_On) := 100 * Natural
+         Delays_US (Panel) (Power_Up_To_BL_On) := 100 * Natural
            (Power_Delay and PCH_PP_ON_DELAYS_PWR_UP_BL_ON_MASK);
 
-         Registers.Read (Panel_PP_Regs.OFF_DELAYS, Power_Delay);
-         Delays_US (Power_Down_Delay) := 100 * Natural
+         Registers.Read (PP (Panel).OFF_DELAYS, Power_Delay);
+         Delays_US (Panel) (Power_Down_Delay) := 100 * Natural
            (Shift_Right (Power_Delay and PCH_PP_OFF_DELAYS_PWR_DOWN_MASK, 16));
-         Delays_US (BL_Off_To_Power_Down) := 100 * Natural
+         Delays_US (Panel) (BL_Off_To_Power_Down) := 100 * Natural
            (Power_Delay and PCH_PP_OFF_DELAYS_BL_OFF_PWR_DOWN_MASK);
 
          if Config.Has_PP_Divisor_Reg then
-            Registers.Read (Panel_PP_Regs.DIVISOR, Power_Delay);
+            Registers.Read (PP (Panel).DIVISOR, Power_Delay);
          else
-            Registers.Read (Panel_PP_Regs.CONTROL, Power_Delay);
-            Power_Delay := Shift_Right (Power_Delay, BXT_PP_CONTROL_PWR_CYC_DELAY_SHIFT);
+            Registers.Read (PP (Panel).CONTROL, Power_Delay);
+            Power_Delay := Shift_Right
+              (Power_Delay, BXT_PP_CONTROL_PWR_CYC_DELAY_SHIFT);
          end if;
          if (Power_Delay and PCH_PP_DIVISOR_PWR_CYC_DELAY_MASK) > 1 then
-            Delays_US (Power_Cycle_Delay) := 100_000 * (Natural
+            Delays_US (Panel) (Power_Cycle_Delay) := 100_000 * (Natural
               (Power_Delay and PCH_PP_DIVISOR_PWR_CYC_DELAY_MASK) - 1);
          end if;
 
-         Check_PP_Delays (Delays_US, Override_Delays);
+         Check_PP_Delays (Delays_US (Panel), Override_Delays);
       end if;
 
       if Override_Delays then
@@ -243,49 +270,61 @@ is
 
          -- Force power-up to backlight-on delay to 100us as recommended by PRM.
          Registers.Unset_And_Set_Mask
-           (Register    => Panel_PP_Regs.ON_DELAYS,
+           (Register    => PP (Panel).ON_DELAYS,
             Mask_Unset  => PCH_PP_ON_DELAYS_PORT_SELECT_MASK or
                            PCH_PP_ON_DELAYS_PWR_UP_MASK or
                            PCH_PP_ON_DELAYS_PWR_UP_BL_ON_MASK,
             Mask_Set    => Port_Select or
-                           PCH_PP_ON_DELAYS_PWR_UP (Delays_US (Power_Up_Delay))
+                           PCH_PP_ON_DELAYS_PWR_UP
+                             (Delays_US (Panel) (Power_Up_Delay))
                            or PCH_PP_ON_DELAYS_PWR_UP_BL_ON (100));
 
          Registers.Unset_And_Set_Mask
-           (Register    => Panel_PP_Regs.OFF_DELAYS,
+           (Register    => PP (Panel).OFF_DELAYS,
             Mask_Unset  => PCH_PP_OFF_DELAYS_PWR_DOWN_MASK or
                            PCH_PP_OFF_DELAYS_BL_OFF_PWR_DOWN_MASK,
             Mask_Set    => PCH_PP_OFF_DELAYS_PWR_DOWN
-                             (Delays_US (Power_Down_Delay)) or
+                             (Delays_US (Panel) (Power_Down_Delay)) or
                            PCH_PP_OFF_DELAYS_BL_OFF_PWR_DOWN
-                             (Delays_US (BL_Off_To_Power_Down)));
+                             (Delays_US (Panel) (BL_Off_To_Power_Down)));
 
          if Config.Has_PP_Divisor_Reg then
             Registers.Unset_And_Set_Mask
-              (Register    => Panel_PP_Regs.DIVISOR,
+              (Register    => PP (Panel).DIVISOR,
                Mask_Unset  => PCH_PP_DIVISOR_PWR_CYC_DELAY_MASK,
                Mask_Set    => PCH_PP_DIVISOR_PWR_CYC_DELAY
-                                (Delays_US (Power_Cycle_Delay)));
+                                (Delays_US (Panel) (Power_Cycle_Delay)));
          else
             Registers.Unset_And_Set_Mask
-              (Register    => Panel_PP_Regs.CONTROL,
+              (Register    => PP (Panel).CONTROL,
                Mask_Unset  => BXT_PP_CONTROL_PWR_CYC_DELAY_MASK,
                Mask_Set    => BXT_PP_CONTROL_PWR_CYC_DELAY
-                                (Delays_US (Power_Cycle_Delay)));
+                                (Delays_US (Panel) (Power_Cycle_Delay)));
          end if;
       end if;
 
       if Config.Has_PP_Write_Protection then
          Registers.Unset_And_Set_Mask
-           (Register    => Panel_PP_Regs.CONTROL,
+           (Register    => PP (Panel).CONTROL,
             Mask_Unset  => PCH_PP_CONTROL_WRITE_PROTECT_MASK,
             Mask_Set    => PCH_PP_CONTROL_WRITE_PROTECT_KEY or
                            PCH_PP_CONTROL_POWER_DOWN_ON_RESET);
       else
          Registers.Set_Mask
-           (Register => Panel_PP_Regs.CONTROL,
+           (Register => PP (Panel).CONTROL,
             Mask     => PCH_PP_CONTROL_POWER_DOWN_ON_RESET);
       end if;
+   end Setup_PP_Sequencer;
+
+   procedure Setup_PP_Sequencer (Default_Delays : Boolean := False) is
+   begin
+      pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
+
+      for Panel in Valid_Panels loop
+         if Config.Panel_Ports (Panel) /= Disabled then
+            Setup_PP_Sequencer (Panel, Default_Delays);
+         end if;
+      end loop;
    end Setup_PP_Sequencer;
 
    ----------------------------------------------------------------------------
@@ -315,14 +354,15 @@ is
 
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
-      Registers.Is_Set_Mask (Panel_PP_Regs.CONTROL, PCH_PP_CONTROL_TARGET_ON, Was_On);
+      Registers.Is_Set_Mask (PP (Panel).CONTROL, PCH_PP_CONTROL_TARGET_ON, Was_On);
       if not Was_On then
-         Time.Delay_Until (Power_Cycle_Timer);
+         Time.Delay_Until (Power_Cycle_Timer (Panel));
       end if;
 
-      Registers.Set_Mask (Panel_PP_Regs.CONTROL, PCH_PP_CONTROL_TARGET_ON);
+      Registers.Set_Mask (PP (Panel).CONTROL, PCH_PP_CONTROL_TARGET_ON);
       if not Was_On then
-         Power_Up_Timer := Time.US_From_Now (Delays_US (Power_Up_Delay));
+         Power_Up_Timer (Panel) :=
+            Time.US_From_Now (Delays_US (Panel) (Power_Up_Delay));
       end if;
       if Wait then
          Wait_On (Panel);
@@ -337,13 +377,13 @@ is
 
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
-      Time.Delay_Until (Power_Up_Timer);
+      Time.Delay_Until (Power_Up_Timer (Panel));
       Registers.Wait_Unset_Mask
-        (Register => Panel_PP_Regs.STATUS,
+        (Register => PP (Panel).STATUS,
          Mask     => PCH_PP_STATUS_PWR_SEQ_PROGRESS_MASK,
          TOut_MS  => 300);
 
-      Registers.Unset_Mask (Panel_PP_Regs.CONTROL, PCH_PP_CONTROL_VDD_OVERRIDE);
+      Registers.Unset_Mask (PP (Panel).CONTROL, PCH_PP_CONTROL_VDD_OVERRIDE);
    end Wait_On;
 
    procedure Off (Panel : Panel_Control)
@@ -356,20 +396,21 @@ is
 
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
-      Registers.Is_Set_Mask (Panel_PP_Regs.CONTROL, PCH_PP_CONTROL_TARGET_ON, Was_On);
+      Registers.Is_Set_Mask (PP (Panel).CONTROL, PCH_PP_CONTROL_TARGET_ON, Was_On);
       Registers.Unset_Mask
-        (Register => Panel_PP_Regs.CONTROL,
+        (Register => PP (Panel).CONTROL,
          Mask     => PCH_PP_CONTROL_TARGET_ON or
                      PCH_PP_CONTROL_VDD_OVERRIDE);
       if Was_On then
-         Time.U_Delay (Delays_US (Power_Down_Delay));
+         Time.U_Delay (Delays_US (Panel) (Power_Down_Delay));
       end if;
       Registers.Wait_Unset_Mask
-        (Register => Panel_PP_Regs.STATUS,
+        (Register => PP (Panel).STATUS,
          Mask     => PCH_PP_STATUS_PWR_SEQ_PROGRESS_MASK,
          TOut_MS  => 600);
       if Was_On then
-         Power_Cycle_Timer := Time.US_From_Now (Delays_US (Power_Cycle_Delay));
+         Power_Cycle_Timer (Panel) :=
+            Time.US_From_Now (Delays_US (Panel) (Power_Cycle_Delay));
       end if;
    end Off;
 
@@ -385,11 +426,11 @@ is
 
       if Config.Has_New_Backlight_Control then
          Registers.Set_Mask
-           (Register => Registers.BXT_BLC_PWM_CTL_1,
+           (Register => BLC (Panel).CTL,
             Mask     => BXT_BLC_PWM_CTL_ENABLE);
       else
          Registers.Set_Mask
-           (Register => Panel_PP_Regs.CONTROL,
+           (Register => PP (Panel).CONTROL,
             Mask     => PCH_PP_CONTROL_BACKLIGHT_ENABLE);
       end if;
    end Backlight_On;
@@ -404,11 +445,11 @@ is
 
       if Config.Has_New_Backlight_Control then
          Registers.Unset_Mask
-           (Register => Registers.BXT_BLC_PWM_CTL_1,
+           (Register => BLC (Panel).CTL,
             Mask     => BXT_BLC_PWM_CTL_ENABLE);
       else
          Registers.Unset_Mask
-           (Register => Panel_PP_Regs.CONTROL,
+           (Register => PP (Panel).CONTROL,
             Mask     => PCH_PP_CONTROL_BACKLIGHT_ENABLE);
       end if;
    end Backlight_Off;
@@ -422,7 +463,7 @@ is
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
       if Config.Has_New_Backlight_Control then
-         Registers.Write (Registers.BXT_BLC_PWM_DUTY_1, Level);
+         Registers.Write (BLC (Panel).DUTY, Level);
       else
          Registers.Unset_And_Set_Mask
            (Register    => Registers.BLC_PWM_CPU_CTL,
@@ -441,7 +482,7 @@ is
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
       if Config.Has_New_Backlight_Control then
-         Registers.Read (Registers.BXT_BLC_PWM_FREQ_1, Level);
+         Registers.Read (BLC (Panel).FREQ, Level);
       else
          Registers.Read (Registers.BLC_PWM_PCH_CTL2, Level);
          Level := Shift_Right (Level, PCH_BLC_PWM_CTL2_BL_MOD_FREQ_SHIFT);

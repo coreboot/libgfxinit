@@ -502,10 +502,10 @@ is
          end if;
       end if;
 
+      Panel.Static_Init;   -- early for flow analysis
+
       if not Success then
          pragma Debug (Debug.Put_Line ("ERROR: Incompatible CPU or PCH."));
-
-         Panel.Static_Init;   -- for flow analysis
 
          Initialized := False;
          return;

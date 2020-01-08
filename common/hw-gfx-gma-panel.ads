@@ -29,14 +29,10 @@ is
    procedure Setup_PP_Sequencer (Default_Delays : Boolean := False)
    with
       Global =>
-        (Input  => Time.State,
-         In_Out => Registers.Register_State,
-         Output => Panel_State),
+        (In_Out => (Panel_State, Registers.Register_State)),
       Depends =>
         ((Panel_State, Registers.Register_State) =>
-           (Time.State, Registers.Register_State, Default_Delays)),
-      Pre      => True,
-      Post     => True;
+           (Panel_State, Registers.Register_State, Default_Delays));
 
    ----------------------------------------------------------------------------
 
