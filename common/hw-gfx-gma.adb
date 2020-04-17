@@ -603,9 +603,10 @@ is
    function Valid_FB (FB : Framebuffer_Type) return Boolean is
      (Valid_Stride (FB) and
       FB_First_Page (FB) in GTT_Range and
-      FB_Last_Page (FB) in GTT_Range and
+      FB_Last_Page (FB) + 128 in GTT_Range and
       (not Rotation_90 (FB) or
-       (FB_Last_Page (FB) + GTT_Rotation_Offset in GTT_Range and
+       (FB_First_Page (FB) mod 64 = 0 and
+        FB_Last_Page (FB) + 128 + GTT_Rotation_Offset in GTT_Range and
         FB.Offset >= Word32 (GTT_Rotation_Offset) * GTT_Page_Size)));
 
    -- Also check that we don't overflow the GTT's 39-bit space
@@ -650,6 +651,10 @@ is
             Valid          => True);
          Phys_Addr := Phys_Addr + GTT_Page_Size;
       end loop;
+      -- Add another 128 dummy pages to work around buggy VT-d
+      for Idx in FB_Last_Page (FB) + 1 .. FB_Last_Page (FB) + 128 loop
+         Registers.Write_GTT (Idx, Phys_Addr, True);
+      end loop;
 
       if Rotation_90 (FB) and FB.Tiling = Y_Tiled and FB.V_Stride >= 32 then
          declare
@@ -673,6 +678,10 @@ is
                end if;
             end loop;
          end;
+         -- Add another 128 dummy pages to work around buggy VT-d
+         for Idx in FB_Last_Page (FB) + 1 .. FB_Last_Page (FB) + 128 loop
+            Registers.Write_GTT (GTT_Rotation_Offset + Idx, Phys_Addr, True);
+         end loop;
       end if;
    end Setup_Default_GTT;
 
@@ -752,6 +761,9 @@ is
       Pre => Is_Initialized,
       Post => (if Valid then Valid_FB (FB))
    is
+      GTT_Off : constant Natural :=
+         (if Rotation_90 (FB) then GTT_Rotation_Offset else 0);
+
       GTT_Size, Aperture_Size : Natural;
       Stolen_Size : Stolen_Size_Range;
    begin
@@ -761,8 +773,10 @@ is
          Decode_Stolen (GTT_Size, Stolen_Size);
          Dev.Resource_Size (Aperture_Size, PCI.Res2);
          Valid :=
-            FB_Last_Page (FB) < GTT_Size / Config.GTT_PTE_Size and
-            FB_Last_Page (FB) < Natural (Stolen_Size / GTT_Page_Size) and
+            FB_Last_Page (FB) + 128 + GTT_Off < GTT_Size / Config.GTT_PTE_Size
+            and
+            FB_Last_Page (FB) < Natural (Stolen_Size / GTT_Page_Size)
+            and
             FB_Last_Page (FB) < Aperture_Size / GTT_Page_Size;
          pragma Debug (not Valid, Debug.Put_Line
            ("Stolen memory too small to hold framebuffer."));
