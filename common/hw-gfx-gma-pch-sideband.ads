@@ -17,9 +17,30 @@ private package HW.GFX.GMA.PCH.Sideband is
    type Destination_Type is (SBI_ICLK, SBI_MPHY);
 
    type Register_Type is
-     (SBI_SSCDIVINTPHASE6,
+     (SBI_SSCDIVINTPHASE,
+      SBI_SSCDITHPHASE,
+      SBI_SSCCTL,
+      SBI_SSCDIVINTPHASE6,
       SBI_SSCCTL6,
-      SBI_SSCAUXDIV);
+      SBI_SSCAUXDIV,
+      SBI_GEN0,
+      SBI_DBUFF0,
+
+      SBI_MPHY_2008,
+      SBI_MPHY_206C,
+      SBI_MPHY_2080,
+      SBI_MPHY_208C,
+      SBI_MPHY_2098,
+      SBI_MPHY_20C4,
+      SBI_MPHY_20EC,
+      SBI_MPHY_2108,
+      SBI_MPHY_216C,
+      SBI_MPHY_2180,
+      SBI_MPHY_218C,
+      SBI_MPHY_2198,
+      SBI_MPHY_21C4,
+      SBI_MPHY_21EC,
+      SBI_MPHY_8008);
 
    procedure Read
      (Dest     : in     Destination_Type;

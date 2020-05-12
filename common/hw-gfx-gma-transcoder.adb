@@ -236,6 +236,8 @@ package body HW.GFX.GMA.Transcoder is
    is
       Trans : Transcoder_Regs renames
                Transcoders (Get_Idx (Pipe, Port_Cfg.Port));
+      Lane_Count : constant DP_Lane_Count :=
+        (if Port_Cfg.Is_FDI then Port_Cfg.FDI.Lane_Count else Port_Cfg.DP.Lane_Count);
       EDP_Select : constant Word32 :=
         (if Pipe = Primary and
             (not Config.Use_PDW_For_EDP_Scaling or else not Scale)
@@ -254,7 +256,7 @@ package body HW.GFX.GMA.Transcoder is
                         DDI_FUNC_CTL_VSYNC (Port_Cfg.Mode.V_Sync_Active_High) or
                         DDI_FUNC_CTL_HSYNC (Port_Cfg.Mode.H_Sync_Active_High) or
                         EDP_Select or
-                        DDI_FUNC_CTL_PORT_WIDTH (Port_Cfg.DP.Lane_Count));
+                        DDI_FUNC_CTL_PORT_WIDTH (Lane_Count));
       end if;
 
       Registers.Write

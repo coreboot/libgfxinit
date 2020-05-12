@@ -21,6 +21,7 @@ with HW.GFX.GMA.Config;
 with HW.GFX.GMA.PCode;
 with HW.GFX.GMA.Registers;
 with HW.GFX.GMA.Transcoder;
+with HW.GFX.GMA.PCH.Lynxpoint;
 
 package body HW.GFX.GMA.Power_And_Clocks_Haswell is
 
@@ -275,6 +276,13 @@ package body HW.GFX.GMA.Power_And_Clocks_Haswell is
       Config.CDClk := CDClk;
    end Set_CDClk;
 
+   procedure Post_All_Off is
+   begin
+      -- Reset CLKOUT_DP to disabled state
+      PCH.Lynxpoint.Disable_Clkout_DP;
+      PCH.Lynxpoint.Unbend_Clkout_DP;
+   end Post_All_Off;
+
    procedure Initialize
    is
       CDClk : Config.CDClk_Range;
@@ -289,6 +297,11 @@ package body HW.GFX.GMA.Power_And_Clocks_Haswell is
       Set_CDClk (Config.Default_CDClk_Freq);
 
       Config.Raw_Clock := Config.Default_RawClk_Freq;
+
+      -- Configure CLKOUT_DP for FDI
+      if Config.Has_DDI_E then
+         PCH.Lynxpoint.Enable_Clkout_DP_And_FDI_mPHY;
+      end if;
    end Initialize;
 
    procedure Limit_Dotclocks

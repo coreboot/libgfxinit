@@ -17,7 +17,7 @@ with HW.GFX.GMA.Config_Helpers;
 private package HW.GFX.GMA.Power_And_Clocks_Haswell is
 
    procedure Pre_All_Off;
-   procedure Post_All_Off is null;
+   procedure Post_All_Off;
 
    procedure Initialize;
 

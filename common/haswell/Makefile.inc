@@ -1,6 +1,8 @@
 gfxinit-y += hw-gfx-gma-connectors-ddi-buffers.adb
 gfxinit-y += hw-gfx-gma-connectors-ddi-buffers.ads
 gfxinit-y += hw-gfx-gma-ddi_phy.ads
+gfxinit-y += hw-gfx-gma-pch-lynxpoint.adb
+gfxinit-y += hw-gfx-gma-pch-lynxpoint.ads
 gfxinit-y += hw-gfx-gma-plls-lcpll.ads
 gfxinit-y += hw-gfx-gma-plls-wrpll.adb
 gfxinit-y += hw-gfx-gma-plls-wrpll.ads

@@ -28,9 +28,30 @@ package body HW.GFX.GMA.PCH.Sideband is
 
    type Register_Array is array (Register_Type) of Word32;
    Register_Addr : constant Register_Array := Register_Array'
-     (SBI_SSCDIVINTPHASE6  => 16#0600_0000#,
+     (SBI_SSCDIVINTPHASE   => 16#0200_0000#,
+      SBI_SSCDITHPHASE     => 16#0204_0000#,
+      SBI_SSCCTL           => 16#020c_0000#,
+      SBI_SSCDIVINTPHASE6  => 16#0600_0000#,
       SBI_SSCCTL6          => 16#060c_0000#,
-      SBI_SSCAUXDIV        => 16#0610_0000#);
+      SBI_SSCAUXDIV        => 16#0610_0000#,
+      SBI_GEN0             => 16#1f00_0000#,
+      SBI_DBUFF0           => 16#2a00_0000#,
+
+      SBI_MPHY_2008        => 16#2008_0000#,
+      SBI_MPHY_206C        => 16#206c_0000#,
+      SBI_MPHY_2080        => 16#2080_0000#,
+      SBI_MPHY_208C        => 16#208c_0000#,
+      SBI_MPHY_2098        => 16#2098_0000#,
+      SBI_MPHY_20C4        => 16#20c4_0000#,
+      SBI_MPHY_20EC        => 16#20ec_0000#,
+      SBI_MPHY_2108        => 16#2108_0000#,
+      SBI_MPHY_216C        => 16#216c_0000#,
+      SBI_MPHY_2180        => 16#2180_0000#,
+      SBI_MPHY_218C        => 16#218c_0000#,
+      SBI_MPHY_2198        => 16#2198_0000#,
+      SBI_MPHY_21C4        => 16#21c4_0000#,
+      SBI_MPHY_21EC        => 16#21ec_0000#,
+      SBI_MPHY_8008        => 16#8008_0000#);
 
    ----------------------------------------------------------------------------
 
