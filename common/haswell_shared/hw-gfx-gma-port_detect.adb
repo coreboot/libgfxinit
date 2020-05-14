@@ -88,7 +88,7 @@ is
       end if;
 
       -- DDI_A
-      if Config.Has_Presence_Straps then
+      if Config.Has_Presence_Straps and not Config.Ignore_Presence_Straps then
          Registers.Is_Set_Mask
            (Register => Registers.DDI_BUF_CTL_A,
             Mask     => DDI_PORT_DETECTED (DIGI_A),
@@ -123,7 +123,7 @@ is
       for Port in Ext_Digital_Port range
          DIGI_B .. Ext_Digital_Port'Min (DIGI_D, Config.Last_Digital_Port)
       loop
-         if Config.Has_Presence_Straps then
+         if Config.Has_Presence_Straps and not Config.Ignore_Presence_Straps then
             Registers.Is_Set_Mask
               (Register => Registers.SFUSE_STRAP,
                Mask     => DDI_PORT_DETECTED (Port),

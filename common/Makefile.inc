@@ -55,6 +55,7 @@ CONFIG_GFX_GMA_CPU_VARIANT	:= $(call strip_quotes,$(CONFIG_GFX_GMA_CPU_VARIANT))
 CONFIG_GFX_GMA_PANEL_1_PORT	:= $(call strip_quotes,$(CONFIG_GFX_GMA_PANEL_1_PORT))
 CONFIG_GFX_GMA_PANEL_2_PORT	:= $(call strip_quotes,$(CONFIG_GFX_GMA_PANEL_2_PORT))
 CONFIG_GFX_GMA_ANALOG_I2C_PORT	:= $(call strip_quotes,$(CONFIG_GFX_GMA_ANALOG_I2C_PORT))
+CONFIG_GFX_GMA_IGNORE_PRESENCE_STRAPS := $(if $(filter y,$(CONFIG_GFX_GMA_IGNORE_PRESENCE_STRAPS)),True,False)
 
 _GEN_NONCONST := $(strip \
 		 $(if $(filter G45,$(CONFIG_GFX_GMA_GENERATION)),g45, \
@@ -79,6 +80,7 @@ $(hw-gfx-gma-config-ads): $(dir)/hw-gfx-gma-config.ads.template $(cnf)
 	    -e's/<<PANEL_2_PORT>>/$(CONFIG_GFX_GMA_PANEL_2_PORT)/' \
 	    -e's/<<ANALOG_I2C_PORT>>/$(CONFIG_GFX_GMA_ANALOG_I2C_PORT)/' \
 	    -e's/<<DEFAULT_MMIO_BASE>>/$(CONFIG_GFX_GMA_DEFAULT_MMIO)/' \
+	    -e's/<<IGNORE_STRAPS>>/$(CONFIG_GFX_GMA_IGNORE_PRESENCE_STRAPS)/' \
 	    -e'/constant Gen_CPU\(_Var\)\?/d' \
 	    -e's/<genbool>/constant Boolean/' \
 	    -e's/<\(\(g45\|ilk\|hsw\|skl\)\(...\)\?\)bool>/<\1var> Boolean/' \
@@ -98,6 +100,7 @@ $(hw-gfx-gma-config-ads): $(dir)/hw-gfx-gma-config.ads.template $(cnf)
 	    -e's/<<PANEL_2_PORT>>/$(CONFIG_GFX_GMA_PANEL_2_PORT)/' \
 	    -e's/<<ANALOG_I2C_PORT>>/$(CONFIG_GFX_GMA_ANALOG_I2C_PORT)/' \
 	    -e's/<<DEFAULT_MMIO_BASE>>/$(CONFIG_GFX_GMA_DEFAULT_MMIO)/' \
+	    -e's/<<IGNORE_STRAPS>>/$(CONFIG_GFX_GMA_IGNORE_PRESENCE_STRAPS)/' \
 	    -e":s$$(printf '\n ')/,$$/{N;s/,\n.*Dyn_CPU\(_Var\)\?[^,)]*//;ts$$(printf '\n ')P;D;}" \
 	    -e'/Dyn_CPU\(_Var\)\?/d' \
 	    -e's/<\(gen\|\(g45\|ilk\|hsw\|skl\)\(...\)\?\)bool>/constant Boolean/' \

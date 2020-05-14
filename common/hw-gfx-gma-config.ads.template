@@ -57,6 +57,8 @@ private package HW.GFX.GMA.Config is
 
    LVDS_Dual_Threshold : constant := 95_000_000;
 
+   Ignore_Presence_Straps : constant Boolean := <<IGNORE_STRAPS>>;
+
    ----------------------------------------------------------------------------
 
    -- On older generations dot clocks are limited to 90% of
