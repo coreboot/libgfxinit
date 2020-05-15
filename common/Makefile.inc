@@ -72,15 +72,18 @@ _GEN_CONST_TARGET := <cpufunc> # set to `constant` to generate constants.
 
 hw-gfx-gma-config-ads := $(subst //,/,$(call src-to-obj,,$(dir)/hw-gfx-gma-config).ads)
 
-ifeq ($(CONFIG_GFX_GMA_DYN_CPU),y)
-$(hw-gfx-gma-config-ads): $(dir)/hw-gfx-gma-config.ads.template $(cnf)
-	printf "    GENERATE   $(patsubst /%,%,$(subst $(obj)/,,$@))\n"
-	sed -e's/<<GEN>>/$(CONFIG_GFX_GMA_GENERATION)/' \
+GFX_GMA_COMMON_SUBSTITUTIONS := \
+	    -e's/<<GEN>>/$(CONFIG_GFX_GMA_GENERATION)/' \
 	    -e's/<<PANEL_1_PORT>>/$(CONFIG_GFX_GMA_PANEL_1_PORT)/' \
 	    -e's/<<PANEL_2_PORT>>/$(CONFIG_GFX_GMA_PANEL_2_PORT)/' \
 	    -e's/<<ANALOG_I2C_PORT>>/$(CONFIG_GFX_GMA_ANALOG_I2C_PORT)/' \
 	    -e's/<<DEFAULT_MMIO_BASE>>/$(CONFIG_GFX_GMA_DEFAULT_MMIO)/' \
 	    -e's/<<IGNORE_STRAPS>>/$(CONFIG_GFX_GMA_IGNORE_PRESENCE_STRAPS)/' \
+
+ifeq ($(CONFIG_GFX_GMA_DYN_CPU),y)
+$(hw-gfx-gma-config-ads): $(dir)/hw-gfx-gma-config.ads.template $(cnf)
+	printf "    GENERATE   $(patsubst /%,%,$(subst $(obj)/,,$@))\n"
+	sed $(GFX_GMA_COMMON_SUBSTITUTIONS) \
 	    -e'/constant Gen_CPU\(_Var\)\?/d' \
 	    -e's/<genbool>/constant Boolean/' \
 	    -e's/<\(\(g45\|ilk\|hsw\|skl\)\(...\)\?\)bool>/<\1var> Boolean/' \
@@ -93,14 +96,9 @@ $(hw-gfx-gma-config-ads): $(dir)/hw-gfx-gma-config.ads.template $(cnf)
 else
 $(hw-gfx-gma-config-ads): $(dir)/hw-gfx-gma-config.ads.template $(cnf)
 	printf "    GENERATE   $(patsubst /%,%,$(subst $(obj)/,,$@))\n"
-	sed -e's/<<GEN>>/$(CONFIG_GFX_GMA_GENERATION)/' \
+	sed $(GFX_GMA_COMMON_SUBSTITUTIONS) \
 	    -e's/<<CPU>>/$(CONFIG_GFX_GMA_CPU)/' \
 	    -e's/<<CPU_VARIANT>>/$(CONFIG_GFX_GMA_CPU_VARIANT)/' \
-	    -e's/<<PANEL_1_PORT>>/$(CONFIG_GFX_GMA_PANEL_1_PORT)/' \
-	    -e's/<<PANEL_2_PORT>>/$(CONFIG_GFX_GMA_PANEL_2_PORT)/' \
-	    -e's/<<ANALOG_I2C_PORT>>/$(CONFIG_GFX_GMA_ANALOG_I2C_PORT)/' \
-	    -e's/<<DEFAULT_MMIO_BASE>>/$(CONFIG_GFX_GMA_DEFAULT_MMIO)/' \
-	    -e's/<<IGNORE_STRAPS>>/$(CONFIG_GFX_GMA_IGNORE_PRESENCE_STRAPS)/' \
 	    -e":s$$(printf '\n ')/,$$/{N;s/,\n.*Dyn_CPU\(_Var\)\?[^,)]*//;ts$$(printf '\n ')P;D;}" \
 	    -e'/Dyn_CPU\(_Var\)\?/d' \
 	    -e's/<\(gen\|\(g45\|ilk\|hsw\|skl\)\(...\)\?\)bool>/constant Boolean/' \
