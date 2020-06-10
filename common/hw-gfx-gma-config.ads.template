@@ -12,6 +12,8 @@
 -- GNU General Public License for more details.
 --
 
+with HW.PCI;
+
 private package HW.GFX.GMA.Config is
 
    Gen : constant Generation := <<GEN>>;
@@ -77,7 +79,9 @@ private package HW.GFX.GMA.Config is
 
    DDI_HDMI_Buffer_Translation : constant Integer := -1;
 
-   Default_MMIO_Base : constant := <<DEFAULT_MMIO_BASE>>;
+   PCI_Dev : constant PCI.Address := <<PCI_DEV_ADDRESS>>;
+   Override_MMConf_Base : constant := <<OVERRIDE_MMCONF_BASE>>;
+   Default_MMIO_Base    : constant := <<DEFAULT_MMIO_BASE>>;
 
    LVDS_Dual_Threshold : constant := 95_000_000;
 

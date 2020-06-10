@@ -78,7 +78,9 @@ is
       USBC3    => "USBC3   ",
       USBC4    => "USBC4   ");
 
-   package Dev is new HW.PCI.Dev (PCI.Address'(0, 2, 0));
+   package Dev is new HW.PCI.Dev
+     (Dev         => Config.PCI_Dev,
+      MMConf_Base => Config.Override_MMConf_Base);
 
    package Display_Controller renames Pipe_Setup;
 
