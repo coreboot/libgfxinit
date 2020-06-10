@@ -2311,13 +2311,6 @@ is
       Pre     => True,
       Post    => True;
 
-   procedure Read_AUD_VID_DID (Value : out Word32)
-   with
-      Global  => (In_Out => Register_State),
-      Depends => ((Value, Register_State) => Register_State),
-      Pre     => True,
-      Post    => True;
-
    procedure Write
       (Register : Registers_Index;
        Value    : Word32;

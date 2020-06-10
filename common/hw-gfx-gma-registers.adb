@@ -353,14 +353,6 @@ is
       pragma Debug (Verbose, Debug.Put_Line (Registers_Index'Image (Register)));
    end Read;
 
-   procedure Read_AUD_VID_DID (Value : out Word32)
-   is
-   begin
-      Regs.Read
-        (Value,
-         Registers_Range (Config.AUD_VID_DID_Offset / Register_Width));
-   end Read_AUD_VID_DID;
-
    ----------------------------------------------------------------------------
 
    -- Read a specific register to post a previous write

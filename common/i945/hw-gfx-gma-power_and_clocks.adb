@@ -49,28 +49,19 @@ package body HW.GFX.GMA.Power_And_Clocks is
       GC_DISPLAY_CLOCK_320_MHZ     : constant Word16 := 4 * 2 ** 4;
 
       GCFGC : Word16;
-      Tmp_Clk : Frequency_Type := 200_000_000;
    begin
       if Config.GMCH_I945GM then
-         if PCI_Usable then
-            PCI_Read16 (GCFGC, 16#f0#);
-            if (GCFGC and GC_LOW_FREQUENCY_ENABLE) /= 0 then
-               Tmp_Clk := 133_333_333;
-            elsif (GCFGC and GC_DISPLAY_CLOCK_MASK) = GC_DISPLAY_CLOCK_320_MHZ then
-               Tmp_Clk := 320_000_000;
-            else
-               Tmp_Clk := 200_000_000;
-            end if;
+         PCI_Read16 (GCFGC, 16#f0#);
+         if (GCFGC and GC_LOW_FREQUENCY_ENABLE) /= 0 then
+            CDClk := 133_333_333;
+         elsif (GCFGC and GC_DISPLAY_CLOCK_MASK) = GC_DISPLAY_CLOCK_320_MHZ then
+            CDClk := 320_000_000;
+         else
+            CDClk := 200_000_000;
          end if;
       else
          -- i945G desktop: fixed 400 MHz
-         Tmp_Clk := 400_000_000;
-      end if;
-
-      if Tmp_Clk in Config.CDClk_Range then
-         CDClk := Tmp_Clk;
-      else
-         CDClk := 200_000_000;
+         CDClk := 400_000_000;
       end if;
    end Get_CDClk;
 

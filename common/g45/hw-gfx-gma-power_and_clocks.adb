@@ -102,7 +102,7 @@ package body HW.GFX.GMA.Power_And_Clocks is
    is
       use type HW.Word16;
 
-      Tmp_Clk : Int64 := 0;
+      Tmp_Clk : Int64;
 
       VCO : Int64;
       Divisors : Div_Array;
@@ -110,23 +110,21 @@ package body HW.GFX.GMA.Power_And_Clocks is
       GCFGC : Word16;
       CDClk_Sel : Natural range 0 .. 7;
    begin
-      if PCI_Usable then
-         Get_VCO (VCO, Divisors);
-         PCI_Read16 (GCFGC, 16#f0#);
-         if Config.GMCH_GM965 then
-            -- Linux i965gm_get_cdclk: cdclk_sel = ((tmp >> 8) & 0x1f) - 1
-            if (Shift_Right (GCFGC, 8) and 16#1f#) in 1 .. 3 then
-               CDClk_Sel := Natural (Shift_Right (GCFGC, 8) and 16#1f#) - 1;
-            else
-               CDClk_Sel := Div_Array'Last;
-            end if;
-         elsif Config.Has_GMCH_Mobile_VCO then
-            CDClk_Sel := Natural (Shift_Right (GCFGC, 12) and 1);
+      Get_VCO (VCO, Divisors);
+      PCI_Read16 (GCFGC, 16#f0#);
+      if Config.GMCH_GM965 then
+         -- Linux i965gm_get_cdclk: cdclk_sel = ((tmp >> 8) & 0x1f) - 1
+         if (Shift_Right (GCFGC, 8) and 16#1f#) in 1 .. 3 then
+            CDClk_Sel := Natural (Shift_Right (GCFGC, 8) and 16#1f#) - 1;
          else
-            CDClk_Sel := Natural (Shift_Right (GCFGC, 4) and 7);
+            CDClk_Sel := Div_Array'Last;
          end if;
-         Tmp_Clk := VCO / Divisors (CDClk_Sel);
+      elsif Config.Has_GMCH_Mobile_VCO then
+         CDClk_Sel := Natural (Shift_Right (GCFGC, 12) and 1);
+      else
+         CDClk_Sel := Natural (Shift_Right (GCFGC, 4) and 7);
       end if;
+      Tmp_Clk := VCO / Divisors (CDClk_Sel);
 
       if Tmp_Clk in Config.CDClk_Range then
          CDClk := Tmp_Clk;

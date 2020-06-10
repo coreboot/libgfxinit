@@ -38,7 +38,6 @@ package body HW.GFX.GMA
    with Refined_State =>
      (State =>
         (Config.Variable,
-         PCI_Usable,
          Dev.Address_State,
          Registers.Address_State,
          PCode.Mailbox_Ready,
@@ -495,8 +494,7 @@ is
            (Dev.PCI_State, Port_IO.State,
             Registers.Register_State, Registers.GTT_State),
          Output =>
-           (PCI_Usable,
-            Config.Variable,
+           (Config.Variable,
             Dev.Address_State,
             Registers.Address_State,
             PCode.Mailbox_Ready,
@@ -514,32 +512,6 @@ is
 
       Now : constant Time.T := Time.Now;
 
-      procedure Check_Platform (Success : out Boolean)
-      is
-         Audio_VID_DID : Word32;
-      begin
-         if Config.Gen_I945 or Config.GMCH_GM965 then
-            -- i945 and GM965 have no integrated audio DID to verify.
-            Success := True;
-            return;
-         end if;
-         Registers.Read_AUD_VID_DID (Audio_VID_DID);
-         Success :=
-           ((Config.Gen_Broxton        and Audio_VID_DID = 16#8086_280a#) or
-            (Config.CPU_Kabylake       and Audio_VID_DID = 16#8086_280b#) or
-            (Config.CPU_Skylake        and Audio_VID_DID = 16#8086_2809#) or
-            (Config.CPU_Broadwell      and Audio_VID_DID = 16#8086_2808#) or
-            (Config.CPU_Haswell        and Audio_VID_DID = 16#8086_2807#) or
-            ((Config.CPU_Ivybridge or
-              Config.CPU_Sandybridge)  and (Audio_VID_DID = 16#8086_2806# or
-                                            Audio_VID_DID = 16#8086_2805#)) or
-            (Config.CPU_Ironlake       and Audio_VID_DID = 16#0000_0000#) or
-            (Config.Gen_G45            and (Audio_VID_DID = 16#8086_2801# or
-                                            Audio_VID_DID = 16#8086_2802# or
-                                            Audio_VID_DID = 16#8086_2803#)) or
-            (Config.CPU_Tigerlake      and (Audio_VID_DID = 16#8086_2812#)));
-      end Check_Platform;
-
       procedure Check_Platform_PCI (Success : out Boolean)
       is
          use type HW.Word16;
@@ -556,7 +528,6 @@ is
 
       pragma Debug (Debug.Set_Register_Write_Delay (Write_Delay));
 
-      PCI_Usable := False;
       Linear_FB_Base := 0;
       PCode.Mailbox_Ready := False;
       Wait_For_HPD := HPD_Type'(others => False);
@@ -575,10 +546,15 @@ is
       PLLs.Initialize;
 
       Dev.Initialize (Success);
+      pragma Debug (not Success, Debug.Put_Line ("ERROR: Couldn't initialize PCI dev."));
 
       if Success then
          Check_Platform_PCI (Success);
-         if Success then
+         pragma Debug (not Success, Debug.Put_Line ("ERROR: Incompatible GPU."));
+      end if;
+
+      if Success then
+         if HW.Config.Dynamic_MMIO then
             if Config.Has_I945_GTT_BAR then
                -- i945: MMIO is on BAR0, GTT is on separate BAR3
                Dev.Map (PCI_MMIO_Base, PCI.Res0);
@@ -589,30 +565,22 @@ is
                Dev.Map
                  (PCI_GTT_Base, PCI.Res0, Offset => Config.MMIO_GTT_Offset);
             end if;
+
             if PCI_MMIO_Base /= 0 and PCI_GTT_Base /= 0 then
                Registers.Set_Register_Base (PCI_MMIO_Base, PCI_GTT_Base);
-               PCI_Usable := True;
             else
-               pragma Debug (Debug.Put_Line
-                 ("ERROR: Couldn't map resource0."));
-               Success := Config.Default_MMIO_Base_Set;
+               pragma Debug (Debug.Put_Line ("ERROR: Couldn't map resource0."));
+               Success := False;
             end if;
-         end if;
-      else
-         pragma Debug (Debug.Put_Line
-           ("WARNING: Couldn't initialize PCI dev."));
-         Success := Config.Default_MMIO_Base_Set;
-
-         if Success then
-            Check_Platform (Success);
+         else
+            Success := Config.Default_MMIO_Base_Set;
+            pragma Debug (not Success, Debug.Put_Line ("ERROR: MMIO base not set."));
          end if;
       end if;
 
       Panel.Static_Init;   -- early for flow analysis
 
       if not Success then
-         pragma Debug (Debug.Put_Line ("ERROR: Incompatible CPU or PCH."));
-
          Initialized := False;
          return;
       end if;

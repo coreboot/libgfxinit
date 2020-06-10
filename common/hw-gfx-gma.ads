@@ -276,11 +276,10 @@ is
 
 private
 
-   PCI_Usable : Boolean with Part_Of => State;
    use type HW.PCI.Index;
    procedure PCI_Read16 (Value : out Word16; Offset : HW.PCI.Index)
    with
-      Pre => PCI_Usable and Offset mod 2 = 0;
+      Pre => Offset mod 2 = 0;
 
    ----------------------------------------------------------------------------
 
