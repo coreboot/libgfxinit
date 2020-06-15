@@ -381,15 +381,18 @@ is
    ----------------------------------------------------------------------------
 
    -- Write a specific register
-   procedure Write (Register : Registers_Index; Value : Word32)
+   procedure Write
+     (Register : Registers_Index;
+      Value    : Word32;
+      Verbose  : Boolean := True)
    is
    begin
-      pragma Debug (Debug.Put (GNAT.Source_Info.Enclosing_Entity & ": "));
-      pragma Debug (Debug.Put_Word32 (Value));
-      pragma Debug (Debug.Put (" -> "));
-      pragma Debug (Debug.Put_Word32 (Register'Enum_Rep * Register_Width));
-      pragma Debug (Debug.Put (":"));
-      pragma Debug (Debug.Put_Line (Registers_Index'Image (Register)));
+      pragma Debug (Verbose, Debug.Put (GNAT.Source_Info.Enclosing_Entity & ": "));
+      pragma Debug (Verbose, Debug.Put_Word32 (Value));
+      pragma Debug (Verbose, Debug.Put (" -> "));
+      pragma Debug (Verbose, Debug.Put_Word32 (Register'Enum_Rep * Register_Width));
+      pragma Debug (Verbose, Debug.Put (":"));
+      pragma Debug (Verbose, Debug.Put_Line (Registers_Index'Image (Register)));
 
       Regs.Write (Rep.Index (Register), Value);
       pragma Debug (Debug.Register_Write_Wait);

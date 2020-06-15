@@ -525,11 +525,13 @@ package body HW.GFX.GMA.Pipe_Setup is
       end if;
       Registers.Write
         (Register => Cursors (Pipe).POS,
-         Value    => CUR_POS_Y (Y) or CUR_POS_X (X));
+         Value    => CUR_POS_Y (Y) or CUR_POS_X (X),
+         Verbose  => False);
       -- write to CUR_BASE always arms other CUR_* registers
       Registers.Write
         (Register => Cursors (Pipe).BASE,
-         Value    => Shift_Left (Word32 (Cursor.GTT_Offset), 12));
+         Value    => Shift_Left (Word32 (Cursor.GTT_Offset), 12),
+         Verbose  => False);
    end Place_Cursor;
 
    ----------------------------------------------------------------------------

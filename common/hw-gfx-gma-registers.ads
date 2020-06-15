@@ -2310,7 +2310,6 @@ is
                   null  => Verbose),
       Pre     => True,
       Post    => True;
-   pragma Warnings (GNATprove, On, "unused variable ""Verbose""");
 
    procedure Read_AUD_VID_DID (Value : out Word32)
    with
@@ -2321,12 +2320,15 @@ is
 
    procedure Write
       (Register : Registers_Index;
-       Value    : Word32)
+       Value    : Word32;
+       Verbose  : Boolean := True)
    with
       Global  => (In_Out => Register_State),
-      Depends => (Register_State => (Register, Register_State, Value)),
+      Depends => (Register_State => (Register, Register_State, Value),
+                  null => Verbose),
       Pre     => True,
       Post    => True;
+   pragma Warnings (GNATprove, On, "unused variable ""Verbose""");
 
    procedure Is_Set_Mask
       (Register : in     Registers_Index;
