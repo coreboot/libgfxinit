@@ -19,7 +19,7 @@ with HW.Debug;
 with HW.GFX.GMA.Config;
 with HW.GFX.GMA.Registers;
 with HW.GFX.GMA.PCode;
-with HW.GFX.GMA.Power_And_Clocks_Haswell;
+with HW.GFX.GMA.Transcoder;
 
 use type HW.Word64;
 
@@ -209,7 +209,7 @@ package body HW.GFX.GMA.Power_And_Clocks_Skylake is
 
    procedure Pre_All_Off is
    begin
-      Power_And_Clocks_Haswell.PSR_Off;
+      Transcoder.PSR_Off;
    end Pre_All_Off;
 
    procedure Post_All_Off is

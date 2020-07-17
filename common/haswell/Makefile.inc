@@ -7,5 +7,7 @@ gfxinit-y += hw-gfx-gma-plls-wrpll.ads
 gfxinit-y += hw-gfx-gma-plls.adb
 gfxinit-y += hw-gfx-gma-plls.ads
 gfxinit-y += hw-gfx-gma-power_and_clocks.ads
+gfxinit-y += hw-gfx-gma-power_and_clocks_haswell.adb
+gfxinit-y += hw-gfx-gma-power_and_clocks_haswell.ads
 gfxinit-y += hw-gfx-gma-spll.adb
 gfxinit-y += hw-gfx-gma-spll.ads

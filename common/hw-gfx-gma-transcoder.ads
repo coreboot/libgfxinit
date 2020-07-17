@@ -28,6 +28,8 @@ is
    procedure Off (Pipe : Pipe_Index);
    procedure Clk_Off (Pipe : Pipe_Index);
 
+   procedure PSR_Off;
+
    function BPC_Conf (BPC : BPC_Type; Dither : Boolean) return Word32;
 
 private

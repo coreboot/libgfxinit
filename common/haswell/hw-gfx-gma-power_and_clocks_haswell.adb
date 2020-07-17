@@ -20,6 +20,7 @@ with HW.Debug;
 with HW.GFX.GMA.Config;
 with HW.GFX.GMA.PCode;
 with HW.GFX.GMA.Registers;
+with HW.GFX.GMA.Transcoder;
 
 package body HW.GFX.GMA.Power_And_Clocks_Haswell is
 
@@ -53,62 +54,8 @@ package body HW.GFX.GMA.Power_And_Clocks_Haswell is
 
    ----------------------------------------------------------------------------
 
-   SRD_CTL_ENABLE          : constant := 1 * 2 ** 31;
-   SRD_STATUS_STATE_MASK   : constant := 7 * 2 ** 29;
-
-   type Pipe is (EDP, A, B, C);
-   type SRD_Regs is record
-      CTL     : Registers.Registers_Index;
-      STATUS  : Registers.Registers_Index;
-   end record;
-   type SRD_Per_Pipe_Regs is array (Pipe) of SRD_Regs;
-   SRD : constant SRD_Per_Pipe_Regs := SRD_Per_Pipe_Regs'
-     (A     => SRD_Regs'
-        (CTL      => Registers.SRD_CTL_A,
-         STATUS   => Registers.SRD_STATUS_A),
-      B     => SRD_Regs'
-        (CTL      => Registers.SRD_CTL_B,
-         STATUS   => Registers.SRD_STATUS_B),
-      C     => SRD_Regs'
-        (CTL      => Registers.SRD_CTL_C,
-         STATUS   => Registers.SRD_STATUS_C),
-      EDP   => SRD_Regs'
-        (CTL      => Registers.SRD_CTL_EDP,
-         STATUS   => Registers.SRD_STATUS_EDP));
-
-   ----------------------------------------------------------------------------
-
    IPS_CTL_ENABLE          : constant := 1 * 2 ** 31;
    DISPLAY_IPS_CONTROL     : constant := 16#19#;
-
-   ----------------------------------------------------------------------------
-
-   procedure PSR_Off
-   is
-      Enabled : Boolean;
-   begin
-      pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
-
-      if Config.Has_Per_Pipe_SRD then
-         for P in Pipe loop
-            Registers.Is_Set_Mask (SRD (P).CTL, SRD_CTL_ENABLE, Enabled);
-            if Enabled then
-               Registers.Unset_Mask (SRD (P).CTL, SRD_CTL_ENABLE);
-               Registers.Wait_Unset_Mask (SRD (P).STATUS, SRD_STATUS_STATE_MASK);
-
-               pragma Debug (Debug.Put_Line ("Disabled PSR."));
-            end if;
-         end loop;
-      else
-         Registers.Is_Set_Mask (Registers.SRD_CTL, SRD_CTL_ENABLE, Enabled);
-         if Enabled then
-            Registers.Unset_Mask (Registers.SRD_CTL, SRD_CTL_ENABLE);
-            Registers.Wait_Unset_Mask (Registers.SRD_STATUS, SRD_STATUS_STATE_MASK);
-
-            pragma Debug (Debug.Put_Line ("Disabled PSR."));
-         end if;
-      end if;
-   end PSR_Off;
 
    ----------------------------------------------------------------------------
 
@@ -218,7 +165,7 @@ package body HW.GFX.GMA.Power_And_Clocks_Haswell is
    begin
       -- HSW: disable panel self refresh (PSR) on eDP if enabled
          -- wait for PSR idling
-      PSR_Off;
+      Transcoder.PSR_Off;
       IPS_Off;
    end Pre_All_Off;
 

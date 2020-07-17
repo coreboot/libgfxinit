@@ -18,7 +18,7 @@ with HW.Debug;
 with HW.GFX.GMA.Config;
 with HW.GFX.GMA.Registers;
 with HW.GFX.GMA.PCode;
-with HW.GFX.GMA.Power_And_Clocks_Haswell;
+with HW.GFX.GMA.Transcoder;
 with HW.GFX.GMA.DDI_Phy;
 
 use HW.GFX.GMA.Registers;
@@ -307,7 +307,7 @@ package body HW.GFX.GMA.Power_And_Clocks is
    procedure Pre_All_Off is
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
-      Power_And_Clocks_Haswell.PSR_Off;
+      Transcoder.PSR_Off;
    end Pre_All_Off;
 
    procedure Post_All_Off is
