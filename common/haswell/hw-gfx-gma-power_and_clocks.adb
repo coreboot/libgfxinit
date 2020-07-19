@@ -23,7 +23,7 @@ with HW.GFX.GMA.Registers;
 with HW.GFX.GMA.Transcoder;
 with HW.GFX.GMA.PCH.Lynxpoint;
 
-package body HW.GFX.GMA.Power_And_Clocks_Haswell is
+package body HW.GFX.GMA.Power_And_Clocks is
 
    LCPLL_CTL_CD_FREQ_SEL_MASK          : constant := 3 * 2 ** 26;
    LCPLL_CTL_CD_FREQ_SEL_450_MHZ       : constant := 0 * 2 ** 26;
@@ -351,4 +351,4 @@ package body HW.GFX.GMA.Power_And_Clocks_Haswell is
       end if;
    end Power_Down;
 
-end HW.GFX.GMA.Power_And_Clocks_Haswell;
+end HW.GFX.GMA.Power_And_Clocks;

@@ -23,7 +23,7 @@ with HW.GFX.GMA.Transcoder;
 
 use type HW.Word64;
 
-package body HW.GFX.GMA.Power_And_Clocks_Skylake is
+package body HW.GFX.GMA.Power_And_Clocks is
 
    type Power_Domain is (MISC_IO, PW1, PW2, DDI_AE, DDI_B, DDI_C, DDI_D);
    subtype Power_Well is Power_Domain range PW1 .. PW2;
@@ -395,4 +395,4 @@ package body HW.GFX.GMA.Power_And_Clocks_Skylake is
       end loop;
    end Power_Down;
 
-end HW.GFX.GMA.Power_And_Clocks_Skylake;
+end HW.GFX.GMA.Power_And_Clocks;

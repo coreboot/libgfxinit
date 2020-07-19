@@ -16,7 +16,7 @@ with HW.Time;
 with HW.GFX.GMA.Config;
 with HW.GFX.GMA.Registers;
 
-package body HW.GFX.GMA.Power_And_Clocks_Ironlake is
+package body HW.GFX.GMA.Power_And_Clocks is
 
    PCH_DREF_CONTROL_120MHZ_CPU_OUTPUT_MASK      : constant := 3 * 2 ** 13;
    PCH_DREF_CONTROL_120MHZ_CPU_OUTPUT_SSC       : constant := 2 * 2 ** 13;
@@ -65,4 +65,4 @@ package body HW.GFX.GMA.Power_And_Clocks_Ironlake is
       CDClk_Switch := False;
    end Limit_Dotclocks;
 
-end HW.GFX.GMA.Power_And_Clocks_Ironlake;
+end HW.GFX.GMA.Power_And_Clocks;
