@@ -169,6 +169,24 @@ is
 
    ----------------------------------------------------------------------------
 
+   procedure Backlight_On (Port : Active_Port_Type)
+   with
+      Global => (In_Out => Device_State);
+
+   procedure Backlight_Off (Port : Active_Port_Type)
+   with
+      Global => (In_Out => Device_State);
+
+   procedure Set_Brightness (Port : Active_Port_Type; Level : Word32)
+   with
+      Global => (In_Out => Device_State);
+
+   procedure Get_Max_Brightness (Port : Active_Port_Type; Level : out Word32)
+   with
+      Global => (In_Out => Device_State);
+
+   ----------------------------------------------------------------------------
+
    procedure Write_GTT
      (GTT_Page       : GTT_Range;
       Device_Address : GTT_Address_Type;

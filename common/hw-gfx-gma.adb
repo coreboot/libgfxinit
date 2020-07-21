@@ -402,6 +402,40 @@ is
 
    ----------------------------------------------------------------------------
 
+   procedure Backlight_On (Port : Active_Port_Type)
+   with
+      Refined_Global => (In_Out => Registers.Register_State)
+   is
+   begin
+      Panel.Backlight_On (Config_Helpers.To_Panel (Port));
+   end Backlight_On;
+
+   procedure Backlight_Off (Port : Active_Port_Type)
+   with
+      Refined_Global => (In_Out => Registers.Register_State)
+   is
+   begin
+      Panel.Backlight_Off (Config_Helpers.To_Panel (Port));
+   end Backlight_Off;
+
+   procedure Set_Brightness (Port : Active_Port_Type; Level : Word32)
+   with
+      Refined_Global => (In_Out => Registers.Register_State)
+   is
+   begin
+      Panel.Set_Backlight (Config_Helpers.To_Panel (Port), Level);
+   end Set_Brightness;
+
+   procedure Get_Max_Brightness (Port : Active_Port_Type; Level : out Word32)
+   with
+      Refined_Global => (In_Out => Registers.Register_State)
+   is
+   begin
+      Panel.Get_Max_Backlight (Config_Helpers.To_Panel (Port), Level);
+   end Get_Max_Brightness;
+
+   ----------------------------------------------------------------------------
+
    procedure Initialize
      (Write_Delay : in     Word64 := 0;
       Clean_State : in     Boolean := False;
