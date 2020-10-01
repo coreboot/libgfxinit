@@ -417,8 +417,8 @@ is
             declare
                C : Cursor_Type renames Pipes (Pipe).Cursor;
                FB : Framebuffer_Type renames Pipes (Pipe).Framebuffer;
-               Width : constant Width_Type := Rotated_Width (FB);
-               Height : constant Height_Type := Rotated_Height (FB);
+               Width : constant Width_Type := FB.Width;
+               Height : constant Height_Type := FB.Height;
                CS : Cursor_Script_Entry renames Cursor_Script
                  (Natural (Cnt) mod (Cursor_Script'Last + 1));
             begin
@@ -516,8 +516,8 @@ is
                C : Cursor_Type renames Pipes (Pipe).Cursor;
                CI : Cursor_Info renames Cursor_Infos (Pipe);
                FB : Framebuffer_Type renames Pipes (Pipe).Framebuffer;
-               Width : constant Width_Type := Rotated_Width (FB);
-               Height : constant Height_Type := Rotated_Height (FB);
+               Width : constant Width_Type := FB.Width;
+               Height : constant Height_Type := FB.Height;
 
                Update : Boolean := False;
             begin
@@ -634,8 +634,8 @@ is
                  (64, Height - New_FB.Start_Y - Rand_Div (Height));
 
                Cursor.Mode := No_Cursor;
-               Cursor.Center_X := Rotated_Width (New_FB) / 2;
-               Cursor.Center_Y := Rotated_Height (New_FB) / 2;
+               Cursor.Center_X := New_FB.Width / 2;
+               Cursor.Center_Y := New_FB.Height / 2;
                CI.X_Velo := 6 * Cursor_Rand (Gen) / (Width / New_FB.Width);
                CI.Y_Velo := 6 * Cursor_Rand (Gen) / (Height / New_FB.Height);
             end;

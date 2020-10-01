@@ -514,8 +514,24 @@ package body HW.GFX.GMA.Pipe_Setup is
       Cursor   : Cursor_Type)
    is
       Width : constant Width_Type := Cursor_Width (Cursor.Size);
-      X : Int32 := Cursor.Center_X - Width / 2;
-      Y : Int32 := Cursor.Center_Y - Width / 2;
+
+      -- The cursor's coordinates are on the framebuffer surface
+      -- but we need to place it on the physical screen:
+      Center_X : constant Int32 :=
+        (case FB.Rotation is
+            when No_Rotation  => Cursor.Center_X,
+            when Rotated_90   => FB.Height   - 1 - Cursor.Center_Y,
+            when Rotated_180  => FB.Width    - 1 - Cursor.Center_X,
+            when Rotated_270  => Cursor.Center_Y);
+      Center_Y : constant Int32 :=
+        (case FB.Rotation is
+            when No_Rotation  => Cursor.Center_Y,
+            when Rotated_90   => Cursor.Center_X,
+            when Rotated_180  => FB.Height   - 1 - Cursor.Center_Y,
+            when Rotated_270  => FB.Width    - 1 - Cursor.Center_X);
+
+      X : Int32 := Center_X - Width / 2;
+      Y : Int32 := Center_Y - Width / 2;
    begin
       -- off-screen cursor needs special care
       if X <= -Width or Y <= -Width or
