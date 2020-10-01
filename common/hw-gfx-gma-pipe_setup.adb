@@ -185,6 +185,10 @@ package body HW.GFX.GMA.Pipe_Setup is
       for Level in WM_Levels loop
          Registers.Write (Controller.CUR_WM (Level), 16#0000_0000#);
       end loop;
+      Registers.Write (Controller.PLANE_2_BUF_CFG, 16#0000_0000#);
+      for Level in WM_Levels loop
+         Registers.Write (Controller.PLANE_2_WM (Level), 16#0000_0000#);
+      end loop;
       Registers.Write (Controller.PLANE_BUF_CFG, 16#0000_0000#);
       for Level in WM_Levels loop
          Registers.Write (Controller.PLANE_WM (Level), 16#0000_0000#);
@@ -194,24 +198,44 @@ package body HW.GFX.GMA.Pipe_Setup is
 
    procedure Setup_Watermarks (Controller : Controller_Type)
    is
+      subtype Buffer_Count is Natural range 1 .. 508;
+      subtype Buffer_Index is Natural range 0 .. Buffer_Count'Last - 1;
+
+      function Encode_Buffers (Start : Buffer_Index; Count : Buffer_Count)
+         return Word32
+      is
+        (Shift_Left (Word32 (Start + Count - 1), 16) or Word32 (Start));
+
       type Per_Plane_Buffer_Range is array (Pipe_Index) of Word32;
+      Plane_1_Buffer_Range : constant Per_Plane_Buffer_Range :=
+        (Primary     => Encode_Buffers (  0, 150),
+         Secondary   => Encode_Buffers (169, 150),
+         Tertiary    => Encode_Buffers (338, 150));
+      Plane_2_Buffer_Range : constant Per_Plane_Buffer_Range :=
+        (Primary     => Encode_Buffers (150, 11),
+         Secondary   => Encode_Buffers (319, 11),
+         Tertiary    => Encode_Buffers (488, 11));
       Cur_Buffer_Range : constant Per_Plane_Buffer_Range :=
-        (Primary     => Shift_Left (  7, 16) or   0,
-         Secondary   => Shift_Left (167, 16) or 160,
-         Tertiary    => Shift_Left (327, 16) or 320);
-      Plane_Buffer_Range : constant Per_Plane_Buffer_Range :=
-        (Primary     => Shift_Left (159, 16) or   8,
-         Secondary   => Shift_Left (319, 16) or 168,
-         Tertiary    => Shift_Left (479, 16) or 328);
+        (Primary     => Encode_Buffers (161, 8),
+         Secondary   => Encode_Buffers (330, 8),
+         Tertiary    => Encode_Buffers (499, 8));
    begin
       Registers.Write
         (Register    => Controller.PLANE_BUF_CFG,
-         Value       => Plane_Buffer_Range (Controller.Pipe));
+         Value       => Plane_1_Buffer_Range (Controller.Pipe));
       Registers.Write
         (Register    => Controller.PLANE_WM (0),
          Value       => PLANE_WM_ENABLE or
                         PLANE_WM_LINES (2) or
-                        PLANE_WM_BLOCKS (152));
+                        PLANE_WM_BLOCKS (150));
+      Registers.Write
+        (Register    => Controller.PLANE_2_BUF_CFG,
+         Value       => Plane_2_Buffer_Range (Controller.Pipe));
+      Registers.Write
+        (Register    => Controller.PLANE_2_WM (0),
+         Value       => PLANE_WM_ENABLE or
+                        PLANE_WM_LINES (2) or
+                        PLANE_WM_BLOCKS (11));
       Registers.Write
         (Register    => Controller.CUR_BUF_CFG,
          Value       => Cur_Buffer_Range (Controller.Pipe));
