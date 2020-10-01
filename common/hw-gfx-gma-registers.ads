@@ -596,7 +596,22 @@ is
       PLANE_WM_1_A_6,
       PLANE_WM_1_A_7,
       PLANE_BUF_CFG_1_A,
-      SPACNTR,
+      PLANE_CTL_2_A,
+      PLANE_STRIDE_2_A,
+      PLANE_POS_2_A,
+      PLANE_SIZE_2_A,
+      PLANE_SURF_2_A,
+      PLANE_OFFSET_2_A,
+      PLANE_COLOR_CTL_2_A,
+      PLANE_WM_2_A_0,
+      PLANE_WM_2_A_1,
+      PLANE_WM_2_A_2,
+      PLANE_WM_2_A_3,
+      PLANE_WM_2_A_4,
+      PLANE_WM_2_A_5,
+      PLANE_WM_2_A_6,
+      PLANE_WM_2_A_7,
+      PLANE_BUF_CFG_2_A,
       PIPE_SCANLINE_B,
       PIPEBCONF,
       PIPEB_ARB_CTL,
@@ -639,7 +654,22 @@ is
       PLANE_WM_1_B_6,
       PLANE_WM_1_B_7,
       PLANE_BUF_CFG_1_B,
-      SPBCNTR,
+      PLANE_CTL_2_B,
+      PLANE_STRIDE_2_B,
+      PLANE_POS_2_B,
+      PLANE_SIZE_2_B,
+      PLANE_SURF_2_B,
+      PLANE_OFFSET_2_B,
+      PLANE_COLOR_CTL_2_B,
+      PLANE_WM_2_B_0,
+      PLANE_WM_2_B_1,
+      PLANE_WM_2_B_2,
+      PLANE_WM_2_B_3,
+      PLANE_WM_2_B_4,
+      PLANE_WM_2_B_5,
+      PLANE_WM_2_B_6,
+      PLANE_WM_2_B_7,
+      PLANE_BUF_CFG_2_B,
       GMCH_VGACNTRL,
       PIPE_SCANLINE_C,
       PIPECCONF,
@@ -679,7 +709,22 @@ is
       PLANE_WM_1_C_6,
       PLANE_WM_1_C_7,
       PLANE_BUF_CFG_1_C,
-      SPCCNTR,
+      PLANE_CTL_2_C,
+      PLANE_STRIDE_2_C,
+      PLANE_POS_2_C,
+      PLANE_SIZE_2_C,
+      PLANE_SURF_2_C,
+      PLANE_OFFSET_2_C,
+      PLANE_COLOR_CTL_2_C,
+      PLANE_WM_2_C_0,
+      PLANE_WM_2_C_1,
+      PLANE_WM_2_C_2,
+      PLANE_WM_2_C_3,
+      PLANE_WM_2_C_4,
+      PLANE_WM_2_C_5,
+      PLANE_WM_2_C_6,
+      PLANE_WM_2_C_7,
+      PLANE_BUF_CFG_2_C,
       PIPE_EDP_CONF,
       PCH_FDI_CHICKEN_B_C,
       QUIRK_C2004,
@@ -1110,8 +1155,13 @@ is
       DSPASURF              => 16#07_019c# / Register_Width,
       DSPATILEOFF           => 16#07_01a4# / Register_Width,
 
-      -- sprite control
-      SPACNTR               => 16#07_0280# / Register_Width,
+      -- sprite / second plane control
+      PLANE_CTL_2_A         => 16#07_0280# / Register_Width,
+      PLANE_STRIDE_2_A      => 16#07_0288# / Register_Width,
+      PLANE_POS_2_A         => 16#07_028c# / Register_Width,
+      PLANE_SIZE_2_A        => 16#07_0290# / Register_Width,
+      PLANE_SURF_2_A        => 16#07_029c# / Register_Width,
+      PLANE_OFFSET_2_A      => 16#07_02a4# / Register_Width,
 
       -- FDI and PCH transcoder control
       FDI_TX_CTL_A          => 16#06_0100# / Register_Width,
@@ -1134,6 +1184,15 @@ is
       PLANE_WM_1_A_6        => 16#07_0258# / Register_Width,
       PLANE_WM_1_A_7        => 16#07_025c# / Register_Width,
       PLANE_BUF_CFG_1_A     => 16#07_027c# / Register_Width,
+      PLANE_WM_2_A_0        => 16#07_0340# / Register_Width,
+      PLANE_WM_2_A_1        => 16#07_0344# / Register_Width,
+      PLANE_WM_2_A_2        => 16#07_0348# / Register_Width,
+      PLANE_WM_2_A_3        => 16#07_034c# / Register_Width,
+      PLANE_WM_2_A_4        => 16#07_0350# / Register_Width,
+      PLANE_WM_2_A_5        => 16#07_0354# / Register_Width,
+      PLANE_WM_2_A_6        => 16#07_0358# / Register_Width,
+      PLANE_WM_2_A_7        => 16#07_035c# / Register_Width,
+      PLANE_BUF_CFG_2_A     => 16#07_037c# / Register_Width,
       CUR_WM_A_0            => 16#07_0140# / Register_Width,
       CUR_WM_A_1            => 16#07_0144# / Register_Width,
       CUR_WM_A_2            => 16#07_0148# / Register_Width,
@@ -1224,8 +1283,13 @@ is
       DSPBSURF              => 16#07_119c# / Register_Width,
       DSPBTILEOFF           => 16#07_11a4# / Register_Width,
 
-      -- sprite control
-      SPBCNTR               => 16#07_1280# / Register_Width,
+      -- sprite / second plane control
+      PLANE_CTL_2_B         => 16#07_1280# / Register_Width,
+      PLANE_STRIDE_2_B      => 16#07_1288# / Register_Width,
+      PLANE_POS_2_B         => 16#07_128c# / Register_Width,
+      PLANE_SIZE_2_B        => 16#07_1290# / Register_Width,
+      PLANE_SURF_2_B        => 16#07_129c# / Register_Width,
+      PLANE_OFFSET_2_B      => 16#07_12a4# / Register_Width,
 
       -- FDI and PCH transcoder control
       FDI_TX_CTL_B          => 16#06_1100# / Register_Width, -- aliased by GMCH_ADPA
@@ -1248,6 +1312,15 @@ is
       PLANE_WM_1_B_6        => 16#07_1258# / Register_Width,
       PLANE_WM_1_B_7        => 16#07_125c# / Register_Width,
       PLANE_BUF_CFG_1_B     => 16#07_127c# / Register_Width,
+      PLANE_WM_2_B_0        => 16#07_1340# / Register_Width,
+      PLANE_WM_2_B_1        => 16#07_1344# / Register_Width,
+      PLANE_WM_2_B_2        => 16#07_1348# / Register_Width,
+      PLANE_WM_2_B_3        => 16#07_134c# / Register_Width,
+      PLANE_WM_2_B_4        => 16#07_1350# / Register_Width,
+      PLANE_WM_2_B_5        => 16#07_1354# / Register_Width,
+      PLANE_WM_2_B_6        => 16#07_1358# / Register_Width,
+      PLANE_WM_2_B_7        => 16#07_135c# / Register_Width,
+      PLANE_BUF_CFG_2_B     => 16#07_137c# / Register_Width,
       CUR_WM_B_0            => 16#07_1140# / Register_Width,
       CUR_WM_B_1            => 16#07_1144# / Register_Width,
       CUR_WM_B_2            => 16#07_1148# / Register_Width,
@@ -1318,8 +1391,13 @@ is
       DSPCSURF              => 16#07_219c# / Register_Width,
       DSPCTILEOFF           => 16#07_21a4# / Register_Width,
 
-      -- sprite control
-      SPCCNTR               => 16#07_2280# / Register_Width,
+      -- sprite / second plane control
+      PLANE_CTL_2_C         => 16#07_2280# / Register_Width,
+      PLANE_STRIDE_2_C      => 16#07_2288# / Register_Width,
+      PLANE_POS_2_C         => 16#07_228c# / Register_Width,
+      PLANE_SIZE_2_C        => 16#07_2290# / Register_Width,
+      PLANE_SURF_2_C        => 16#07_229c# / Register_Width,
+      PLANE_OFFSET_2_C      => 16#07_22a4# / Register_Width,
 
       -- PCH transcoder control
       FDI_TX_CTL_C          => 16#06_2100# / Register_Width,
@@ -1342,6 +1420,15 @@ is
       PLANE_WM_1_C_6        => 16#07_2258# / Register_Width,
       PLANE_WM_1_C_7        => 16#07_225c# / Register_Width,
       PLANE_BUF_CFG_1_C     => 16#07_227c# / Register_Width,
+      PLANE_WM_2_C_0        => 16#07_2340# / Register_Width,
+      PLANE_WM_2_C_1        => 16#07_2344# / Register_Width,
+      PLANE_WM_2_C_2        => 16#07_2348# / Register_Width,
+      PLANE_WM_2_C_3        => 16#07_234c# / Register_Width,
+      PLANE_WM_2_C_4        => 16#07_2350# / Register_Width,
+      PLANE_WM_2_C_5        => 16#07_2354# / Register_Width,
+      PLANE_WM_2_C_6        => 16#07_2358# / Register_Width,
+      PLANE_WM_2_C_7        => 16#07_235c# / Register_Width,
+      PLANE_BUF_CFG_2_C     => 16#07_237c# / Register_Width,
       CUR_WM_C_0            => 16#07_2140# / Register_Width,
       CUR_WM_C_1            => 16#07_2144# / Register_Width,
       CUR_WM_C_2            => 16#07_2148# / Register_Width,
@@ -2147,6 +2234,9 @@ is
       PLANE_COLOR_CTL_1_A   => 16#07_01cc# / Register_Width,
       PLANE_COLOR_CTL_1_B   => 16#07_11cc# / Register_Width,
       PLANE_COLOR_CTL_1_C   => 16#07_21cc# / Register_Width,
+      PLANE_COLOR_CTL_2_A   => 16#07_02cc# / Register_Width,
+      PLANE_COLOR_CTL_2_B   => 16#07_12cc# / Register_Width,
+      PLANE_COLOR_CTL_2_C   => 16#07_22cc# / Register_Width,
 
       -- TGL FIA registers
       PORT_TX_DFLEXDPCSSS_FIA1 => 16#16_3894# / Register_Width,
@@ -2246,6 +2336,9 @@ is
    CURACNTR             : constant Registers_Index := CUR_CTL_A;
    CURABASE             : constant Registers_Index := CUR_BASE_A;
    CURAPOS              : constant Registers_Index := CUR_POS_A;
+   SPACNTR              : constant Registers_Index := PLANE_CTL_2_A;
+   SPBCNTR              : constant Registers_Index := PLANE_CTL_2_B;
+   SPCCNTR              : constant Registers_Index := PLANE_CTL_2_C;
    BXT_BLC_PWM_CTL_1    : constant Registers_Index := BLC_PWM_PCH_CTL1;
    BXT_BLC_PWM_FREQ_1   : constant Registers_Index := BLC_PWM_PCH_CTL2;
    PHY_MISC_A           : constant Registers_Index := BXT_PHY_CTL_A;
