@@ -87,7 +87,6 @@ private
          DSPTILEOFF        : Registers.Registers_Index;
          DSPSIZE           : Registers.Registers_Index;
          DSPPOS            : Registers.Registers_Index;
-         SPCNTR            : Registers.Registers_Index;
          -- Skylake registers (partially aliased)
          PLANE_CTL         : Registers.Registers_Index;
          PLANE_OFFSET      : Registers.Registers_Index;
@@ -102,12 +101,21 @@ private
          PS_WIN_SZ_2       : Registers.Registers_Invalid_Index;
          WM_LINETIME       : Registers.Registers_Index;
          PLANE_BUF_CFG     : Registers.Registers_Index;
+         PLANE_COLOR_CTL   : Registers.Registers_Index;
          PLANE_WM          : PLANE_WM_Type;
+         PLANE_2_CTL       : Registers.Registers_Index;
+         PLANE_2_OFFSET    : Registers.Registers_Index;
+         PLANE_2_POS       : Registers.Registers_Index;
+         PLANE_2_SIZE      : Registers.Registers_Index;
+         PLANE_2_STRIDE    : Registers.Registers_Index;
+         PLANE_2_SURF      : Registers.Registers_Index;
+         PLANE_2_BUF_CFG   : Registers.Registers_Index;
+         PLANE_2_COLOR_CTL : Registers.Registers_Index;
+         PLANE_2_WM        : PLANE_WM_Type;
          CUR_BUF_CFG       : Registers.Registers_Index;
          CUR_WM            : PLANE_WM_Type;
          MBUS_DBOX_CTL     : Registers.Registers_Index;
          PIPE_CHICKEN      : Registers.Registers_Index;
-         PLANE_COLOR_CTL   : Registers.Registers_Index;
          PLANE_AUX_DIST    : Registers.Registers_Index;
       end record;
 
@@ -147,7 +155,6 @@ private
          DSPPOS            =>
            (if Config.Planes_Pipes_Swapped
             then Registers.PLANE_POS_1_B else Registers.PLANE_POS_1_A),
-         SPCNTR            => Registers.SPACNTR,
          PLANE_CTL         => Registers.DSPACNTR,
          PLANE_OFFSET      => Registers.DSPATILEOFF,
          PLANE_POS         => Registers.PLANE_POS_1_A,
@@ -161,6 +168,7 @@ private
          PS_WIN_SZ_2       => Registers.PS_WIN_SZ_2_A,
          WM_LINETIME       => Registers.WM_LINETIME_A,
          PLANE_BUF_CFG     => Registers.PLANE_BUF_CFG_1_A,
+         PLANE_COLOR_CTL   => Registers.PLANE_COLOR_CTL_1_A,
          PLANE_WM          => PLANE_WM_Type'(
                               Registers.PLANE_WM_1_A_0,
                               Registers.PLANE_WM_1_A_1,
@@ -170,6 +178,23 @@ private
                               Registers.PLANE_WM_1_A_5,
                               Registers.PLANE_WM_1_A_6,
                               Registers.PLANE_WM_1_A_7),
+         PLANE_2_CTL       => Registers.PLANE_CTL_2_A,
+         PLANE_2_OFFSET    => Registers.PLANE_OFFSET_2_A,
+         PLANE_2_POS       => Registers.PLANE_POS_2_A,
+         PLANE_2_SIZE      => Registers.PLANE_SIZE_2_A,
+         PLANE_2_STRIDE    => Registers.PLANE_STRIDE_2_A,
+         PLANE_2_SURF      => Registers.PLANE_SURF_2_A,
+         PLANE_2_BUF_CFG   => Registers.PLANE_BUF_CFG_2_A,
+         PLANE_2_COLOR_CTL => Registers.PLANE_COLOR_CTL_2_A,
+         PLANE_2_WM        => PLANE_WM_Type'(
+                              Registers.PLANE_WM_2_A_0,
+                              Registers.PLANE_WM_2_A_1,
+                              Registers.PLANE_WM_2_A_2,
+                              Registers.PLANE_WM_2_A_3,
+                              Registers.PLANE_WM_2_A_4,
+                              Registers.PLANE_WM_2_A_5,
+                              Registers.PLANE_WM_2_A_6,
+                              Registers.PLANE_WM_2_A_7),
          CUR_BUF_CFG       => Registers.CUR_BUF_CFG_A,
          CUR_WM            => PLANE_WM_Type'(
                               Registers.CUR_WM_A_0,
@@ -182,7 +207,6 @@ private
                               Registers.CUR_WM_A_7),
          MBUS_DBOX_CTL     => Registers.PIPE_MBUS_DBOX_CTL_A,
          PIPE_CHICKEN      => Registers.PIPEA_CHICKEN,
-         PLANE_COLOR_CTL   => Registers.PLANE_COLOR_CTL_1_A,
          PLANE_AUX_DIST    => Registers.PLANE_AUX_DIST_1_A),
       Secondary => Controller_Type'
         (Pipe              => Secondary,
@@ -212,7 +236,6 @@ private
          DSPPOS            =>
            (if Config.Planes_Pipes_Swapped
             then Registers.PLANE_POS_1_A else Registers.PLANE_POS_1_B),
-         SPCNTR            => Registers.SPBCNTR,
          PLANE_CTL         => Registers.DSPBCNTR,
          PLANE_OFFSET      => Registers.DSPBTILEOFF,
          PLANE_POS         => Registers.PLANE_POS_1_B,
@@ -226,6 +249,7 @@ private
          PS_WIN_SZ_2       => Registers.PS_WIN_SZ_2_B,
          WM_LINETIME       => Registers.WM_LINETIME_B,
          PLANE_BUF_CFG     => Registers.PLANE_BUF_CFG_1_B,
+         PLANE_COLOR_CTL   => Registers.PLANE_COLOR_CTL_1_B,
          PLANE_WM          => PLANE_WM_Type'(
                               Registers.PLANE_WM_1_B_0,
                               Registers.PLANE_WM_1_B_1,
@@ -235,6 +259,23 @@ private
                               Registers.PLANE_WM_1_B_5,
                               Registers.PLANE_WM_1_B_6,
                               Registers.PLANE_WM_1_B_7),
+         PLANE_2_CTL       => Registers.PLANE_CTL_2_B,
+         PLANE_2_OFFSET    => Registers.PLANE_OFFSET_2_B,
+         PLANE_2_POS       => Registers.PLANE_POS_2_B,
+         PLANE_2_SIZE      => Registers.PLANE_SIZE_2_B,
+         PLANE_2_STRIDE    => Registers.PLANE_STRIDE_2_B,
+         PLANE_2_SURF      => Registers.PLANE_SURF_2_B,
+         PLANE_2_BUF_CFG   => Registers.PLANE_BUF_CFG_2_B,
+         PLANE_2_COLOR_CTL => Registers.PLANE_COLOR_CTL_2_B,
+         PLANE_2_WM        => PLANE_WM_Type'(
+                              Registers.PLANE_WM_2_B_0,
+                              Registers.PLANE_WM_2_B_1,
+                              Registers.PLANE_WM_2_B_2,
+                              Registers.PLANE_WM_2_B_3,
+                              Registers.PLANE_WM_2_B_4,
+                              Registers.PLANE_WM_2_B_5,
+                              Registers.PLANE_WM_2_B_6,
+                              Registers.PLANE_WM_2_B_7),
          CUR_BUF_CFG       => Registers.CUR_BUF_CFG_B,
          CUR_WM            => PLANE_WM_Type'(
                               Registers.CUR_WM_B_0,
@@ -247,7 +288,6 @@ private
                               Registers.CUR_WM_B_7),
          MBUS_DBOX_CTL     => Registers.PIPE_MBUS_DBOX_CTL_B,
          PIPE_CHICKEN      => Registers.PIPEB_CHICKEN,
-         PLANE_COLOR_CTL   => Registers.PLANE_COLOR_CTL_1_B,
          PLANE_AUX_DIST    => Registers.PLANE_AUX_DIST_1_B),
       Tertiary => Controller_Type'
         (Pipe              => Tertiary,
@@ -263,7 +303,6 @@ private
          DSPTILEOFF        => Registers.DSPCTILEOFF,
          DSPSIZE           => Registers.PLANE_SIZE_1_C,
          DSPPOS            => Registers.PLANE_POS_1_C,
-         SPCNTR            => Registers.SPCCNTR,
          PLANE_CTL         => Registers.DSPCCNTR,
          PLANE_OFFSET      => Registers.DSPCTILEOFF,
          PLANE_POS         => Registers.PLANE_POS_1_C,
@@ -277,6 +316,7 @@ private
          PS_WIN_SZ_2       => Registers.Invalid_Register,
          WM_LINETIME       => Registers.WM_LINETIME_C,
          PLANE_BUF_CFG     => Registers.PLANE_BUF_CFG_1_C,
+         PLANE_COLOR_CTL   => Registers.PLANE_COLOR_CTL_1_C,
          PLANE_WM          => PLANE_WM_Type'(
                               Registers.PLANE_WM_1_C_0,
                               Registers.PLANE_WM_1_C_1,
@@ -286,6 +326,23 @@ private
                               Registers.PLANE_WM_1_C_5,
                               Registers.PLANE_WM_1_C_6,
                               Registers.PLANE_WM_1_C_7),
+         PLANE_2_CTL       => Registers.PLANE_CTL_2_C,
+         PLANE_2_OFFSET    => Registers.PLANE_OFFSET_2_C,
+         PLANE_2_POS       => Registers.PLANE_POS_2_C,
+         PLANE_2_SIZE      => Registers.PLANE_SIZE_2_C,
+         PLANE_2_STRIDE    => Registers.PLANE_STRIDE_2_C,
+         PLANE_2_SURF      => Registers.PLANE_SURF_2_C,
+         PLANE_2_BUF_CFG   => Registers.PLANE_BUF_CFG_2_C,
+         PLANE_2_COLOR_CTL => Registers.PLANE_COLOR_CTL_2_C,
+         PLANE_2_WM        => PLANE_WM_Type'(
+                              Registers.PLANE_WM_2_C_0,
+                              Registers.PLANE_WM_2_C_1,
+                              Registers.PLANE_WM_2_C_2,
+                              Registers.PLANE_WM_2_C_3,
+                              Registers.PLANE_WM_2_C_4,
+                              Registers.PLANE_WM_2_C_5,
+                              Registers.PLANE_WM_2_C_6,
+                              Registers.PLANE_WM_2_C_7),
          CUR_BUF_CFG       => Registers.CUR_BUF_CFG_C,
          CUR_WM            => PLANE_WM_Type'(
                               Registers.CUR_WM_C_0,
@@ -298,7 +355,6 @@ private
                               Registers.CUR_WM_C_7),
          MBUS_DBOX_CTL     => Registers.PIPE_MBUS_DBOX_CTL_C,
          PIPE_CHICKEN      => Registers.PIPEC_CHICKEN,
-         PLANE_COLOR_CTL   => Registers.PLANE_COLOR_CTL_1_C,
          PLANE_AUX_DIST    => Registers.PLANE_AUX_DIST_1_C));
 
    type Cursor_Regs is record

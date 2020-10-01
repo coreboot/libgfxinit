@@ -997,7 +997,7 @@ package body HW.GFX.GMA.Pipe_Setup is
       if CUR.FBC_CTL /= Registers.Invalid_Register then
          Registers.Write (CUR.FBC_CTL, 16#0000_0000#);
       end if;
-      Registers.Unset_Mask (Controller.SPCNTR, DSPCNTR_ENABLE);
+      Registers.Unset_Mask (Controller.PLANE_2_CTL, DSPCNTR_ENABLE);
       if Config.Has_Plane_Control then
          Clear_Watermarks (Controller);
          Registers.Unset_Mask (Controller.PLANE_CTL, PLANE_CTL_PLANE_ENABLE);
