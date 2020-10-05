@@ -540,35 +540,49 @@ package body HW.GFX.GMA.Pipe_Setup is
    is
       Width : constant Width_Type := Cursor_Width (Cursor.Size);
 
+      -- Like `Cursor_Pos`/`Cursor_Coord` but allowing wider range for proof.
+      subtype Relaxed_Pos is Int32 range
+         Cursor_Pos'First - Width_Type'Last .. Cursor_Pos'Last + Width_Type'Last;
+      type Relaxed_Coord is record
+         X : Relaxed_Pos;
+         Y : Relaxed_Pos;
+      end record;
+
       -- The cursor's coordinates are on the framebuffer surface
       -- but we need to place it on the physical screen:
-      Center_X : constant Int32 :=
-        (case FB.Rotation is
-            when No_Rotation  => Center.X,
-            when Rotated_90   => FB.Height   - 1 - Center.Y,
-            when Rotated_180  => FB.Width    - 1 - Center.X,
-            when Rotated_270  => Center.Y);
-      Center_Y : constant Int32 :=
-        (case FB.Rotation is
-            when No_Rotation  => Center.Y,
-            when Rotated_90   => Center.X,
-            when Rotated_180  => FB.Height   - 1 - Center.Y,
-            when Rotated_270  => FB.Width    - 1 - Center.X);
+      function Rotate (Center : Cursor_Coord) return Relaxed_Coord is
+        (X =>
+           (case FB.Rotation is
+               when No_Rotation  => Center.X,
+               when Rotated_90   => FB.Height   - 1 - Center.Y,
+               when Rotated_180  => FB.Width    - 1 - Center.X,
+               when Rotated_270  => Center.Y),
+         Y =>
+           (case FB.Rotation is
+               when No_Rotation  => Center.Y,
+               when Rotated_90   => Center.X,
+               when Rotated_180  => FB.Height   - 1 - Center.Y,
+               when Rotated_270  => FB.Width    - 1 - Center.X));
 
-      X : Int32 := Center_X - Width / 2;
-      Y : Int32 := Center_Y - Width / 2;
+      -- Calculates the coordinates of the cursor plane's
+      -- upper-left corner on the bigger screen (pipe input).
+      function Phys_Origin (Center : Cursor_Coord) return Relaxed_Coord is
+        (X => Rotate (Center).X - Width / 2,
+         Y => Rotate (Center).Y - Width / 2);
+
+      Origin : Relaxed_Coord := Phys_Origin (Center);
    begin
       -- off-screen cursor needs special care
-      if X <= -Width or Y <= -Width or
-         X >= Source_Width (FB) or Y >= Source_Height (FB) or
-         X > Config.Maximum_Cursor_X or Y > Config.Maximum_Cursor_Y
+      if Origin.X <= -Width or Origin.Y <= -Width or
+         Origin.X >= Source_Width (FB) or Origin.Y >= Source_Height (FB) or
+         Origin.X > Config.Maximum_Cursor_X or Origin.Y > Config.Maximum_Cursor_Y
       then
-         X := -Width;
-         Y := -Width;
+         Origin.X := -Width;
+         Origin.Y := -Width;
       end if;
       Registers.Write
         (Register => Cursors (Pipe).POS,
-         Value    => CUR_POS_Y (Y) or CUR_POS_X (X),
+         Value    => CUR_POS_Y (Origin.Y) or CUR_POS_X (Origin.X),
          Verbose  => False);
       -- write to CUR_BASE always arms other CUR_* registers
       Registers.Write
