@@ -50,6 +50,7 @@ package body HW.GFX.GMA.Pipe_Setup is
       DSPCNTR_TILED_SURFACE_X_TILED;
 
    PLANE_COLOR_CTL_PLANE_GAMMA_DISABLE : constant := 1 * 2 ** 13;
+   PLANE_COLOR_CTL_ALPHA_MODE_SW_PREMUL: constant := 2 * 2 **  4;
 
    PLANE_CTL_PLANE_ENABLE              : constant := 1 * 2 ** 31;
    PLANE_CTL_SRC_PIX_FMT_RGB_32B_8888  : constant := 4 * 2 ** 24;
@@ -59,6 +60,8 @@ package body HW.GFX.GMA.Pipe_Setup is
    PLANE_CTL_TILED_SURFACE_X_TILED     : constant := 1 * 2 ** 10;
    PLANE_CTL_TILED_SURFACE_Y_TILED     : constant := 4 * 2 ** 10;
    PLANE_CTL_TILED_SURFACE_YF_TILED    : constant := 5 * 2 ** 10;
+   PLANE_CTL_ALPHA_MODE_MASK           : constant := 3 * 2 **  4;
+   PLANE_CTL_ALPHA_MODE_SW_PREMULTIPLY : constant := 2 * 2 **  4;
 
    PLANE_CTL_TILED_SURFACE : constant array (Tiling_Type) of Word32 :=
      (Linear   => PLANE_CTL_TILED_SURFACE_LINEAR,
@@ -515,30 +518,48 @@ package body HW.GFX.GMA.Pipe_Setup is
 
    ----------------------------------------------------------------------------
 
+   function Use_Plane_For_Cursor (FB : Framebuffer_Type) return Boolean is
+     (Config.Has_Plane_Control and then FB.Tiling = Y_Tiled);
+
    procedure Update_Cursor
      (Pipe     : Pipe_Index;
       FB       : Framebuffer_Type;
       Cursor   : Cursor_Type)
    is
+      Controller : Controller_Type renames Controllers (Pipe);
    begin
-      -- on some platforms writing CUR_CTL disables self-arming of CUR_POS
-      -- so keep it first
-      Registers.Write
-        (Register => Cursors (Pipe).CTL,
-         Value    => CUR_CTL_MODE (Cursor.Mode, Cursor.Size) or
-                     (if Config.Need_Pipe_Arb_Slots
-                      then MCURSOR_ARB_SLOTS (1)
-                      else CUR_CTL_PIPE_SELECT (Pipe)));
-      Place_Cursor (Pipe, FB, Cursor, (Cursor.Center_X, Cursor.Center_Y));
+      if Use_Plane_For_Cursor (FB) then
+         if Config.Has_Plane_Color_Control then
+            Registers.Write
+              (Register => Controller.PLANE_2_COLOR_CTL,
+               Value    => PLANE_COLOR_CTL_PLANE_GAMMA_DISABLE or
+                           PLANE_COLOR_CTL_ALPHA_MODE_SW_PREMUL);
+         end if;
+      else
+         -- on some platforms writing CUR_CTL disables self-arming of CUR_POS
+         -- so keep it first
+         Registers.Write
+           (Register => Cursors (Pipe).CTL,
+            Value    => CUR_CTL_MODE (Cursor.Mode, Cursor.Size) or
+                        (if Config.Need_Pipe_Arb_Slots
+                         then MCURSOR_ARB_SLOTS (1)
+                         else CUR_CTL_PIPE_SELECT (Pipe)));
+      end if;
+      Place_Cursor (Pipe, FB, Cursor, (Cursor.Center_X, Cursor.Center_Y), Update => True);
    end Update_Cursor;
 
    procedure Place_Cursor
      (Pipe     : Pipe_Index;
       FB       : Framebuffer_Type;
       Cursor   : Cursor_Type;
-      Center   : Cursor_Coord)
+      Center   : Cursor_Coord;
+      Update   : Boolean := False)
    is
+      Controller : Controller_Type renames Controllers (Pipe);
+
       Width : constant Width_Type := Cursor_Width (Cursor.Size);
+      Surface_Width : constant Width_Type := Source_Width (FB);
+      Surface_Height : constant Height_Type := Source_Height (FB);
 
       -- Like `Cursor_Pos`/`Cursor_Coord` but allowing wider range for proof.
       subtype Relaxed_Pos is Int32 range
@@ -570,25 +591,125 @@ package body HW.GFX.GMA.Pipe_Setup is
         (X => Rotate (Center).X - Width / 2,
          Y => Rotate (Center).Y - Width / 2);
 
+      function Fully_Visible (Origin : Relaxed_Coord) return Boolean is
+        (Origin.X in 0 .. Surface_Width - Width - 1 and
+         Origin.Y in 0 .. Surface_Height - Width - 1);
+
       Origin : Relaxed_Coord := Phys_Origin (Center);
+
+      Visible : constant Boolean :=
+         Origin.X in -Width + 1 .. Surface_Width - 1 and
+         Origin.Y in -Width + 1 .. Surface_Height - 1;
    begin
-      -- off-screen cursor needs special care
-      if Origin.X <= -Width or Origin.Y <= -Width or
-         Origin.X >= Source_Width (FB) or Origin.Y >= Source_Height (FB) or
-         Origin.X > Config.Maximum_Cursor_X or Origin.Y > Config.Maximum_Cursor_Y
+      if Use_Plane_For_Cursor (FB) and then
+         ((Update and Cursor.Mode /= ARGB_Cursor) or not Visible)
       then
-         Origin.X := -Width;
-         Origin.Y := -Width;
+         Registers.Write
+           (Register => Controller.PLANE_2_CTL,
+            Value    => 0,
+            Verbose  => False);
+         Registers.Write   -- arming
+           (Register => Controller.PLANE_2_SURF,
+            Value    => 0,
+            Verbose  => False);
+      elsif Use_Plane_For_Cursor (FB) then
+         -- we may have to configure all registers
+         if Update or
+            not Fully_Visible (Phys_Origin ((Cursor.Center_X, Cursor.Center_Y))) or
+            not Fully_Visible (Origin)
+         then
+            declare
+               Visible_Width  : Width_Type   := Width;
+               Visible_Height : Height_Type  := Width;
+               Offset_X : Word32;
+               Offset_Y : Word32;
+
+               -- Calculates where to start reading from the cursor plane's
+               -- framebuffer, iow. gives the first visible pixel of the
+               -- cursor (e.g. for an unrotated cursor whose upper-left
+               -- corner left the screen).
+               function Offset (Pos : Relaxed_Pos; Visible : Int32) return Word32
+               is
+                 (if (Pos < 0 and FB.Rotation <= Rotated_90) or
+                     (Pos >= 0 and FB.Rotation >= Rotated_180)
+                  then Word32 (Width - Visible) else 0)
+               with
+                  Pre => Visible in 0 .. Width;
+            begin
+               -- The hardware does neither support negative positions nor
+               -- clipping. So if the cursor should be clipped at an edge
+               -- of the framebuffer, we need to make these calculations
+               -- manually:
+
+               if Origin.X < 0 then
+                  Visible_Width := Visible_Width + Origin.X;
+               elsif Origin.X > Surface_Width - Width then
+                  Visible_Width := Surface_Width - Origin.X;
+               end if;
+               Offset_X := Offset (Origin.X, Visible_Width);
+               Origin.X := Int32'Max (Origin.X, 0);
+
+               if Origin.Y < 0 then
+                  Visible_Height := Visible_Height + Origin.Y;
+               elsif Origin.Y > Surface_Height - Width then
+                  Visible_Height := Surface_Height - Origin.Y;
+               end if;
+               Offset_Y := Offset (Origin.Y, Visible_Height);
+               Origin.Y := Int32'Max (Origin.Y, 0);
+
+               Registers.Write
+                 (Register    => Controller.PLANE_2_CTL,
+                  Value       => PLANE_CTL_PLANE_ENABLE or
+                                 PLANE_CTL_SRC_PIX_FMT_RGB_32B_8888 or
+                                 PLANE_CTL_TILED_SURFACE (FB.Tiling) or
+                                 PLANE_CTL_PLANE_ROTATION (FB.Rotation) or
+                                (if not Config.Has_Plane_Color_Control
+                                 then PLANE_CTL_PLANE_GAMMA_DISABLE or
+                                      PLANE_CTL_ALPHA_MODE_SW_PREMULTIPLY
+                                 else 0),
+                  Verbose  => False);
+               Registers.Write
+                 (Register => Controller.PLANE_2_OFFSET,
+                  Value    => Shift_Left (Offset_Y, 16) or Offset_X,
+                  Verbose  => False);
+               Registers.Write
+                 (Register => Controller.PLANE_2_SIZE,
+                  Value    => Encode_Size (Visible_Width, Visible_Height),
+                  Verbose  => False);
+               Registers.Write
+                 (Register => Controller.PLANE_2_STRIDE,
+                  Value    => Word32 (FB_Pitch (Width, FB)),
+                  Verbose  => False);
+            end;
+         end if;
+
+         Registers.Write
+           (Register => Controller.PLANE_2_POS,
+            Value    => Shift_Left (Word32 (Origin.Y), 16) or Word32 (Origin.X),
+            Verbose  => False);
+         Registers.Write   -- arming
+           (Register => Controller.PLANE_2_SURF,
+            Value    => Shift_Left (Word32 (Cursor.GTT_Offset), 12),
+            Verbose  => False);
+      else
+         -- off-screen cursor needs special care
+         if not Visible or
+            Origin.X > Config.Maximum_Cursor_X or
+            Origin.Y > Config.Maximum_Cursor_Y
+         then
+            Origin.X := -Width;
+            Origin.Y := -Width;
+         end if;
+         Registers.Write
+           (Register => Cursors (Pipe).POS,
+            Value    => CUR_POS_Y (Origin.Y) or CUR_POS_X (Origin.X),
+            Verbose  => False);
+         -- write to CUR_BASE always arms other CUR_* registers
+         Registers.Write
+           (Register => Cursors (Pipe).BASE,
+            Value    => Shift_Left (Word32 (Cursor.GTT_Offset), 12),
+            Verbose  => False);
       end if;
-      Registers.Write
-        (Register => Cursors (Pipe).POS,
-         Value    => CUR_POS_Y (Origin.Y) or CUR_POS_X (Origin.X),
-         Verbose  => False);
-      -- write to CUR_BASE always arms other CUR_* registers
-      Registers.Write
-        (Register => Cursors (Pipe).BASE,
-         Value    => Shift_Left (Word32 (Cursor.GTT_Offset), 12),
-         Verbose  => False);
    end Place_Cursor;
 
    ----------------------------------------------------------------------------

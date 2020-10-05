@@ -52,7 +52,8 @@ is
      (Pipe     : Pipe_Index;
       FB       : Framebuffer_Type;
       Cursor   : Cursor_Type;
-      Center   : Cursor_Coord);
+      Center   : Cursor_Coord;
+      Update   : Boolean := False);
 
    type Scaler_Reservation is private;
    Null_Scaler_Reservation : constant Scaler_Reservation;

@@ -8,6 +8,7 @@ with HW.Debug;
 with HW.PCI.Dev;
 with HW.MMIO_Range;
 with HW.GFX.GMA.Config;
+with HW.GFX.GMA.Registers;
 with HW.GFX.GMA.Display_Probing;
 
 package body HW.GFX.GMA.GFX_Test
@@ -236,12 +237,16 @@ is
       return Byte (255 - Int32'Min (255, 6 * abs Dist_Circle + 64));
    end Donut;
 
-   procedure Draw_Cursor (Pipe : Pipe_Index; Cursor : Cursor_Type)
+   procedure Draw_Cursor (Pipe : Pipe_Index; Rotation : Rotation_Type; Cursor : Cursor_Type)
    is
       use type HW.Byte;
       Width : constant Width_Type := Cursor_Width (Cursor.Size);
-      Screen_Offset : Natural :=
-         Natural (Shift_Left (Word32 (Cursor.GTT_Offset), 12) / 4);
+      GTT_Offset : constant GTT_Range :=
+        (if Rotation = Rotated_90 or Rotation = Rotated_270 then
+            Cursor.GTT_Offset - GTT_Rotation_Offset
+         else
+            Cursor.GTT_Offset);
+      Screen_Offset : Natural := Natural (Shift_Left (Word32 (GTT_Offset), 12) / 4);
    begin
       if Cursor.Mode /= ARGB_Cursor then
          return;
@@ -309,6 +314,7 @@ is
 
    procedure Prepare_Cursors
      (Cursors  :    out Cursor_Array;
+      Rotation : in     Rotation_Type;
       Offset   : in out Word32)
    is
       GMA_Phys_Base_Mask : constant := 16#fff0_0000#;
@@ -336,21 +342,69 @@ is
          Offset := (Offset + Cursor_Align - 1) and not (Cursor_Align - 1);
          declare
             Width : constant Width_Type := Cursor_Width (Size);
-            GTT_End : constant Word32 := Offset + Word32 (Width * Width) * 4;
+            Height : Width_Type renames Width;
+
+            Phys_End : constant Word32 := Offset + Word32 (Width * Height) * 4;
+            GTT_Start : constant GTT_Range := GTT_Range (Shift_Right (Offset, 12));
+            GTT_End   : constant GTT_Range := GTT_Range (Shift_Right (Phys_End, 12));
+            -- 90 degree rotations use a special framebuffer mapping w/ GTT_Rotation_Offset:
+            Scanout_Offset : constant GTT_Range :=
+              (if Rotation in Rotated_90 | Rotated_270 then GTT_Rotation_Offset else 0);
          begin
             Cursors (Size) :=
               (Mode        => ARGB_Cursor,
                Size        => Size,
                Center_X    => Width,
-               Center_Y    => Width,
-               GTT_Offset  => GTT_Range (Shift_Right (Offset, 12)));
-            while Offset < GTT_End loop
+               Center_Y    => Height,
+               GTT_Offset  => GTT_Start + Scanout_Offset);
+
+            while Offset < Phys_End loop
                GMA.Write_GTT
                  (GTT_Page       => GTT_Range (Offset / GTT_Page_Size),
                   Device_Address => GTT_Address_Type (Phys_Base + Offset),
                   Valid          => True);
                Offset := Offset + GTT_Page_Size;
             end loop;
+
+            if Rotation in Rotated_90 | Rotated_270 then
+               -- In case of y-tiled surfaces (needed for 90 degree rotations),
+               -- the fence makes the framebuffer writeable like a linear one.
+               Registers.Add_Fence
+                 (First_Page  => GTT_Start,
+                  Last_Page   => GTT_End - 1,
+                  Tiling      => Y_Tiled,
+                  Pitch       => Natural (Width / Tile_Width (Y_Tiled)),
+                  Success     => Success);
+
+               -- Though, for the scanout of the rotated surface, we have to add
+               -- a special,  rotated framebuffer mapping.  For each linear page
+               -- index we calculate `Phys_Addr` column-wise from bottom to top.
+               declare
+                  subtype Rotated_Pages is GTT_Range range
+                     GTT_Start + GTT_Rotation_Offset .. GTT_End - 1 + GTT_Rotation_Offset;
+
+                  Bytes_Per_Row : constant GTT_Address_Type :=
+                     GTT_Address_Type (Tile_Rows (Y_Tiled) * Width * 4);
+                  V_Pages : constant GTT_Range := GTT_Range (Height / Tile_Rows (Y_Tiled));
+                  V_Bytes : constant GTT_Address_Type :=
+                     GTT_Address_Type (V_Pages) * Bytes_Per_Row;
+
+                  Phys_Addr : GTT_Address_Type := GTT_Address_Type (Phys_Base + Phys_End);
+               begin
+                  for Page in Rotated_Pages loop
+                     Phys_Addr := Phys_Addr - Bytes_Per_Row;
+
+                     Registers.Write_GTT
+                       (GTT_Page       => Page,
+                        Device_Address => Phys_Addr,
+                        Valid          => True);
+
+                     if (Page - Rotated_Pages'First + 1) mod V_Pages = 0 then
+                        Phys_Addr := Phys_Addr + GTT_Page_Size + V_Bytes;
+                     end if;
+                  end loop;
+               end;
+            end if;
          end;
       end loop;
    end Prepare_Cursors;
@@ -381,7 +435,7 @@ is
                Pipes (Pipe).Port := GMA.Disabled;
             end if;
          end if;
-         Prepare_Cursors (Cursors (Pipe), Offset);
+         Prepare_Cursors (Cursors (Pipe), Rotation, Offset);
          Pipes (Pipe).Cursor := Cursors (Pipe) (Cursor_Size'Val (Rand (Gen) mod 3));
       end loop;
 
@@ -565,7 +619,10 @@ is
       end loop;
    end Move_Cursors;
 
-   procedure Run_The_Show (Deadline : Time.T; Gen : Rand_P.Generator)
+   procedure Run_The_Show
+     (Deadline : Time.T;
+      Gen      : Rand_P.Generator;
+      Rotation : Rotation_Type)
    is
       Timed_Out : Boolean;
       Hotplug_List : GMA.Display_Probing.Port_List;
@@ -586,7 +643,7 @@ is
                Pipe        => Pipe);
          end if;
          for Size in Cursor_Size loop
-            Draw_Cursor (Pipe, Cursors (Pipe) (Size));
+            Draw_Cursor (Pipe, Rotation, Cursors (Pipe) (Size));
          end loop;
       end loop;
 
@@ -740,7 +797,7 @@ is
                   end if;
                end loop;
 
-               Run_The_Show (Deadline, Gen);
+               Run_The_Show (Deadline, Gen, Rotation);
 
                for Pipe in GMA.Pipe_Index loop
                   if Pipes (Pipe).Port /= GMA.Disabled then
