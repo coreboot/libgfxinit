@@ -51,7 +51,8 @@ is
    procedure Place_Cursor
      (Pipe     : Pipe_Index;
       FB       : Framebuffer_Type;
-      Cursor   : Cursor_Type);
+      Cursor   : Cursor_Type;
+      Center   : Cursor_Coord);
 
    type Scaler_Reservation is private;
    Null_Scaler_Reservation : constant Scaler_Reservation;

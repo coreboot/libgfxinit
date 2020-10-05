@@ -420,10 +420,10 @@ is
       Y     : Cursor_Pos)
    is
    begin
+      Display_Controller.Place_Cursor
+        (Pipe, Cur_Configs (Pipe).Framebuffer, Cur_Configs (Pipe).Cursor, (X, Y));
       Cur_Configs (Pipe).Cursor.Center_X := X;
       Cur_Configs (Pipe).Cursor.Center_Y := Y;
-      Display_Controller.Place_Cursor
-        (Pipe, Cur_Configs (Pipe).Framebuffer, Cur_Configs (Pipe).Cursor);
    end Place_Cursor;
 
    procedure Move_Cursor

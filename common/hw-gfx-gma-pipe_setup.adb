@@ -529,13 +529,14 @@ package body HW.GFX.GMA.Pipe_Setup is
                      (if Config.Need_Pipe_Arb_Slots
                       then MCURSOR_ARB_SLOTS (1)
                       else CUR_CTL_PIPE_SELECT (Pipe)));
-      Place_Cursor (Pipe, FB, Cursor);
+      Place_Cursor (Pipe, FB, Cursor, (Cursor.Center_X, Cursor.Center_Y));
    end Update_Cursor;
 
    procedure Place_Cursor
      (Pipe     : Pipe_Index;
       FB       : Framebuffer_Type;
-      Cursor   : Cursor_Type)
+      Cursor   : Cursor_Type;
+      Center   : Cursor_Coord)
    is
       Width : constant Width_Type := Cursor_Width (Cursor.Size);
 
@@ -543,16 +544,16 @@ package body HW.GFX.GMA.Pipe_Setup is
       -- but we need to place it on the physical screen:
       Center_X : constant Int32 :=
         (case FB.Rotation is
-            when No_Rotation  => Cursor.Center_X,
-            when Rotated_90   => FB.Height   - 1 - Cursor.Center_Y,
-            when Rotated_180  => FB.Width    - 1 - Cursor.Center_X,
-            when Rotated_270  => Cursor.Center_Y);
+            when No_Rotation  => Center.X,
+            when Rotated_90   => FB.Height   - 1 - Center.Y,
+            when Rotated_180  => FB.Width    - 1 - Center.X,
+            when Rotated_270  => Center.Y);
       Center_Y : constant Int32 :=
         (case FB.Rotation is
-            when No_Rotation  => Cursor.Center_Y,
-            when Rotated_90   => Cursor.Center_X,
-            when Rotated_180  => FB.Height   - 1 - Cursor.Center_Y,
-            when Rotated_270  => FB.Width    - 1 - Cursor.Center_X);
+            when No_Rotation  => Center.Y,
+            when Rotated_90   => Center.X,
+            when Rotated_180  => FB.Height   - 1 - Center.Y,
+            when Rotated_270  => FB.Width    - 1 - Center.X);
 
       X : Int32 := Center_X - Width / 2;
       Y : Int32 := Center_Y - Width / 2;

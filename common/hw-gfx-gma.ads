@@ -378,4 +378,11 @@ private
       FB.Height + FB.Start_Y <= FB.V_Stride and
       FB.V_Stride mod Tile_Rows (FB.Tiling) = 0);
 
+   ----------------------------------------------------------------------------
+
+   type Cursor_Coord is record
+      X : Cursor_Pos;
+      Y : Cursor_Pos;
+   end record;
+
 end HW.GFX.GMA;
