@@ -91,6 +91,8 @@ private
          DSPPOS            : Registers.Registers_Index;
          -- Skylake registers (partially aliased)
          PLANE_CTL         : Registers.Registers_Index;
+         PLANE_KEYVAL      : Registers.Registers_Index;
+         PLANE_KEYMSK      : Registers.Registers_Index;
          PLANE_OFFSET      : Registers.Registers_Index;
          PLANE_POS         : Registers.Registers_Index;
          PLANE_SIZE        : Registers.Registers_Index;
@@ -106,6 +108,8 @@ private
          PLANE_COLOR_CTL   : Registers.Registers_Index;
          PLANE_WM          : PLANE_WM_Type;
          PLANE_2_CTL       : Registers.Registers_Index;
+         PLANE_2_KEYVAL    : Registers.Registers_Index;
+         PLANE_2_KEYMSK    : Registers.Registers_Index;
          PLANE_2_OFFSET    : Registers.Registers_Index;
          PLANE_2_POS       : Registers.Registers_Index;
          PLANE_2_SIZE      : Registers.Registers_Index;
@@ -158,6 +162,8 @@ private
            (if Config.Planes_Pipes_Swapped
             then Registers.PLANE_POS_1_B else Registers.PLANE_POS_1_A),
          PLANE_CTL         => Registers.DSPACNTR,
+         PLANE_KEYVAL      => Registers.PLANE_KEYVAL_1_A,
+         PLANE_KEYMSK      => Registers.PLANE_KEYMSK_1_A,
          PLANE_OFFSET      => Registers.DSPATILEOFF,
          PLANE_POS         => Registers.PLANE_POS_1_A,
          PLANE_SIZE        => Registers.PLANE_SIZE_1_A,
@@ -181,6 +187,8 @@ private
                               Registers.PLANE_WM_1_A_6,
                               Registers.PLANE_WM_1_A_7),
          PLANE_2_CTL       => Registers.PLANE_CTL_2_A,
+         PLANE_2_KEYVAL    => Registers.PLANE_KEYVAL_2_A,
+         PLANE_2_KEYMSK    => Registers.PLANE_KEYMSK_2_A,
          PLANE_2_OFFSET    => Registers.PLANE_OFFSET_2_A,
          PLANE_2_POS       => Registers.PLANE_POS_2_A,
          PLANE_2_SIZE      => Registers.PLANE_SIZE_2_A,
@@ -239,6 +247,8 @@ private
            (if Config.Planes_Pipes_Swapped
             then Registers.PLANE_POS_1_A else Registers.PLANE_POS_1_B),
          PLANE_CTL         => Registers.DSPBCNTR,
+         PLANE_KEYVAL      => Registers.PLANE_KEYVAL_1_B,
+         PLANE_KEYMSK      => Registers.PLANE_KEYMSK_1_B,
          PLANE_OFFSET      => Registers.DSPBTILEOFF,
          PLANE_POS         => Registers.PLANE_POS_1_B,
          PLANE_SIZE        => Registers.PLANE_SIZE_1_B,
@@ -262,6 +272,8 @@ private
                               Registers.PLANE_WM_1_B_6,
                               Registers.PLANE_WM_1_B_7),
          PLANE_2_CTL       => Registers.PLANE_CTL_2_B,
+         PLANE_2_KEYVAL    => Registers.PLANE_KEYVAL_2_B,
+         PLANE_2_KEYMSK    => Registers.PLANE_KEYMSK_2_B,
          PLANE_2_OFFSET    => Registers.PLANE_OFFSET_2_B,
          PLANE_2_POS       => Registers.PLANE_POS_2_B,
          PLANE_2_SIZE      => Registers.PLANE_SIZE_2_B,
@@ -306,6 +318,8 @@ private
          DSPSIZE           => Registers.PLANE_SIZE_1_C,
          DSPPOS            => Registers.PLANE_POS_1_C,
          PLANE_CTL         => Registers.DSPCCNTR,
+         PLANE_KEYVAL      => Registers.PLANE_KEYVAL_1_C,
+         PLANE_KEYMSK      => Registers.PLANE_KEYMSK_1_C,
          PLANE_OFFSET      => Registers.DSPCTILEOFF,
          PLANE_POS         => Registers.PLANE_POS_1_C,
          PLANE_SIZE        => Registers.PLANE_SIZE_1_C,
@@ -329,6 +343,8 @@ private
                               Registers.PLANE_WM_1_C_6,
                               Registers.PLANE_WM_1_C_7),
          PLANE_2_CTL       => Registers.PLANE_CTL_2_C,
+         PLANE_2_KEYVAL    => Registers.PLANE_KEYVAL_2_C,
+         PLANE_2_KEYMSK    => Registers.PLANE_KEYMSK_2_C,
          PLANE_2_OFFSET    => Registers.PLANE_OFFSET_2_C,
          PLANE_2_POS       => Registers.PLANE_POS_2_C,
          PLANE_2_SIZE      => Registers.PLANE_SIZE_2_C,

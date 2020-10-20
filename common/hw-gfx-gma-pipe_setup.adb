@@ -54,6 +54,8 @@ package body HW.GFX.GMA.Pipe_Setup is
 
    PLANE_CTL_PLANE_ENABLE              : constant := 1 * 2 ** 31;
    PLANE_CTL_SRC_PIX_FMT_RGB_32B_8888  : constant := 4 * 2 ** 24;
+   PLANE_CTL_KEY_ENABLE_MASK           : constant := 3 * 2 ** 21;
+   PLANE_CTL_KEY_ENABLE_SOURCE         : constant := 1 * 2 ** 21;
    PLANE_CTL_PLANE_GAMMA_DISABLE       : constant := 1 * 2 ** 13;
    PLANE_CTL_TILED_SURFACE_MASK        : constant := 7 * 2 ** 10;
    PLANE_CTL_TILED_SURFACE_LINEAR      : constant := 0 * 2 ** 10;
@@ -62,6 +64,7 @@ package body HW.GFX.GMA.Pipe_Setup is
    PLANE_CTL_TILED_SURFACE_YF_TILED    : constant := 5 * 2 ** 10;
    PLANE_CTL_ALPHA_MODE_MASK           : constant := 3 * 2 **  4;
    PLANE_CTL_ALPHA_MODE_SW_PREMULTIPLY : constant := 2 * 2 **  4;
+   PLANE_CTL_ALPHA_MODE_HW_PREMULTIPLY : constant := 3 * 2 **  4;
 
    PLANE_CTL_TILED_SURFACE : constant array (Tiling_Type) of Word32 :=
      (Linear   => PLANE_CTL_TILED_SURFACE_LINEAR,
@@ -529,6 +532,13 @@ package body HW.GFX.GMA.Pipe_Setup is
       Controller : Controller_Type renames Controllers (Pipe);
    begin
       if Use_Plane_For_Cursor (FB) then
+         -- Use feffff (most white cyan) as key color for transparency.
+         -- It turned out that at least on APL, even fully transparent
+         -- pixels are faintly visible when blended onto the primary
+         -- framebuffer.
+         Registers.Write (Controller.PLANE_2_KEYVAL, 16#00_fe_ff_ff#);
+         Registers.Write (Controller.PLANE_2_KEYMSK, 16#07_ff_ff_ff#);
+
          if Config.Has_Plane_Color_Control then
             Registers.Write
               (Register => Controller.PLANE_2_COLOR_CTL,
@@ -659,9 +669,10 @@ package body HW.GFX.GMA.Pipe_Setup is
 
                Registers.Write
                  (Register    => Controller.PLANE_2_CTL,
-                  Value       => PLANE_CTL_PLANE_ENABLE or
-                                 PLANE_CTL_SRC_PIX_FMT_RGB_32B_8888 or
-                                 PLANE_CTL_TILED_SURFACE (FB.Tiling) or
+                  Value       => PLANE_CTL_PLANE_ENABLE                 or
+                                 PLANE_CTL_SRC_PIX_FMT_RGB_32B_8888     or
+                                 PLANE_CTL_KEY_ENABLE_SOURCE            or
+                                 PLANE_CTL_TILED_SURFACE (FB.Tiling)    or
                                  PLANE_CTL_PLANE_ROTATION (FB.Rotation) or
                                 (if not Config.Has_Plane_Color_Control
                                  then PLANE_CTL_PLANE_GAMMA_DISABLE or
