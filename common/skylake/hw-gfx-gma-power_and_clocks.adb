@@ -82,6 +82,8 @@ package body HW.GFX.GMA.Power_And_Clocks is
    LCPLL1_CTL_PLL_ENABLE               : constant := 1 * 2 ** 31;
    LCPLL1_CTL_PLL_LOCK                 : constant := 1 * 2 ** 30;
 
+   DISP_FBC_MEMORY_WAKE                : constant := 1 * 2 ** 31;
+
    ----------------------------------------------------------------------------
 
    CDCLK_CTL_CD_FREQ_SELECT_MASK       : constant := 3 * 2 ** 26;
@@ -350,6 +352,16 @@ package body HW.GFX.GMA.Power_And_Clocks is
       Registers.Wait_Set_Mask
         (Register    => Registers.LCPLL1_CTL,
          Mask        => LCPLL1_CTL_PLL_LOCK);
+
+      -- WaEnableChickenDCPR:skl,bxt,kbl,glk,cfl
+      Registers.Set_Mask
+        (Register    => Registers.GEN8_CHICKEN_DCPR_1,
+         Mask        => 1 * 2 ** 13);
+
+      -- Display WA #0859 WaFbcWakeMemOn:skl,bxt,kbl,glk,cfl
+      Registers.Set_Mask
+        (Register    => Registers.ARB_CTL,
+         Mask        => DISP_FBC_MEMORY_WAKE);
 
       Get_Cur_CDClk (Config.CDClk);
       Get_Max_CDClk (Config.Max_CDClk);
