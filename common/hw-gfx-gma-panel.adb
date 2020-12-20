@@ -428,11 +428,11 @@ is
          Registers.Set_Mask
            (Register => BLC (Panel).CTL,
             Mask     => BXT_BLC_PWM_CTL_ENABLE);
-      else
-         Registers.Set_Mask
-           (Register => PP (Panel).CONTROL,
-            Mask     => PCH_PP_CONTROL_BACKLIGHT_ENABLE);
       end if;
+
+      Registers.Set_Mask
+        (Register => PP (Panel).CONTROL,
+         Mask     => PCH_PP_CONTROL_BACKLIGHT_ENABLE);
    end Backlight_On;
 
    procedure Backlight_Off (Panel : Panel_Control) is
@@ -443,14 +443,14 @@ is
 
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
+     Registers.Unset_Mask
+       (Register => PP (Panel).CONTROL,
+        Mask     => PCH_PP_CONTROL_BACKLIGHT_ENABLE);
+
       if Config.Has_New_Backlight_Control then
          Registers.Unset_Mask
            (Register => BLC (Panel).CTL,
             Mask     => BXT_BLC_PWM_CTL_ENABLE);
-      else
-         Registers.Unset_Mask
-           (Register => PP (Panel).CONTROL,
-            Mask     => PCH_PP_CONTROL_BACKLIGHT_ENABLE);
       end if;
    end Backlight_Off;
 
