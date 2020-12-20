@@ -54,7 +54,8 @@ is
       Ibex_Peak,
       Cougar_Point,     -- Panther Point compatible
       Lynx_Point,       -- Wildcat Point compatible
-      Sunrise_Point);   -- Union Point compatible
+      Sunrise_Point,    -- Union Point compatible
+      Cannon_Point);
 
    type Port_Type is
      (Disabled,

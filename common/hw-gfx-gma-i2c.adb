@@ -38,9 +38,10 @@ package body HW.GFX.GMA.I2C is
    GMBUS0_PIN_PAIR_SELECT_DIGI_C    : constant :=   4 * 2 **  0;
    GMBUS0_PIN_PAIR_SELECT_DIGI_B    : constant :=   5 * 2 **  0;
    GMBUS0_PIN_PAIR_SELECT_DIGI_D    : constant :=   6 * 2 **  0;
-   -- Broxton uses different pins
+   -- Broxton and later use different pins
    GMBUS0_PIN_PAIR_SELECT_BXT_B     : constant :=   1 * 2 **  0;
    GMBUS0_PIN_PAIR_SELECT_BXT_C     : constant :=   2 * 2 **  0;
+   GMBUS0_PIN_PAIR_SELECT_BXT_D     : constant :=   3 * 2 **  0;
 
    GMBUS1_SOFTWARE_CLEAR_INTERRUPT  : constant :=   1 * 2 ** 31;
    GMBUS1_SOFTWARE_READY            : constant :=   1 * 2 ** 30;
@@ -109,6 +110,7 @@ package body HW.GFX.GMA.I2C is
            (case Port is
                when PCH_HDMI_B   => GMBUS0_PIN_PAIR_SELECT_BXT_B,
                when PCH_HDMI_C   => GMBUS0_PIN_PAIR_SELECT_BXT_C,
+               when PCH_HDMI_D   => GMBUS0_PIN_PAIR_SELECT_BXT_D,
                when others       => GMBUS0_PIN_PAIR_SELECT_NONE)
          else
            (case Port is

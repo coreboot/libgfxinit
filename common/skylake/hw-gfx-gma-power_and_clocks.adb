@@ -40,6 +40,8 @@ package body HW.GFX.GMA.Power_And_Clocks is
    DFSM_DISPLAY_CDCLK_LIMIT_337_5MHZ   : constant := 3 * 2 ** 23;
    DFSM_DISPLAY_CDCLK_LIMIT_MASK       : constant := 3 * 2 ** 23;
 
+   SFUSE_STRAP_RAW_FREQUENCY           : constant := 1 * 2 **  8;
+
    type Power_Domain_Values is array (Power_Domain) of Word32;
    PWR_WELL_CTL_POWER_REQUEST : constant Power_Domain_Values :=
      (MISC_IO  => 1 * 2 **  1,
@@ -309,6 +311,22 @@ package body HW.GFX.GMA.Power_And_Clocks is
       Config.CDClk := CDClk;
    end Set_CDClk;
 
+   procedure Get_Raw_Clock (Raw_Clock : out Frequency_Type)
+   is
+      Freq_24MHz : Boolean;
+   begin
+      Raw_Clock := Config.Default_RawClk_Freq;
+      if Config.Has_Fractional_RawClk then
+         Registers.Is_Set_Mask
+           (Register => Registers.SFUSE_STRAP,
+            Mask     => SFUSE_STRAP_RAW_FREQUENCY,
+            Result   => Freq_24MHz);
+         if not Freq_24MHz then
+            Raw_Clock := 19_200_000;
+         end if;
+      end if;
+   end Get_Raw_Clock;
+
    procedure Initialize is
    begin
       Registers.Set_Mask
@@ -337,7 +355,7 @@ package body HW.GFX.GMA.Power_And_Clocks is
       Get_Max_CDClk (Config.Max_CDClk);
       Set_CDClk (Config.Default_CDClk_Freq);
 
-      Config.Raw_Clock := Config.Default_RawClk_Freq;
+      Get_Raw_Clock (Config.Raw_Clock);
    end Initialize;
 
    procedure Limit_Dotclocks

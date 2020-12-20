@@ -56,7 +56,7 @@ private package HW.GFX.GMA.Config is
          when Ironlake  => Cougar_Point,
          when Haswell   => Lynx_Point,
          when Broxton   => No_PCH,
-         when Skylake   => Sunrise_Point);
+         when Skylake   => Cannon_Point);
    subtype Gen_PCH_Type is PCH_Type range PCH_First .. PCH_Last;
 
    PCH : constant Gen_PCH_Type := <<PCH>>;
@@ -167,6 +167,7 @@ private package HW.GFX.GMA.Config is
 
    Cougar_Point_On   : <genbool> :=
      ((Gen_Ironlake and then PCH >= Cougar_Point) or Haswell_On);
+   Cannon_Point_On   : <genbool> := Skylake_On and then PCH >= Cannon_Point;
 
    ----------------------------------------------------------------------------
 
@@ -207,8 +208,9 @@ private package HW.GFX.GMA.Config is
    Has_PP_Port_Select            : <genbool> := Up_To_Ironlake;
    Use_PP_VDD_Override           : <genbool> := Up_To_Ironlake;
    Has_PCH_Panel_Power           : <genbool> := Ironlake_On;
-   Has_PP_Divisor_Reg            : <genbool> := not Gen_Broxton;
-   Has_New_Backlight_Control     : <genbool> := Gen_Broxton;
+   Has_PP_Divisor_Reg            : <genbool> :=
+     (not Gen_Broxton and not Cannon_Point_On);
+   Has_New_Backlight_Control     : <genbool> := Gen_Broxton or Cannon_Point_On;
 
    ----------- PCH/FDI: ---------
    Has_PCH                       : <genbool> := PCH /= No_PCH;
@@ -236,6 +238,7 @@ private package HW.GFX.GMA.Config is
    Has_GMCH_Mobile_VCO           : <g45bool> := GMCH_GM45;
    Has_Broadwell_CDClk           : <hswbool> := CPU_Broadwell;
    Can_Switch_CDClk              : <hswbool> := Broadwell_On;
+   Has_Fractional_RawClk         : <genbool> := Cannon_Point_On;
 
    ----------- DDI: -------------
    End_EDP_Training_Late         : <genbool> := Gen_Haswell;
@@ -264,7 +267,7 @@ private package HW.GFX.GMA.Config is
 
    ----------- GMBUS: -----------
    Ungate_GMBUS_Unit_Level       : <genbool> := Skylake_On;
-   GMBUS_Alternative_Pins        : <genbool> := Gen_Broxton;
+   GMBUS_Alternative_Pins        : <genbool> := Gen_Broxton or Cannon_Point_On;
    Has_PCH_GMBUS                 : <genbool> := Ironlake_On;
 
    ----------- Power: -----------

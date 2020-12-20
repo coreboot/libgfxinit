@@ -85,12 +85,26 @@ is
 
    ----------------------------------------------------------------------------
 
-   PCH_RAWCLK_FREQ_MASK                : constant := 16#3ff# * 2 ** 0;
+   PCH_RAWCLK_FREQ_MASK : constant :=
+     (if Config.Has_Fractional_RawClk then 16#3fff# * 2 ** 16 else 16#3ff# * 2 ** 0);
 
    function PCH_RAWCLK_FREQ (Freq : Frequency_Type) return Word32
    is
    begin
-      return Word32 (Freq / 1_000_000);
+      if Config.Has_Fractional_RawClk then
+         declare
+            Fraction_K : constant Int64 := Freq / 1_000 mod 1_000;
+            Freq32 : Word32 := Shift_Left (Word32 (Freq / 1_000_000), 16);
+         begin
+            if Fraction_K /= 0 then
+               Freq32 := Freq32 or Shift_Left
+                 (Word32 (Div_Round_Closest (1_000, Fraction_K) - 1), 26);
+            end if;
+            return Freq32;
+         end;
+      else
+         return Word32 (Freq / 1_000_000);
+      end if;
    end PCH_RAWCLK_FREQ;
 
    ----------------------------------------------------------------------------
