@@ -47,11 +47,13 @@ gfxinit-y += hw-gfx.ads
 gfxinit-y += hw-gfx-framebuffer_filler.adb
 gfxinit-y += hw-gfx-framebuffer_filler.ads
 
+CONFIG_GFX_GMA_PCH		?= No_PCH
 CONFIG_GFX_GMA_PANEL_2_PORT	?= Disabled
 
 CONFIG_GFX_GMA_GENERATION	:= $(call strip_quotes,$(CONFIG_GFX_GMA_GENERATION))
 CONFIG_GFX_GMA_CPU		:= $(call strip_quotes,$(CONFIG_GFX_GMA_CPU))
 CONFIG_GFX_GMA_CPU_VARIANT	:= $(call strip_quotes,$(CONFIG_GFX_GMA_CPU_VARIANT))
+CONFIG_GFX_GMA_PCH		:= $(call strip_quotes,$(CONFIG_GFX_GMA_PCH))
 CONFIG_GFX_GMA_PANEL_1_PORT	:= $(call strip_quotes,$(CONFIG_GFX_GMA_PANEL_1_PORT))
 CONFIG_GFX_GMA_PANEL_2_PORT	:= $(call strip_quotes,$(CONFIG_GFX_GMA_PANEL_2_PORT))
 CONFIG_GFX_GMA_ANALOG_I2C_PORT	:= $(call strip_quotes,$(CONFIG_GFX_GMA_ANALOG_I2C_PORT))
@@ -76,6 +78,7 @@ hw-gfx-gma-config-ads := $(subst //,/,$(call src-to-obj,,$(dir)/hw-gfx-gma-confi
 
 GFX_GMA_COMMON_SUBSTITUTIONS := \
 	    -e's/<<GEN>>/$(CONFIG_GFX_GMA_GENERATION)/' \
+	    -e's/<<PCH>>/$(CONFIG_GFX_GMA_PCH)/' \
 	    -e's/<<PANEL_1_PORT>>/$(CONFIG_GFX_GMA_PANEL_1_PORT)/' \
 	    -e's/<<PANEL_2_PORT>>/$(CONFIG_GFX_GMA_PANEL_2_PORT)/' \
 	    -e's/<<ANALOG_I2C_PORT>>/$(CONFIG_GFX_GMA_ANALOG_I2C_PORT)/' \

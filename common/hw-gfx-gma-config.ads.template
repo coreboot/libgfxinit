@@ -43,6 +43,24 @@ private package HW.GFX.GMA.Config is
 
    CPU_Var : constant Gen_CPU_Variant := <<CPU_VARIANT>>;
 
+   PCH_First : constant PCH_Type :=
+     (case Gen is
+         when G45       => No_PCH,
+         when Ironlake  => Ibex_Peak,
+         when Haswell   => Lynx_Point,
+         when Broxton   => No_PCH,
+         when Skylake   => Sunrise_Point);
+   PCH_Last : constant PCH_Type :=
+     (case Gen is
+         when G45       => No_PCH,
+         when Ironlake  => Cougar_Point,
+         when Haswell   => Lynx_Point,
+         when Broxton   => No_PCH,
+         when Skylake   => Sunrise_Point);
+   subtype Gen_PCH_Type is PCH_Type range PCH_First .. PCH_Last;
+
+   PCH : constant Gen_PCH_Type := <<PCH>>;
+
    Panel_Ports : constant array (Valid_Panels) of Port_Type :=
      (Panel_1 => <<PANEL_1_PORT>>,
       Panel_2 => <<PANEL_2_PORT>>);
@@ -145,6 +163,11 @@ private package HW.GFX.GMA.Config is
    Broadwell_On      : <hswbool> :=
      ((Gen_Haswell and then CPU >= Broadwell) or Broxton_On);
 
+   PCH_Cougar_Point  : <genbool> := Gen_Ironlake and then PCH = Cougar_Point;
+
+   Cougar_Point_On   : <genbool> :=
+     ((Gen_Ironlake and then PCH >= Cougar_Point) or Haswell_On);
+
    ----------------------------------------------------------------------------
 
    Have_HDMI_Buf_Override  : constant Boolean := DDI_HDMI_Buffer_Translation >= 0;
@@ -188,7 +211,7 @@ private package HW.GFX.GMA.Config is
    Has_New_Backlight_Control     : <genbool> := Gen_Broxton;
 
    ----------- PCH/FDI: ---------
-   Has_PCH                       : <genbool> := not Gen_Broxton and not Gen_G45;
+   Has_PCH                       : <genbool> := PCH /= No_PCH;
    Has_PCH_DAC                   : <hswbool> :=
      (Gen_Ironlake or (Gen_Haswell and then not Is_LP));
 
@@ -201,9 +224,9 @@ private package HW.GFX.GMA.Config is
    Has_DPLL_SEL                  : <genbool> := Gen_Ironlake;
    Has_FDI_BPC                   : <genbool> := Gen_Ironlake;
    Has_FDI_Composite_Sel         : <ilkbool> := CPU_Ivybridge;
-   Has_New_FDI_Sink              : <ilkbool> := Sandybridge_On;
+   Has_New_FDI_Sink              : <genbool> := Cougar_Point_On;
    Has_New_FDI_Source            : <ilkbool> := Ivybridge_On;
-   Has_Trans_DP_Ctl              : <ilkbool> := CPU_Sandybridge or CPU_Ivybridge;
+   Has_Trans_DP_Ctl              : <genbool> := PCH_Cougar_Point;
    Has_FDI_C                     : <ilkbool> := CPU_Ivybridge;
 
    Has_FDI_RX_Power_Down         : <genbool> := Gen_Haswell;

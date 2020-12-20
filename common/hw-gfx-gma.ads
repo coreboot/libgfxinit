@@ -49,6 +49,13 @@ is
 
    type CPU_Variant is (Normal, ULT, ULX);
 
+   type PCH_Type is
+     (No_PCH,
+      Ibex_Peak,
+      Cougar_Point,     -- Panther Point compatible
+      Lynx_Point,       -- Wildcat Point compatible
+      Sunrise_Point);   -- Union Point compatible
+
    type Port_Type is
      (Disabled,
       LVDS,
