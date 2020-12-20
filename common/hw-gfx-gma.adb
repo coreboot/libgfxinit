@@ -538,7 +538,7 @@ is
          Registers.Unset_And_Set_Mask
            (Register    => Registers.PCH_RAWCLK_FREQ,
             Mask_Unset  => PCH_RAWCLK_FREQ_MASK,
-            Mask_Set    => PCH_RAWCLK_FREQ (Config.Default_RawClk_Freq));
+            Mask_Set    => PCH_RAWCLK_FREQ (Config.Raw_Clock));
       end if;
 
       Initialized := True;
