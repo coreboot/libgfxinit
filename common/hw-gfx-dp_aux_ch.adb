@@ -371,6 +371,41 @@ package body HW.GFX.DP_Aux_Ch is
 
    ----------------------------------------------------------------------------
 
+   procedure I2C_Write_Byte
+     (Port     : in     T;
+      Address  : in     I2C.Transfer_Address;
+      Offset   : in     Word8;
+      Value    : in     Word8;
+      Success  :    out Boolean)
+   is
+      Payload : constant DP_Defs.Aux_Payload := (Offset, Value, others => 16#00#);
+
+      Length : constant I2C.Transfer_Length  := 1;
+   begin
+      Do_I2C_Write (Port, Address, 1 + Length, Payload, Success);
+   end I2C_Write_Byte;
+
+   procedure I2C_Read_Byte
+     (Port     : in     T;
+      Address  : in     I2C.Transfer_Address;
+      Offset   : in     Word8;
+      Value    :    out Word8;
+      Success  :    out Boolean)
+   is
+      Index_Payload : constant DP_Defs.Aux_Payload := (Offset, others => 16#00#);
+
+      Length : I2C.Transfer_Length  := 1;
+      Data   : I2C.Transfer_Data    := (others => 16#00#);
+   begin
+      Do_I2C_Write (Port, Address, 1, Index_Payload, Success);
+
+      if Success then
+         Do_I2C_Read (Port, Address, Length, Data, Success);
+         Success := Success and Length = 1;
+      end if;
+      Value := Data (0);
+   end I2C_Read_Byte;
+
    procedure I2C_Read
      (Port     : in     T;
       Address  : in     I2C.Transfer_Address;

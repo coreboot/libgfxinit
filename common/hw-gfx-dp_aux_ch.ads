@@ -45,6 +45,20 @@ package HW.GFX.DP_Aux_Ch is
 
    ----------------------------------------------------------------------------
 
+   procedure I2C_Write_Byte
+     (Port     : in     T;
+      Address  : in     I2C.Transfer_Address;
+      Offset   : in     Word8;
+      Value    : in     Word8;
+      Success  :    out Boolean);
+
+   procedure I2C_Read_Byte
+     (Port     : in     T;
+      Address  : in     I2C.Transfer_Address;
+      Offset   : in     Word8;
+      Value    :    out Word8;
+      Success  :    out Boolean);
+
    procedure I2C_Read
      (Port     : in     T;
       Address  : in     I2C.Transfer_Address;
