@@ -1,6 +1,8 @@
 gfxinit-y += hw-gfx-dp_aux_ch.adb
 gfxinit-y += hw-gfx-dp_aux_ch.ads
 gfxinit-y += hw-gfx-dp_defs.ads
+gfxinit-y += hw-gfx-dp_dual_mode.adb
+gfxinit-y += hw-gfx-dp_dual_mode.ads
 gfxinit-y += hw-gfx-dp_info.adb
 gfxinit-y += hw-gfx-dp_info.ads
 gfxinit-y += hw-gfx-dp_training.adb
@@ -17,6 +19,7 @@ gfxinit-y += hw-gfx-gma-display_probing.ads
 gfxinit-y += hw-gfx-gma-dp_aux_ch.ads
 gfxinit-y += hw-gfx-gma-dp_aux_request.adb
 gfxinit-y += hw-gfx-gma-dp_aux_request.ads
+gfxinit-y += hw-gfx-gma-dp_dual_mode.ads
 gfxinit-y += hw-gfx-gma-dp_info.ads
 gfxinit-y += hw-gfx-gma-i2c.adb
 gfxinit-y += hw-gfx-gma-i2c.ads

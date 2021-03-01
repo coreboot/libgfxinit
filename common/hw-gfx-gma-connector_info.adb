@@ -14,6 +14,7 @@
 
 with HW.GFX.GMA.Config;
 with HW.GFX.GMA.Panel;
+with HW.GFX.GMA.DP_Dual_Mode;
 with HW.GFX.GMA.DP_Info;
 
 with HW.Debug;
@@ -43,6 +44,8 @@ package body HW.GFX.GMA.Connector_Info is
          else
             Panel.On (Port_Cfg.Panel);
          end if;
+
+         DP_Dual_Mode.Switch_LSPCON (DP_Port);
 
          DP_Info.Read_Caps
            (Link     => Port_Cfg.DP,
