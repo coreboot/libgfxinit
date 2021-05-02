@@ -181,8 +181,12 @@ package body HW.GFX.DP_Aux_Ch is
    is
       Request : DP_Defs.Aux_Request;
 
+      Xfered      : Natural := 0;
+      Tries       : Natural := 0;
+      Max_Defers  : constant := 7;
+
       Response : DP_Defs.Aux_Response;
-      Ignored_Response_Length : DP_Defs.Aux_Response_Length;
+      Response_Length : DP_Defs.Aux_Response_Length;
    begin
       Fill_Aux_Request
         (Request  => Request,
@@ -190,21 +194,34 @@ package body HW.GFX.DP_Aux_Ch is
          Address  => Address,
          Length   => Length);
       Request (4 .. Length + 4 - 1) := Data (0 .. Length - 1);
-      for Try in Positive range 1 .. 7 loop
-         pragma Warnings (GNATprove, Off,
-                          "unused assignment to ""Ignored_Response_Length""",
-                          Reason => "No response expected here");
+
+      loop
          Do_Aux_Request
            (Port              => Port,
             Request           => Request,
             Request_Length    => (if Is_Empty (Request) then 3 else 4 + Length),
             Response          => Response,
-            Response_Length   => Ignored_Response_Length,
+            Response_Length   => Response_Length,
             Success           => Success);
-         exit when not (Success and Is_I2C_Defer (Response));
+         exit when not Success;
 
-         -- Command was already AUX-acked. Thus, only query for
-         -- new status from now on until we get I2C-acked too.
+         if Is_I2C_Ack (Response) then
+            if Response_Length <= 1 then
+               Xfered := Length;
+            else
+               Xfered := Xfered + Natural'Min (Natural (Response (1)), Length - Xfered);
+               Tries := 0;
+            end if;
+            exit when Xfered = Length;
+         elsif Is_I2C_Defer (Response) then
+            exit when Tries >= Max_Defers;
+            Tries := Tries + 1;
+         else -- Nak
+            exit;
+         end if;
+
+         -- Command was already AUX-acked. Thus, only query for new
+         -- status from now on until we got all bytes I2C-acked too.
          Fill_Aux_Request
            (Request  => Request,
             Command  => (Command and DP_AUX_I2C_MOT) or DP_AUX_I2C_WR_STATUS_REQ,
@@ -212,7 +229,7 @@ package body HW.GFX.DP_Aux_Ch is
             Length   => 0);
          Time.U_Delay (500);
       end loop;
-      Success := Success and then Is_I2C_Ack (Response);
+      Success := Success and then (Is_I2C_Ack (Response) and Xfered = Length);
    end I2C_Out_Packet;
 
    procedure I2C_In_Packet
