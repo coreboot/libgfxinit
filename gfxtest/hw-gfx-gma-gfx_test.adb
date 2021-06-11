@@ -630,10 +630,9 @@ is
    procedure Print_Usage
    is
    begin
-      Debug.Put_Line
-        ("Usage: " & Ada.Command_Line.Command_Name &
-         " <delay seconds>" &
-         " [(0|90|180|270)]");
+      Debug.Put ("Usage: ");
+      Debug.Put (Ada.Command_Line.Command_Name);
+      Debug.Put_Line (" <delay seconds> [(0|90|180|270)]");
       Debug.New_Line;
    end Print_Usage;
 
