@@ -24,7 +24,7 @@ is
    type T is (Invalid_PLL, DPLL_A, DPLL_B, DPLL_C);
    Invalid : constant T := Invalid_PLL;
 
-   procedure Initialize is null
+   procedure Initialize
    with
       Global => (Output => State);
 

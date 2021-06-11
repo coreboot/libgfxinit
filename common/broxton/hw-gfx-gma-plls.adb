@@ -398,6 +398,8 @@ is
 
    ----------------------------------------------------------------------------
 
+   procedure Initialize is null;
+
    procedure Alloc
      (Port_Cfg : in     Port_Config;
       PLL      :    out T;
