@@ -100,7 +100,7 @@ $(hw-gfx-gma-config-ads): $(dir)/hw-gfx-gma-config.ads.template $(cnf)
 	    $(foreach gen,$(_GEN_TLA_SUBSTITUTIONS), \
 	      -e's/<$(gen)\(...\)*var>/$(_GEN_CONST_TARGET)/') \
 	    -e's/\(.*: *<cpufunc>.*:=\) *\(.*\);/\1\n     (\2);/' \
-	    -e's/\([^ ]\+\) *: *<cpufunc> \+\([^ ]*\) *:=/function \1 return \2 is/' \
+	    -e's/\([^ ][^ ]*\) *: *<cpufunc>  *\([^ ]*\) *:=/function \1 return \2 is/' \
 	    -e's/<cpunull>//' \
 	    $< >$@
 else
