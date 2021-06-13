@@ -92,7 +92,7 @@ ifeq ($(CONFIG_GFX_GMA_DYN_CPU),y)
 $(hw-gfx-gma-config-ads): $(dir)/hw-gfx-gma-config.ads.template $(cnf)
 	printf "    GENERATE   $(patsubst /%,%,$(subst $(obj)/,,$@))\n"
 	sed $(GFX_GMA_COMMON_SUBSTITUTIONS) \
-	    -e'/constant Gen_CPU\(_Var\)\?/d' \
+	    -e'/constant Gen_CPU/d' \
 	    -e's/<genbool>/constant Boolean/' \
 	    -e's/<\($(_GEN_TLA_SUBSTITUTIONS)\(...\)\?\)bool>/<\1var> Boolean/' \
 	    $(if $(_GEN_NONCONST),-e's/<\(...\)\?$(_GEN_NONCONST)\(...\)\?var>/<cpufunc>/') \
