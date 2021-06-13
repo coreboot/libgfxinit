@@ -107,11 +107,10 @@ $(hw-gfx-gma-config-ads): $(dir)/hw-gfx-gma-config.ads.template $(cnf)
 	sed $(GFX_GMA_COMMON_SUBSTITUTIONS) \
 	    -e's/<<CPU>>/$(CONFIG_GFX_GMA_CPU)/' \
 	    -e's/<<CPU_VARIANT>>/$(CONFIG_GFX_GMA_CPU_VARIANT)/' \
-	    -e":s$$(printf '\n ')/,$$/{N;s/,\n.*Dyn_CPU\(_Var\)\?[^,)]*//;ts$$(printf '\n ')P;D;}" \
-	    -e'/Dyn_CPU\(_Var\)\?/d' \
 	    -e's/<\(gen\|$(_GEN_TLA_SUBSTITUTIONS)\(...\)\?\)bool>/constant Boolean/' \
 	    -e's/<\($(_GEN_TLA_SUBSTITUTIONS)\(...\)\?\)var>/constant/' \
 	    -e's/<cpunull>/ is null/' \
+	    -f $(dir $<)/delete_dyncpu.sed \
 	    $< >$@
 endif
 gfxinit-gen-y += $(hw-gfx-gma-config-ads)
