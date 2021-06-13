@@ -62,7 +62,7 @@ CONFIG_GFX_GMA_PANEL_2_PORT	:= $(call strip_quotes,$(CONFIG_GFX_GMA_PANEL_2_PORT
 CONFIG_GFX_GMA_ANALOG_I2C_PORT	:= $(call strip_quotes,$(CONFIG_GFX_GMA_ANALOG_I2C_PORT))
 CONFIG_GFX_GMA_IGNORE_PRESENCE_STRAPS := $(if $(filter y,$(CONFIG_GFX_GMA_IGNORE_PRESENCE_STRAPS)),True,False)
 
-_GEN_TLA_SUBSTITUTIONS := \(g45\|ilk\|hsw\|skl\)
+_GEN_TLA_SUBSTITUTIONS := g45 ilk hsw skl
 
 _GEN_NONCONST := $(strip \
 		 $(if $(filter G45,$(CONFIG_GFX_GMA_GENERATION)),g45, \
@@ -94,9 +94,11 @@ $(hw-gfx-gma-config-ads): $(dir)/hw-gfx-gma-config.ads.template $(cnf)
 	sed $(GFX_GMA_COMMON_SUBSTITUTIONS) \
 	    -e'/constant Gen_CPU/d' \
 	    -e's/<genbool>/constant Boolean/' \
-	    -e's/<\($(_GEN_TLA_SUBSTITUTIONS)\(...\)*\)bool>/<\1var> Boolean/' \
+	    $(foreach gen,$(_GEN_TLA_SUBSTITUTIONS), \
+	      -e's/<\($(gen)\(...\)*\)bool>/<\1var> Boolean/') \
 	    $(if $(_GEN_NONCONST),-e's/<\(...\)*$(_GEN_NONCONST)\(...\)*var>/<cpufunc>/') \
-	    -e's/<$(_GEN_TLA_SUBSTITUTIONS)\(...\)*var>/$(_GEN_CONST_TARGET)/' \
+	    $(foreach gen,$(_GEN_TLA_SUBSTITUTIONS), \
+	      -e's/<$(gen)\(...\)*var>/$(_GEN_CONST_TARGET)/') \
 	    -e's/\(.*: *<cpufunc>.*:=\) *\(.*\);/\1\n     (\2);/' \
 	    -e's/\([^ ]\+\) *: *<cpufunc> \+\([^ ]*\) *:=/function \1 return \2 is/' \
 	    -e's/<cpunull>//' \
@@ -107,8 +109,10 @@ $(hw-gfx-gma-config-ads): $(dir)/hw-gfx-gma-config.ads.template $(cnf)
 	sed $(GFX_GMA_COMMON_SUBSTITUTIONS) \
 	    -e's/<<CPU>>/$(CONFIG_GFX_GMA_CPU)/' \
 	    -e's/<<CPU_VARIANT>>/$(CONFIG_GFX_GMA_CPU_VARIANT)/' \
-	    -e's/<\(gen\|$(_GEN_TLA_SUBSTITUTIONS)\(...\)*\)bool>/constant Boolean/' \
-	    -e's/<\($(_GEN_TLA_SUBSTITUTIONS)\(...\)*\)var>/constant/' \
+	    -e's/<genbool>/constant Boolean/' \
+	    $(foreach gen,$(_GEN_TLA_SUBSTITUTIONS), \
+	      -e's/<$(gen)\(...\)*bool>/constant Boolean/' \
+	      -e's/<$(gen)\(...\)*var>/constant/') \
 	    -e's/<cpunull>/ is null/' \
 	    -f $(dir $<)/delete_dyncpu.sed \
 	    $< >$@
