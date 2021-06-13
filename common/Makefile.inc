@@ -94,9 +94,9 @@ $(hw-gfx-gma-config-ads): $(dir)/hw-gfx-gma-config.ads.template $(cnf)
 	sed $(GFX_GMA_COMMON_SUBSTITUTIONS) \
 	    -e'/constant Gen_CPU/d' \
 	    -e's/<genbool>/constant Boolean/' \
-	    -e's/<\($(_GEN_TLA_SUBSTITUTIONS)\(...\)\?\)bool>/<\1var> Boolean/' \
-	    $(if $(_GEN_NONCONST),-e's/<\(...\)\?$(_GEN_NONCONST)\(...\)\?var>/<cpufunc>/') \
-	    -e's/<$(_GEN_TLA_SUBSTITUTIONS)\(...\)\?var>/$(_GEN_CONST_TARGET)/' \
+	    -e's/<\($(_GEN_TLA_SUBSTITUTIONS)\(...\)*\)bool>/<\1var> Boolean/' \
+	    $(if $(_GEN_NONCONST),-e's/<\(...\)*$(_GEN_NONCONST)\(...\)*var>/<cpufunc>/') \
+	    -e's/<$(_GEN_TLA_SUBSTITUTIONS)\(...\)*var>/$(_GEN_CONST_TARGET)/' \
 	    -e's/\(.*: *<cpufunc>.*:=\) *\(.*\);/\1\n     (\2);/' \
 	    -e's/\([^ ]\+\) *: *<cpufunc> \+\([^ ]*\) *:=/function \1 return \2 is/' \
 	    -e's/<cpunull>//' \
@@ -107,8 +107,8 @@ $(hw-gfx-gma-config-ads): $(dir)/hw-gfx-gma-config.ads.template $(cnf)
 	sed $(GFX_GMA_COMMON_SUBSTITUTIONS) \
 	    -e's/<<CPU>>/$(CONFIG_GFX_GMA_CPU)/' \
 	    -e's/<<CPU_VARIANT>>/$(CONFIG_GFX_GMA_CPU_VARIANT)/' \
-	    -e's/<\(gen\|$(_GEN_TLA_SUBSTITUTIONS)\(...\)\?\)bool>/constant Boolean/' \
-	    -e's/<\($(_GEN_TLA_SUBSTITUTIONS)\(...\)\?\)var>/constant/' \
+	    -e's/<\(gen\|$(_GEN_TLA_SUBSTITUTIONS)\(...\)*\)bool>/constant Boolean/' \
+	    -e's/<\($(_GEN_TLA_SUBSTITUTIONS)\(...\)*\)var>/constant/' \
 	    -e's/<cpunull>/ is null/' \
 	    -f $(dir $<)/delete_dyncpu.sed \
 	    $< >$@
