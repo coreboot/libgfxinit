@@ -8,9 +8,9 @@ more specifically the Intel Core processor line.
 It can query and set up most kinds of displays based on their EDID
 information. You can, however, also specify particular mode lines.
 
-*libgfxinit* is written in SPARK, an Ada subset with formal verifica-
-tion aspects. Absence of runtime errors can be proved automatically
-with SPARK GPL 2016.
+*libgfxinit* is written in SPARK, an Ada subset with formal
+verification aspects. Absence of runtime errors can be proved
+automatically with SPARK GPL 2016.
 
 
 Building on Linux
@@ -25,9 +25,9 @@ names in Linux distributions are `gcc-ada` and `gnat`.
 Grab the Sources
 ----------------
 
-You'll need *libhwbase* and *libgfxinit*. Best is to clone the reposi-
-tories into a common parent directory (this way *libgfxinit* will know
-where to find *libhwbase*).
+You'll need *libhwbase* and *libgfxinit*. Best is to clone the
+repositories into a common parent directory (this way *libgfxinit*
+will know where to find *libhwbase*).
 
     $ mkdir gfxfun && cd gfxfun
     $ git clone https://review.coreboot.org/p/libhwbase.git
@@ -61,8 +61,8 @@ overwrite this decision by specifying `DESTDIR=`.
 Build libgfxinit/`gfx_test`
 ---------------------------
 
-*libgfxinit* is configured and installed in the same manner as de-
-scribed above. You will have to select a configuration matching your
+*libgfxinit* is configured and installed in the same manner as
+described above. You will have to select a configuration matching your
 hardware.
 
 The makefile knows an additional target `gfx_test` to build a small
@@ -78,10 +78,10 @@ Testing libgfxinit on Linux
 ===========================
 
 `gfx_test` sets up its own framebuffer in the *stolen memory*. It
-backs any current framebuffer mapping and contents up first and re-
-stores it before exiting. This works somehow even while the *i915*
-driver is running. A wrapper script `gfxtest/gfx_test.sh` is pro-
-vided to help with the setup. It switches to a text console first
+backs any current framebuffer mapping and contents up first and
+restores it before exiting. This works somehow even while the *i915*
+driver is running. A wrapper script `gfxtest/gfx_test.sh` is
+provided to help with the setup. It switches to a text console first
 and tries to unload the *i915* driver. But ignores failures to do
 so (it won't work if you still have any application running that
 uses the gfx driver, e.g. an X server).
