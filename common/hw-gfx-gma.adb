@@ -53,19 +53,31 @@ package body HW.GFX.GMA
 is
    pragma Disable_Atomic_Synchronization;
 
-   subtype Port_Name is String (1 .. 8);
+   subtype Port_Name is String (1 .. 10);
    type Port_Name_Array is array (Port_Type) of Port_Name;
    Port_Names : constant Port_Name_Array :=
-     (Disabled => "Disabled",
-      LVDS     => "LVDS    ",
-      eDP      => "eDP     ",
-      DP1      => "DP1     ",
-      DP2      => "DP2     ",
-      DP3      => "DP3     ",
-      HDMI1    => "HDMI1   ",
-      HDMI2    => "HDMI2   ",
-      HDMI3    => "HDMI3   ",
-      Analog   => "Analog  ");
+     (Disabled   => "Disabled  ",
+      LVDS       => "LVDS      ",
+      eDP        => "eDP       ",
+      DP1        => "DP1       ",
+      DP2        => "DP2       ",
+      DP3        => "DP3       ",
+      HDMI1      => "HDMI1     ",
+      HDMI2      => "HDMI2     ",
+      HDMI3      => "HDMI3     ",
+      Analog     => "Analog    ",
+      USBC1_DP   => "USBC1-DP  ",
+      USBC2_DP   => "USBC2-DP  ",
+      USBC3_DP   => "USBC3-DP  ",
+      USBC4_DP   => "USBC4-DP  ",
+      USBC5_DP   => "USBC5-DP  ",
+      USBC6_DP   => "USBC6-DP  ",
+      USBC1_HDMI => "USBC1-HDMI",
+      USBC2_HDMI => "USBC2-HDMI",
+      USBC3_HDMI => "USBC3-HDMI",
+      USBC4_HDMI => "USBC4-HDMI",
+      USBC5_HDMI => "USBC5-HDMI",
+      USBC6_HDMI => "USBC6-HDMI");
 
    package Dev is new HW.PCI.Dev (PCI.Address'(0, 2, 0));
 
@@ -485,7 +497,7 @@ is
                Registers.Read (Registers.G4X_AUD_VID_DID, Audio_VID_DID);
             when Ironlake =>
                Registers.Read (Registers.PCH_AUD_VID_DID, Audio_VID_DID);
-            when Haswell .. Skylake =>
+            when Haswell .. Tigerlake =>
                Registers.Read (Registers.AUD_VID_DID, Audio_VID_DID);
          end case;
          Success :=
@@ -500,7 +512,8 @@ is
             (Config.CPU_Ironlake       and Audio_VID_DID = 16#0000_0000#) or
             (Config.Gen_G45            and (Audio_VID_DID = 16#8086_2801# or
                                             Audio_VID_DID = 16#8086_2802# or
-                                            Audio_VID_DID = 16#8086_2803#)));
+                                            Audio_VID_DID = 16#8086_2803#)) or
+            (Config.CPU_Tigerlake      and (Audio_VID_DID = 16#8086_2812#)));
       end Check_Platform;
 
       procedure Check_Platform_PCI (Success : out Boolean)

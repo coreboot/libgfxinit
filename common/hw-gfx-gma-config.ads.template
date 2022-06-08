@@ -22,18 +22,20 @@ private package HW.GFX.GMA.Config is
          when Ironlake  => Ironlake,
          when Haswell   => Haswell,
          when Broxton   => Broxton,
-         when Skylake   => Skylake);
+         when Skylake   => Skylake,
+         when Tigerlake => Tigerlake);
    CPU_Last : constant CPU_Type :=
      (case Gen is
          when G45       => GM45,
          when Ironlake  => Ivybridge,
          when Haswell   => Broadwell,
          when Broxton   => Broxton,
-         when Skylake   => Kabylake);
+         when Skylake   => Kabylake,
+         when Tigerlake => Tigerlake);
    CPU_Var_Last : constant CPU_Variant :=
      (case Gen is
-         when Haswell | Skylake  => ULX,
-         when others             => Normal);
+         when Haswell | Skylake | Tigerlake  => ULX,
+         when others                         => Normal);
    subtype Gen_CPU_Type is CPU_Type range CPU_First .. CPU_Last;
    subtype Gen_CPU_Variant is CPU_Variant range Normal .. CPU_Var_Last;
 
@@ -47,14 +49,16 @@ private package HW.GFX.GMA.Config is
          when Ironlake  => Ibex_Peak,
          when Haswell   => Lynx_Point,
          when Broxton   => No_PCH,
-         when Skylake   => Sunrise_Point);
+         when Skylake   => Sunrise_Point,
+         when Tigerlake => Tiger_Point);
    PCH_Last : constant PCH_Type :=
      (case Gen is
          when G45       => No_PCH,
          when Ironlake  => Cougar_Point,
          when Haswell   => Lynx_Point,
          when Broxton   => No_PCH,
-         when Skylake   => Cannon_Point);
+         when Skylake   => Cannon_Point,
+         when Tigerlake => Tiger_Point);
    subtype Gen_PCH_Type is PCH_Type range PCH_First .. PCH_Last;
 
    PCH : constant Gen_PCH_Type := <<PCH>>;
@@ -138,12 +142,14 @@ private package HW.GFX.GMA.Config is
    Gen_Haswell       : <genbool> := Gen = Haswell;
    Gen_Broxton       : <genbool> := Gen = Broxton;
    Gen_Skylake       : <genbool> := Gen = Skylake;
+   Gen_Tigerlake     : <genbool> := Gen = Tigerlake;
 
    Up_To_Ironlake    : <genbool> := Gen <= Ironlake;
    Ironlake_On       : <genbool> := Gen >= Ironlake;
    Haswell_On        : <genbool> := Gen >= Haswell;
    Broxton_On        : <genbool> := Gen >= Broxton;
    Skylake_On        : <genbool> := Gen >= Skylake;
+   Tigerlake_On      : <genbool> := Gen >= Tigerlake;
 
    GMCH_GM45         : <g45bool> := Gen_G45 and then CPU = GM45;
    CPU_Ironlake      : <ilkbool> := Gen_Ironlake and then CPU = Ironlake;
@@ -153,6 +159,7 @@ private package HW.GFX.GMA.Config is
    CPU_Broadwell     : <hswbool> := Gen_Haswell and then CPU = Broadwell;
    CPU_Skylake       : <sklbool> := Gen_Skylake and then CPU = Skylake;
    CPU_Kabylake      : <sklbool> := Gen_Skylake and then CPU = Kabylake;
+   CPU_Tigerlake     : <tglbool> := Gen_Tigerlake;
 
    Sandybridge_On    : <ilkbool> :=
      ((Gen_Ironlake and then CPU >= Sandybridge) or Haswell_On);
@@ -166,6 +173,7 @@ private package HW.GFX.GMA.Config is
    Cougar_Point_On   : <genbool> :=
      ((Gen_Ironlake and then PCH >= Cougar_Point) or Haswell_On);
    Cannon_Point_On   : <genbool> := Skylake_On and then PCH >= Cannon_Point;
+   Tiger_Point_On    : <genbool> := Tigerlake_On and then PCH >= Tiger_Point;
 
    ----------------------------------------------------------------------------
 
@@ -175,11 +183,11 @@ private package HW.GFX.GMA.Config is
    Have_DVI_I              : constant Boolean := Analog_I2C_Port /= PCH_DAC;
 
    Has_Presence_Straps           : <genbool> := not Gen_Broxton;
-   Is_ULT                        : <hswsklbool> :=
-     ((Gen_Haswell or Gen_Skylake) and then CPU_Var = ULT);
-   Is_ULX                        : <hswsklbool> :=
-     ((Gen_Haswell or Gen_Skylake) and then CPU_Var = ULX);
-   Is_LP                         : <hswsklbool> := Is_ULT or Is_ULX;
+   Is_ULT                        : <hswskltglbool> :=
+     ((Gen_Haswell or Gen_Skylake or Gen_Tigerlake) and then CPU_Var = ULT);
+   Is_ULX                        : <hswskltglbool> :=
+     ((Gen_Haswell or Gen_Skylake or Gen_Tigerlake) and then CPU_Var = ULX);
+   Is_LP                         : <hswskltglbool> := Is_ULT or Is_ULX;
 
    ---------- CPU pipe: ---------
    Has_Tertiary_Pipe             : <ilkbool> := Ivybridge_On;
@@ -279,6 +287,9 @@ private package HW.GFX.GMA.Config is
    ----------- GTT: -------------
    Has_64bit_GTT                 : <hswbool> := Broadwell_On;
 
+   ----------- Type-C: ----------
+   Has_Type_C_Ports              : <genbool> := Tigerlake_On;
+
    ----------------------------------------------------------------------------
 
    Max_Pipe : <ilkvar> Pipe_Index :=
@@ -295,7 +306,8 @@ private package HW.GFX.GMA.Config is
       eDP            => False,
       LVDS           => Gen_Ironlake,
       DP1 .. HDMI3   => Gen_Ironlake,
-      Analog         => Has_PCH_DAC);
+      Analog         => Has_PCH_DAC,
+      others         => False);
 
    type FDI_Lanes_Per_Port is array (GPU_Port) of DP_Lane_Count;
    FDI_Lane_Count : constant FDI_Lanes_Per_Port :=
@@ -316,6 +328,7 @@ private package HW.GFX.GMA.Config is
      (if    CPU_Haswell    then 6
       elsif CPU_Broadwell  then 7
       elsif Broxton_On     then 8
+      elsif Tigerlake_On   then 6
                            else 0);
 
    ----------------------------------------------------------------------------
@@ -328,6 +341,7 @@ private package HW.GFX.GMA.Config is
       elsif Gen_Haswell                      then 450_000_000
       elsif Gen_Broxton                      then 288_000_000
       elsif Gen_Skylake                      then 337_500_000
+      elsif Gen_Tigerlake                    then CDClk_Range'First  -- depends on ref clk
                                              else CDClk_Range'First);
 
    Default_RawClk_Freq : <hswvar> Frequency_Type :=
@@ -336,6 +350,7 @@ private package HW.GFX.GMA.Config is
       elsif Gen_Haswell    then (if Is_LP then 24_000_000 else 125_000_000)
       elsif Gen_Broxton    then Frequency_Type'First  -- none needed
       elsif Gen_Skylake    then 24_000_000
+      elsif Gen_Tigerlake  then 24_000_000
                            else Frequency_Type'First);
 
    ----------------------------------------------------------------------------
@@ -363,7 +378,7 @@ private package HW.GFX.GMA.Config is
    Maximum_Cursor_X : constant :=
      (case Gen is
          when G45 .. Ironlake       => 4095,
-         when Haswell .. Skylake    => 8191);
+         when Haswell .. Tigerlake  => 8191);
 
    Maximum_Cursor_Y : constant := 4095;
 
@@ -372,9 +387,10 @@ private package HW.GFX.GMA.Config is
    -- FIXME: Unknown for Broxton, Linux' i915 contains a fixme too :-D
    HDMI_Max_Clock_24bpp : constant Frequency_Type :=
      (case Gen is
-         when Generation'First .. G45     => 165_000_000,
-         when Ironlake                    => 225_000_000,
-         when Haswell .. Generation'Last  => 300_000_000);
+         when Generation'First .. G45      => 165_000_000,
+         when Ironlake                     => 225_000_000,
+         when Haswell .. Skylake           => 300_000_000,
+	 when Tigerlake .. Generation'Last => 600_000_000);
 
    ----------------------------------------------------------------------------
 
@@ -467,6 +483,25 @@ private package HW.GFX.GMA.Config is
       (Device_Id and 16#ff8f#) = 16#9b86# or
       (Device_Id and 16#ff8f#) = 16#9b88#);
 
+   -- For TGL, the distinction is UP4 (formerly Y), UP3 (U), or H (Normal),
+   -- however, the PRMs state "The Intel UHD Graphics Device ID SKUs are
+   -- unified for both UP3 and UP4, e.g. there is no unique device ID
+   -- between UP3 and UP4"
+   function Is_Tiger_Lake_U (Device_Id : Word16) return Boolean is
+     (Device_Id = 16#9a40# or
+      Device_Id = 16#9a49# or
+      Device_Id = 16#9a59# or
+      Device_Id = 16#9a78# or
+      Device_Id = 16#9ac0# or
+      Device_Id = 16#9ac9# or
+      Device_Id = 16#9ad9# or
+      Device_Id = 16#9af8#);
+
+   function Is_Tiger_Lake_H (Device_Id : Word16) return Boolean is
+     (Device_Id = 16#9a60# or
+      Device_Id = 16#9a68# or
+      Device_Id = 16#9a70#);
+
    function Is_GPU (Device_Id : Word16; CPU : CPU_Type; CPU_Var : CPU_Variant)
       return Boolean is
      (case CPU is
@@ -500,7 +535,12 @@ private package HW.GFX.GMA.Config is
                                  when ULX    =>
                                     Is_Kaby_Lake_Y (Device_Id) or
                                     Is_Kaby_Lake_Y_AML (Device_Id) or
-                                    Is_Coffee_Lake_Y_AML (Device_Id)));
+                                    Is_Coffee_Lake_Y_AML (Device_Id)),
+         when Tigerlake    => (case CPU_Var is
+                                when Normal =>
+                                   Is_Tiger_Lake_H (Device_Id),
+                                when ULT | ULX =>
+                                   Is_Tiger_Lake_U (Device_Id)));
 
    function Compatible_GPU (Device_Id : Word16) return Boolean is
      (Is_GPU (Device_Id, CPU, CPU_Var));

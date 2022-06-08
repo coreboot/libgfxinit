@@ -85,7 +85,7 @@ is
                   PCH.VGA.On (FDI_Port, Port_Cfg.Mode);
                elsif Port_Cfg.PCH_Port = PCH_LVDS then
                   PCH.LVDS.On (Port_Cfg, FDI_Port);
-               elsif Port_Cfg.PCH_Port in PCH_HDMI_Port then
+               elsif Port_Cfg.PCH_Port in PCH.HDMI.IRL_PCH_HDMI_Port then
                   PCH.HDMI.On (Port_Cfg, FDI_Port);
                elsif Port_Cfg.PCH_Port in PCH_DP_Port then
                   PCH.DP.On (Port_Cfg, FDI_Port, Success);
@@ -137,7 +137,7 @@ is
                PCH.VGA.Off;
             elsif Port_Cfg.PCH_Port = PCH_LVDS then
                PCH.LVDS.Off;
-            elsif Port_Cfg.PCH_Port in PCH_HDMI_Port then
+            elsif Port_Cfg.PCH_Port in PCH.HDMI.IRL_PCH_HDMI_Port then
                PCH.HDMI.Off (Port_Cfg.PCH_Port);
             end if;
             PCH.Transcoder.Off (FDI_Port);

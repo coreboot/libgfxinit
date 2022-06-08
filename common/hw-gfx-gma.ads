@@ -35,7 +35,7 @@ is
    subtype GTT_Range is Natural range 0 .. 16#8_0000# - 1;
    GTT_Rotation_Offset : constant GTT_Range := GTT_Range'Last / 2 + 1;
 
-   type Generation is (G45, Ironlake, Haswell, Broxton, Skylake);
+   type Generation is (G45, Ironlake, Haswell, Broxton, Skylake, Tigerlake);
 
    type CPU_Type is
      (G45,
@@ -47,7 +47,8 @@ is
       Broadwell,
       Broxton,
       Skylake,
-      Kabylake);
+      Kabylake,
+      Tigerlake);
 
    type CPU_Variant is (Normal, ULT, ULX);
 
@@ -57,7 +58,8 @@ is
       Cougar_Point,     -- Panther Point compatible
       Lynx_Point,       -- Wildcat Point compatible
       Sunrise_Point,    -- Union Point compatible
-      Cannon_Point);
+      Cannon_Point,
+      Tiger_Point);
 
    type Port_Type is
      (Disabled,
@@ -69,10 +71,24 @@ is
       HDMI1, -- or DVI
       HDMI2, -- or DVI
       HDMI3, -- or DVI
-      Analog);
+      Analog,
+      USBC1_DP,
+      USBC2_DP,
+      USBC3_DP,
+      USBC4_DP,
+      USBC5_DP,
+      USBC6_DP,
+      USBC1_HDMI,
+      USBC2_HDMI,
+      USBC3_HDMI,
+      USBC4_HDMI,
+      USBC5_HDMI,
+      USBC6_HDMI);
    subtype Active_Port_Type is Port_Type
       range Port_Type'Succ (Disabled) .. Port_Type'Last;
    subtype Internal_Port_Type is Port_Type range LVDS .. eDP;
+   subtype Combo_Port_Type is Port_Type range DP1 .. HDMI3;
+   subtype USBC_Port_Type is Port_Type range USBC1_DP .. USBC6_HDMI;
 
    type Cursor_Mode is (No_Cursor, ARGB_Cursor);
    type Cursor_Size is (Cursor_64x64, Cursor_128x128, Cursor_256x256);
@@ -267,19 +283,30 @@ private
    ----------------------------------------------------------------------------
    -- Internal representation of a single pipe's configuration
 
-   type GPU_Port is (DIGI_A, DIGI_B, DIGI_C, DIGI_D, DIGI_E, LVDS, VGA);
+   type GPU_Port is
+     (DIGI_A, DIGI_B, DIGI_C, DIGI_D, DIGI_E,
+      DDI_TC1, DDI_TC2, DDI_TC3, DDI_TC4, DDI_TC5, DDI_TC6,
+      LVDS, VGA);
 
    subtype Digital_Port is GPU_Port range DIGI_A .. DIGI_E;
    subtype GMCH_DP_Port is GPU_Port range DIGI_B .. DIGI_D;
    subtype GMCH_HDMI_Port is GPU_Port range DIGI_B .. DIGI_C;
+   subtype Combo_Port is GPU_Port range DIGI_A .. DIGI_C;
+   subtype USBC_Port is GPU_Port range DDI_TC1 .. DDI_TC6;
+   subtype TGL_Digital_Port is GPU_Port range DIGI_A .. DDI_TC6;
+
+   function Is_Digital_Port (Port : GPU_Port) return Boolean is
+      (Port in Digital_Port or Port in TGL_Digital_Port);
 
    type PCH_Port is
      (PCH_DAC, PCH_LVDS,
-      PCH_HDMI_B, PCH_HDMI_C, PCH_HDMI_D,
-      PCH_DP_B, PCH_DP_C, PCH_DP_D);
+      PCH_HDMI_A, PCH_HDMI_B, PCH_HDMI_C, PCH_HDMI_D,
+      PCH_DP_B, PCH_DP_C, PCH_DP_D,
+      PCH_TC1, PCH_TC2, PCH_TC3, PCH_TC4, PCH_TC5, PCH_TC6);
 
-   subtype PCH_HDMI_Port is PCH_Port range PCH_HDMI_B .. PCH_HDMI_D;
+   subtype PCH_HDMI_Port is PCH_Port range PCH_HDMI_A .. PCH_HDMI_D;
    subtype PCH_DP_Port is PCH_Port range PCH_DP_B .. PCH_DP_D;
+   subtype PCH_TC_Port is PCH_Port range PCH_TC1 .. PCH_TC6;
 
    type Panel_Control is (No_Panel, Panel_1, Panel_2);
    subtype Valid_Panels is Panel_Control range Panel_1 .. Panel_2;

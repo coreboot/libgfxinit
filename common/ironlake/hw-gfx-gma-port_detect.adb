@@ -15,6 +15,7 @@
 with HW.GFX.GMA.Config;
 with HW.GFX.GMA.Registers;
 with HW.GFX.GMA.Config_Helpers;
+with HW.GFX.GMA.PCH.HDMI;
 
 package body HW.GFX.GMA.Port_Detect
 is
@@ -25,7 +26,7 @@ is
 
    SHOTPLUG_CTL_DETECT_MASK            : constant := 16#0003_0303#;
 
-   type PCH_Digital_Port_Value is array (PCH_HDMI_Port) of Word32;
+   type PCH_Digital_Port_Value is array (PCH.HDMI.IRL_PCH_HDMI_Port) of Word32;
    SHOTPLUG_CTL_HPD_INPUT_ENABLE : constant PCH_Digital_Port_Value :=
      (PCH_HDMI_B => 1 * 2 **  4,
       PCH_HDMI_C => 1 * 2 ** 12,
@@ -43,7 +44,7 @@ is
       PCH_HDMI_C => 1 * 2 **  9,
       PCH_HDMI_D => 1 * 2 ** 17);
 
-   type PCH_Digital_Regs is array (PCH_HDMI_Port) of Registers.Registers_Index;
+   type PCH_Digital_Regs is array (PCH.HDMI.IRL_PCH_HDMI_Port) of Registers.Registers_Index;
    PCH_HDMI : constant PCH_Digital_Regs :=
      (PCH_HDMI_B => Registers.PCH_HDMIB,
       PCH_HDMI_C => Registers.PCH_HDMIC,
@@ -60,7 +61,7 @@ is
       HDMI_Detected,
       DP_Detected : Boolean;
 
-      type PCH_Port_To_GMA_Port is array (PCH_HDMI_Port) of Port_Type;
+      type PCH_Port_To_GMA_Port is array (PCH.HDMI.IRL_PCH_HDMI_Port) of Port_Type;
       To_Digital_Port : constant PCH_Port_To_GMA_Port :=
         (PCH_HDMI_B => HDMI1,
          PCH_HDMI_C => HDMI2,
@@ -87,7 +88,7 @@ is
       Config.Valid_Port (eDP) := eDP_Detected;
 
       -- PCH_HDMI_[BCD], PCH_DP_[BCD] share hotplug registers
-      for PCH_Port in PCH_HDMI_Port loop
+      for PCH_Port in PCH.HDMI.IRL_PCH_HDMI_Port loop
          Registers.Is_Set_Mask
            (Register => PCH_HDMI (PCH_Port),
             Mask     => PCH_DIGI_PORT_DETECTED,

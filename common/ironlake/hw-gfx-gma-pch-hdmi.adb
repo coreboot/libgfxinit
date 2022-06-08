@@ -39,7 +39,7 @@ is
       PCH_HDMI_HSYNC_ACTIVE_HIGH or
       PCH_HDMI_VSYNC_ACTIVE_HIGH);
 
-   type PCH_HDMI_Array is array (PCH_HDMI_Port) of Registers.Registers_Index;
+   type PCH_HDMI_Array is array (IRL_PCH_HDMI_Port) of Registers.Registers_Index;
    PCH_HDMI : constant PCH_HDMI_Array := PCH_HDMI_Array'
      (PCH_HDMI_B => Registers.PCH_HDMIB,
       PCH_HDMI_C => Registers.PCH_HDMIC,
@@ -74,7 +74,7 @@ is
 
    ----------------------------------------------------------------------------
 
-   procedure Off (Port : PCH_HDMI_Port)
+   procedure Off (Port : IRL_PCH_HDMI_Port)
    is
       With_Transcoder_B_Enabled : Boolean := False;
    begin
@@ -115,7 +115,7 @@ is
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
-      for Port in PCH_HDMI_Port loop
+      for Port in IRL_PCH_HDMI_Port loop
          Off (Port);
       end loop;
    end All_Off;

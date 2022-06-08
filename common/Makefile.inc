@@ -62,13 +62,14 @@ CONFIG_GFX_GMA_PANEL_2_PORT	:= $(call strip_quotes,$(CONFIG_GFX_GMA_PANEL_2_PORT
 CONFIG_GFX_GMA_ANALOG_I2C_PORT	:= $(call strip_quotes,$(CONFIG_GFX_GMA_ANALOG_I2C_PORT))
 CONFIG_GFX_GMA_IGNORE_PRESENCE_STRAPS := $(if $(filter y,$(CONFIG_GFX_GMA_IGNORE_PRESENCE_STRAPS)),True,False)
 
-_GEN_TLA_SUBSTITUTIONS := g45 ilk hsw skl
+_GEN_TLA_SUBSTITUTIONS := g45 ilk hsw skl tgl
 
 _GEN_NONCONST := $(strip \
 		 $(if $(filter G45,$(CONFIG_GFX_GMA_GENERATION)),g45, \
 		 $(if $(filter Ironlake,$(CONFIG_GFX_GMA_GENERATION)),ilk, \
 		 $(if $(filter Haswell,$(CONFIG_GFX_GMA_GENERATION)),hsw,  \
-		 $(if $(filter Skylake,$(CONFIG_GFX_GMA_GENERATION)),skl)))))
+		 $(if $(filter Skylake,$(CONFIG_GFX_GMA_GENERATION)),skl, \
+		 $(if $(filter Tigerlake,$(CONFIG_GFX_GMA_GENERATION)),tgl))))))
 # GNATprove (GPL 2017) doesn't realize when a boolean expression
 # that depends both on static values and variables can be evalu-
 # ated at compile time (e.g. `False and then Variable` is always
@@ -130,4 +131,6 @@ else ifneq ($(filter Broxton,$(CONFIG_GFX_GMA_GENERATION)),)
 subdirs-y += haswell_shared broxton
 else ifneq ($(filter Skylake,$(CONFIG_GFX_GMA_GENERATION)),)
 subdirs-y += haswell_shared skylake
+else ifneq ($(filter Tigerlake,$(CONFIG_GFX_GMA_GENERATION)),)
+subdirs-y += tigerlake
 endif
