@@ -367,7 +367,12 @@ package body HW.GFX.GMA.Power_And_Clocks is
       Get_Max_CDClk (Config.Max_CDClk);
       Set_CDClk (Config.Default_CDClk_Freq);
 
-      Get_Raw_Clock (Config.Raw_Clock);
+      declare  -- avoid aliasing
+         Raw_Clock : Frequency_Type;
+      begin
+         Get_Raw_Clock (Raw_Clock);
+         Config.Raw_Clock := Raw_Clock;
+      end;
    end Initialize;
 
    procedure Limit_Dotclocks
