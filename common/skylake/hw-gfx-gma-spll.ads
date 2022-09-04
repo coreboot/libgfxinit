@@ -12,7 +12,7 @@
 -- GNU General Public License for more details.
 --
 
-package HW.GFX.GMA.SPLL is
+private package HW.GFX.GMA.SPLL is
 
    -- Just for a common interface with Haswell's DDI.
    -- There is no SPLL (no FDI) on Skylake.
