@@ -63,16 +63,21 @@ package HW.GFX.DP_Info is
    type Adjust_Requests_Array is array (Lane_Index) of Adjust_Request;
    pragma Pack (Adjust_Requests_Array);
 
+   type Link_Status_Padding is mod 2**15;
    type Link_Status is record
       Lanes                : Lanes_Status;
       Interlane_Align_Done : Boolean;
+      Padding              : Link_Status_Padding;
       Adjust_Requests      : Adjust_Requests_Array;
    end record;
    for Link_Status use record
       Lanes                at 16#00# range 0 .. 15;
       Interlane_Align_Done at 16#02# range 0 ..  0;
+      Padding              at 16#02# range 1 .. 15;
       Adjust_Requests      at 16#04# range 0 .. 15;
    end record;
+   for Link_Status'Size use 48;
+   for Link_Status'Object_Size use 48;
 
    ----------------------------------------------------------------------------
 

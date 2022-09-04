@@ -356,7 +356,9 @@ package body HW.GFX.DP_Info is
       Success  :    out Boolean)
    is
       subtype Status_Index is DP_Defs.Aux_Payload_Index range 0 .. 5;
-      subtype Status_Buffer is Buffer (Status_Index);
+      subtype Status_Buffer is Buffer (Status_Index)
+      with
+         Object_Size => 48;
       function Buffer_As_Status is new Ada.Unchecked_Conversion
         (Source => Status_Buffer, Target => Link_Status);
 
