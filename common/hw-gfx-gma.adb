@@ -436,6 +436,11 @@ is
 
    ----------------------------------------------------------------------------
 
+   pragma Warnings
+     (GNATprove, Off, """Registers.GTT_State"" * is not modified*",
+      Reason => "The whole, abstract Device_State is modified in certain configurations.");
+   pragma Warnings
+     (GNATprove, Off, "no check message justified*", Reason => "see below");
    procedure Initialize
      (Write_Delay : in     Word64 := 0;
       Clean_State : in     Boolean := False;
@@ -443,7 +448,9 @@ is
    with
       Refined_Global =>
         (Input => (Time.State),
-         In_Out => (Dev.PCI_State, Registers.Register_State, Port_IO.State),
+         In_Out =>
+           (Dev.PCI_State, Port_IO.State,
+            Registers.Register_State, Registers.GTT_State),
          Output =>
            (PCI_Usable,
             Config.Variable,
@@ -592,6 +599,12 @@ is
       Initialized := True;
 
    end Initialize;
+   pragma Annotate
+     (GNATprove, Intentional, "unused global",
+      "The whole, abstract Device_State is modified in certain configurations.");
+   pragma Warnings (GNATprove, On, "no check message justified*");
+   pragma Warnings
+     (GNATprove, On, """Registers.GTT_State"" * is not modified*");
 
    function Is_Initialized return Boolean
    with
