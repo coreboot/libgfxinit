@@ -291,8 +291,10 @@ is
          -- reverse loops as hardware prefers higher values
          for M1 in reverse M1_Range range Limits.M1_Lower .. Limits.M1_Upper
          loop
+            pragma Loop_Invariant (True);
             for M2 in reverse M2_Range range Limits.M2_Lower .. Limits.M2_Upper
             loop
+               pragma Loop_Invariant (True);
                for P1 in reverse P1_Range range Limits.P1_Lower .. Limits.P1_Upper
                loop
                   Verify_Parameters
