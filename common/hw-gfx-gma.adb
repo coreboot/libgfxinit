@@ -606,6 +606,8 @@ is
    pragma Warnings
      (GNATprove, Off, """Registers.Register_State"" * is not modified*",
       Reason => "Power_Up_VGA is only effective in certain configurations.");
+   pragma Warnings
+     (GNATprove, Off, "no check message justified*", Reason => "see below");
    procedure Power_Up_VGA
    with
       Refined_Global =>
@@ -627,8 +629,6 @@ is
    begin
       Power_And_Clocks.Power_Up (Cur_Configs, Fake_Config);
    end Power_Up_VGA;
-   pragma Warnings
-     (GNATprove, Off, "no check message justified*", Reason => "see below");
    pragma Annotate
      (GNATprove, Intentional, "unused global",
       "Power_Up_VGA is only effective in certain configurations.");
