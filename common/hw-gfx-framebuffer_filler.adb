@@ -38,7 +38,9 @@ is
       for Line in 0 .. Framebuffer.Height - 1 loop
          pragma Loop_Invariant (Line_Start = Line * Framebuffer.Stride);
          for Col in 0 .. Framebuffer.Width - 1 loop
-            pragma Loop_Invariant (Line_Start = Line * Framebuffer.Stride);
+            pragma Loop_Invariant
+              (Line_Start = Line * Framebuffer.Stride and
+               Line_Start <= (Height_Type'Last - 1) * Width_Type'Last);
             FB.Write (FB_Index (Line_Start + Col), 16#ff000000#);
          end loop;
          Line_Start := Line_Start + Framebuffer.Stride;
