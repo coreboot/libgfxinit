@@ -132,6 +132,8 @@ is
 
          pragma Warnings (GNATprove, Off, "unused assignment to ""Raw_EDID""",
             Reason => "We just want to check if it's readable.");
+         pragma Warnings (GNATprove, Off, """Raw_EDID"" is set by * but*",
+            Reason => "We just want to check if it's readable.");
          if Has_Sibling_Port (Port) then
             -- Probe sibling port too and bail out if something is detected.
             -- This is a precaution for adapters that expose the pins of a
@@ -148,6 +150,7 @@ is
                end if;
             end;
          end if;
+         pragma Warnings (GNATprove, On, """Raw_EDID"" is set by * but*");
          pragma Warnings (GNATprove, On, "unused assignment to ""Raw_EDID""");
       else
          Success := False;
