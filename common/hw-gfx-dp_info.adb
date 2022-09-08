@@ -72,7 +72,7 @@ package body HW.GFX.DP_Info is
          Link.Receiver_Caps.TPS3_Supported     := (Data (2) and 16#40#) /= 0;
          Link.Receiver_Caps.Enhanced_Framing   := (Data (2) and 16#80#) /= 0;
          Link.Receiver_Caps.No_Aux_Handshake   := (Data (3) and 16#40#) /= 0;
-         Link.Receiver_Caps.Aux_RD_Interval    := Data (14);
+         Link.Receiver_Caps.Aux_RD_Interval    := Data (14) and 16#7f#;
 
          pragma Debug (Debug.New_Line);
          pragma Debug (Debug.Put_Line ("DPCD:"));
@@ -82,7 +82,7 @@ package body HW.GFX.DP_Info is
          pragma Debug (Debug.Put_Reg8 ("  TPS3_Supported  ", Data (2) and 16#40#));
          pragma Debug (Debug.Put_Reg8 ("  Enhanced_Framing", Data (2) and 16#80#));
          pragma Debug (Debug.Put_Reg8 ("  No_Aux_Handshake", Data (3) and 16#40#));
-         pragma Debug (Debug.Put_Reg8 ("  Aux_RD_Interval ", Data (14)));
+         pragma Debug (Debug.Put_Reg8 ("  Aux_RD_Interval ", Data (14) and 16#7f#));
          pragma Debug (Debug.New_Line);
       end if;
    end Read_Caps;
