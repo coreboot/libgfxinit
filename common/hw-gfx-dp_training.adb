@@ -310,8 +310,7 @@ package body HW.GFX.DP_Training is
       function EQ_Delay return Natural is
          Result : Natural := 400; -- DP spec: 400us
       begin
-         if Link.Bandwidth = DP_Bandwidth_5_4 and
-            Link.Receiver_Caps.Aux_RD_Interval /= 0
+         if Link.Receiver_Caps.Aux_RD_Interval /= 0
          then
             Result := Natural (Link.Receiver_Caps.Aux_RD_Interval) * 4_000;
          end if;
