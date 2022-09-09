@@ -385,7 +385,7 @@ private package HW.GFX.GMA.Config is
       elsif Gen_Haswell                      then 450_000_000
       elsif Gen_Broxton                      then 288_000_000
       elsif Gen_Skylake                      then 337_500_000
-      elsif Gen_Tigerlake                    then CDClk_Range'First  -- depends on ref clk
+      elsif Gen_Tigerlake                    then 172_800_000  -- depends on ref clk
                                              else CDClk_Range'First);
 
    Default_RawClk_Freq : <hswvar> Frequency_Type :=
