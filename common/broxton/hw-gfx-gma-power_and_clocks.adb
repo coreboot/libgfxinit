@@ -318,8 +318,8 @@ package body HW.GFX.GMA.Power_And_Clocks is
          PD_Off (PD);
       end loop;
 
-      Unset_Mask (DBUF_CTL, DBUF_CTL_DBUF_POWER_REQUEST);
-      Wait_Unset_Mask (DBUF_CTL, DBUF_CTL_DBUF_POWER_STATE);
+      Unset_Mask (DBUF_CTL_S0, DBUF_CTL_DBUF_POWER_REQUEST);
+      Wait_Unset_Mask (DBUF_CTL_S0, DBUF_CTL_DBUF_POWER_STATE);
 
       -- Linux' i915 never keeps the PLL disabled but runs it
       -- at a "ratio" of 0 with CDClk at its reference clock.
@@ -342,8 +342,8 @@ package body HW.GFX.GMA.Power_And_Clocks is
       Get_Cur_CDClk (Config.CDClk);
       Set_CDClk (Config.Default_CDClk_Freq);
 
-      Set_Mask (DBUF_CTL, DBUF_CTL_DBUF_POWER_REQUEST);
-      Wait_Set_Mask (DBUF_CTL, DBUF_CTL_DBUF_POWER_STATE);
+      Set_Mask (DBUF_CTL_S0, DBUF_CTL_DBUF_POWER_REQUEST);
+      Wait_Set_Mask (DBUF_CTL_S0, DBUF_CTL_DBUF_POWER_STATE);
 
       Config.Raw_Clock := Config.Default_RawClk_Freq;
    end Initialize;

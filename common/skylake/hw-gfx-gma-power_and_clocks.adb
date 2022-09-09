@@ -223,10 +223,10 @@ package body HW.GFX.GMA.Power_And_Clocks is
       end loop;
 
       Registers.Unset_Mask
-        (Register    => Registers.DBUF_CTL,
+        (Register    => Registers.DBUF_CTL_S0,
          Mask        => DBUF_CTL_DBUF_POWER_REQUEST);
       Registers.Wait_Unset_Mask
-        (Register    => Registers.DBUF_CTL,
+        (Register    => Registers.DBUF_CTL_S0,
          Mask        => DBUF_CTL_DBUF_POWER_STATE);
 
       Registers.Unset_Mask
@@ -304,10 +304,10 @@ package body HW.GFX.GMA.Power_And_Clocks is
                            when 450_000_000 => 1,
                            when others      => 0));
       Registers.Set_Mask
-        (Register    => Registers.DBUF_CTL,
+        (Register    => Registers.DBUF_CTL_S0,
          Mask        => DBUF_CTL_DBUF_POWER_REQUEST);
       Registers.Wait_Set_Mask
-        (Register    => Registers.DBUF_CTL,
+        (Register    => Registers.DBUF_CTL_S0,
          Mask        => DBUF_CTL_DBUF_POWER_STATE);
 
       Config.CDClk := CDClk;
