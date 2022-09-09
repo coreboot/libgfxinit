@@ -97,8 +97,20 @@ is
 
    ----------------------------------------------------------------------------
 
-   PCH_RAWCLK_FREQ_MASK : constant :=
-     (if Config.Has_Fractional_RawClk then 16#3fff# * 2 ** 16 else 16#3ff# * 2 ** 0);
+   ICP_RAWCLK_NUM : constant := 1 * 2 ** 11;
+
+   function PCH_RAWCLK_FREQ_MASK return Word32 is
+      Mask : Word32;
+   begin
+      if Config.Need_Rawclk_Numerator then
+         Mask := 16#ffff_ffff#;
+      elsif Config.Has_Fractional_RawClk then
+         Mask := 16#3fff# * 2 ** 16;
+      else
+         Mask := 16#3ff# * 2 ** 0;
+      end if;
+      return Mask;
+   end PCH_RAWCLK_FREQ_MASK;
 
    function PCH_RAWCLK_FREQ (Freq : Frequency_Type) return Word32
    is
@@ -111,6 +123,10 @@ is
             if Fraction_K /= 0 then
                Freq32 := Freq32 or Shift_Left
                  (Word32 (Div_Round_Closest (1_000, Fraction_K) - 1), 26);
+            end if;
+
+            if Config.Need_Rawclk_Numerator then
+               Freq32 := Freq32 or ICP_RAWCLK_NUM;
             end if;
             return Freq32;
          end;
