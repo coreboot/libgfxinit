@@ -18,6 +18,8 @@ with HW.GFX.GMA.Config;
 private package HW.GFX.GMA.Transcoder
 is
 
+   procedure Enable_Pipe_Clock (Pipe : Pipe_Index; Port_Cfg : Port_Config);
+   procedure Configure (Pipe : Pipe_Index; Port_Cfg : Port_Config; Scale : Boolean);
    procedure Setup (Pipe : Pipe_Index; Port_Cfg : Port_Config);
    procedure On
      (Pipe     : Pipe_Index;
@@ -52,6 +54,7 @@ private
          DDI_FUNC_CTL   : Registers.Registers_Index;
          MSA_MISC       : Registers.Registers_Index;
          CLK_SEL        : Registers.Registers_Invalid_Index;
+         PIPE_ARB_CTL   : Registers.Registers_Invalid_Index;
       end record;
 
    type Transcoder_Array is array (Transcoder_Index) of Transcoder_Regs;
@@ -100,7 +103,8 @@ private
          LINK_N1        => Registers.PIPE_EDP_LINK_N1,
          DDI_FUNC_CTL   => Registers.PIPE_EDP_DDI_FUNC_CTL,
          MSA_MISC       => Registers.PIPE_EDP_MSA_MISC,
-         CLK_SEL        => Registers.Invalid_Register),
+         CLK_SEL        => Registers.Invalid_Register,
+         PIPE_ARB_CTL   => Registers.Invalid_Register),
       Trans_A =>
         (HTOTAL         => Registers.HTOTAL_A,
          HBLANK         => Registers.HBLANK_A,
@@ -115,7 +119,8 @@ private
          LINK_N1        => PIPE_LINK_N1 (0),
          DDI_FUNC_CTL   => Registers.PIPEA_DDI_FUNC_CTL,
          MSA_MISC       => Registers.PIPEA_MSA_MISC,
-         CLK_SEL        => Registers.TRANSA_CLK_SEL),
+         CLK_SEL        => Registers.TRANSA_CLK_SEL,
+         PIPE_ARB_CTL   => Registers.PIPEA_ARB_CTL),
       Trans_B =>
         (HTOTAL         => Registers.HTOTAL_B,
          HBLANK         => Registers.HBLANK_B,
@@ -130,7 +135,8 @@ private
          LINK_N1        => PIPE_LINK_N1 (1),
          DDI_FUNC_CTL   => Registers.PIPEB_DDI_FUNC_CTL,
          MSA_MISC       => Registers.PIPEB_MSA_MISC,
-         CLK_SEL        => Registers.TRANSB_CLK_SEL),
+         CLK_SEL        => Registers.TRANSB_CLK_SEL,
+         PIPE_ARB_CTL   => Registers.PIPEB_ARB_CTL),
       Trans_C =>
         (HTOTAL         => Registers.HTOTAL_C,
          HBLANK         => Registers.HBLANK_C,
@@ -145,6 +151,7 @@ private
          LINK_N1        => Registers.PIPEC_LINK_N1,
          DDI_FUNC_CTL   => Registers.PIPEC_DDI_FUNC_CTL,
          MSA_MISC       => Registers.PIPEC_MSA_MISC,
-         CLK_SEL        => Registers.TRANSC_CLK_SEL));
+         CLK_SEL        => Registers.TRANSC_CLK_SEL,
+         PIPE_ARB_CTL   => Registers.PIPEC_ARB_CTL));
 
 end HW.GFX.GMA.Transcoder;

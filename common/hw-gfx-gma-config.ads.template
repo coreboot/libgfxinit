@@ -196,7 +196,7 @@ private package HW.GFX.GMA.Config is
    Has_Tertiary_Pipe             : <ilkbool> := Ivybridge_On;
    Disable_Trickle_Feed          : <genbool> := not Gen_Haswell;
    Pipe_Enabled_Workaround       : <hswbool> := CPU_Broadwell;
-   Has_EDP_Transcoder            : <genbool> := Haswell_On;
+   Has_EDP_Transcoder            : <genbool> := Haswell_On and not Tigerlake_On;
    Use_PDW_For_EDP_Scaling       : <hswbool> := CPU_Haswell;
    Has_Pipe_DDI_Func             : <genbool> := Haswell_On;
    Has_Trans_Clk_Sel             : <genbool> := Haswell_On;
@@ -211,6 +211,9 @@ private package HW.GFX.GMA.Config is
    Has_GMCH_DP_Transcoder        : <genbool> := Gen_G45;
    Has_GMCH_VGACNTRL             : <genbool> := Gen_G45;
    Has_GMCH_PFIT_CONTROL         : <genbool> := Gen_G45;
+
+   ----------- Transcoder -------
+   Need_Early_Transcoder_Setup   : <genbool> := Tigerlake_On;
 
    --------- Panel power: -------
    Has_PP_Write_Protection       : <genbool> := Up_To_Ironlake;
@@ -262,6 +265,8 @@ private package HW.GFX.GMA.Config is
      ((Gen_Haswell or Gen_Skylake) and then not Is_LP);
    -- might be disabled by x4 eDP:
    Has_DDI_E                     : <hswsklbool> := Has_DDI_D;
+
+   Has_TGL_DDI_Select            : <genbool> := Tigerlake_On;
 
    Has_DDI_Buffer_Trans          : <genbool> := Haswell_On and not Has_DDI_PHYs;
    Has_Low_Voltage_Swing         : <genbool> := Broxton_On;
