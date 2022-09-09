@@ -16,29 +16,30 @@ with HW.GFX.GMA.Config_Helpers;
 
 private package HW.GFX.GMA.Power_And_Clocks is
 
-   pragma Warnings (Off, "subprogram ""*"" has no effect",
-                    Reason => "Not yet implemented.");
+   subtype Refclk_Range is Frequency_Type range 19_200_000 .. 38_400_000;
+   subtype Refclk_Range_KHz is Pos64
+      range (Refclk_Range'First / 1000) .. (Refclk_Range'Last / 1000);
+
    procedure Pre_All_Off;
    procedure Post_All_Off;
 
    procedure Initialize;
 
-   pragma Warnings (Off, """Configs"" is not modified, could be IN",
-                    Reason => "Not yet implemented.");
    procedure Limit_Dotclocks
      (Configs           : in out Pipe_Configs;
       CDClk_Switch      : out Boolean)
    with
       Post => Config_Helpers.Stable_FB (Configs'Old, Configs);
+
    procedure Update_CDClk (Configs : in out Pipe_Configs)
    with
       Post => Config_Helpers.Stable_FB (Configs'Old, Configs);
-   pragma Warnings (On, """Configs"" is not modified, could be IN");
-   procedure Enable_CDClk is null;
+   procedure Enable_CDClk;
 
    procedure Power_Set_To (Configs : Pipe_Configs);
    procedure Power_Up (Old_Configs, New_Configs : Pipe_Configs);
    procedure Power_Down (Old_Configs, Tmp_Configs, New_Configs : Pipe_Configs);
-   pragma Warnings (On, "subprogram ""*"" has no effect");
+
+   procedure Get_Refclk (Refclk : out Refclk_Range);
 
 end HW.GFX.GMA.Power_And_Clocks;
