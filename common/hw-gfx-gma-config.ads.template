@@ -397,6 +397,11 @@ private package HW.GFX.GMA.Config is
 
    ----------------------------------------------------------------------------
 
+   GMA_Phys_Base_Index : constant PCI.Index :=
+      (if Config.Tigerlake_On then 16#c0# else 16#5c#);
+
+   GMA_Base_Is_64bit : constant Boolean := Config.Tigerlake_On;
+
    GTT_PTE_Size : <hswvar> Natural := (if Has_64bit_GTT then 8 else 4);
 
    Fence_Base : <ilkvar> Natural :=

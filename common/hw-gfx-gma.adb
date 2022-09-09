@@ -866,7 +866,6 @@ is
       Clear    : in     Boolean := True;
       Success  :    out Boolean)
    is
-      GMA_Phys_Base      : constant PCI.Index := 16#5c#;
       GMA_Phys_Base_Mask : constant := 16#fff0_0000#;
 
       Phys_Base : Word32;
@@ -874,7 +873,16 @@ is
       Validate_FB (FB, Success);
 
       if Success then
-         Dev.Read32 (Phys_Base, GMA_Phys_Base);
+         if Config.GMA_Base_Is_64bit then
+            Dev.Read32 (Phys_Base, Config.GMA_Phys_Base_Index + 4);
+            if Phys_Base /= 0 then
+               pragma Debug (Debug.Put_Line ("Cannot handle 64-bit DSM yet."));
+               Success := False;
+               return;
+            end if;
+         end if;
+
+         Dev.Read32 (Phys_Base, Config.GMA_Phys_Base_Index);
          Phys_Base := Phys_Base and GMA_Phys_Base_Mask;
          Success := Phys_Base /= GMA_Phys_Base_Mask and Phys_Base /= 0;
          pragma Debug (not Success, Debug.Put_Line
