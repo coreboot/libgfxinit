@@ -84,6 +84,17 @@ package body HW.GFX.GMA.PCode is
         (MBox, Command, Ignored_R, Wait_Ready, Wait_Ack, Success);
    end Mailbox_Write;
 
+   procedure Mailbox_Read
+     (MBox        : in     Word32;
+      Command     : in     Word64 := 0;
+      Wait_Ready  : in     Boolean := False;
+      Reply       :    out Word64;
+      Success     :    out Boolean)
+   is
+   begin
+      Mailbox_Write_Read (MBox, Command, Reply, Wait_Ready, True, Success);
+   end Mailbox_Read;
+
    procedure Mailbox_Request
      (MBox        : in     Word32;
       Command     : in     Word64;
