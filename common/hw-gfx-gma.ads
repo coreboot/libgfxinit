@@ -48,7 +48,8 @@ is
       Broxton,
       Skylake,
       Kabylake,
-      Tigerlake);
+      Tigerlake,
+      Alderlake);
 
    type CPU_Variant is (Normal, ULT, ULX);
 
@@ -59,7 +60,8 @@ is
       Lynx_Point,       -- Wildcat Point compatible
       Sunrise_Point,    -- Union Point compatible
       Cannon_Point,
-      Tiger_Point);
+      Tiger_Point,
+      Alder_Point);
 
    type Port_Type is
      (Disabled,

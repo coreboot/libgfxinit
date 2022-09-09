@@ -31,7 +31,7 @@ private package HW.GFX.GMA.Config is
          when Haswell   => Broadwell,
          when Broxton   => Broxton,
          when Skylake   => Kabylake,
-         when Tigerlake => Tigerlake);
+         when Tigerlake => Alderlake);
    CPU_Var_Last : constant CPU_Variant :=
      (case Gen is
          when Haswell | Skylake | Tigerlake  => ULX,
@@ -58,7 +58,7 @@ private package HW.GFX.GMA.Config is
          when Haswell   => Lynx_Point,
          when Broxton   => No_PCH,
          when Skylake   => Cannon_Point,
-         when Tigerlake => Tiger_Point);
+         when Tigerlake => Alder_Point);
    subtype Gen_PCH_Type is PCH_Type range PCH_First .. PCH_Last;
 
    PCH : constant Gen_PCH_Type := <<PCH>>;
@@ -159,7 +159,8 @@ private package HW.GFX.GMA.Config is
    CPU_Broadwell     : <hswbool> := Gen_Haswell and then CPU = Broadwell;
    CPU_Skylake       : <sklbool> := Gen_Skylake and then CPU = Skylake;
    CPU_Kabylake      : <sklbool> := Gen_Skylake and then CPU = Kabylake;
-   CPU_Tigerlake     : <tglbool> := Gen_Tigerlake;
+   CPU_Tigerlake     : <tglbool> := Gen_Tigerlake and then CPU = Tigerlake;
+   CPU_Alderlake     : <tglbool> := Gen_Tigerlake and then CPU = Alderlake;
 
    Sandybridge_On    : <ilkbool> :=
      ((Gen_Ironlake and then CPU >= Sandybridge) or Haswell_On);
@@ -167,6 +168,8 @@ private package HW.GFX.GMA.Config is
      ((Gen_Ironlake and then CPU >= Ivybridge) or Haswell_On);
    Broadwell_On      : <hswbool> :=
      ((Gen_Haswell and then CPU >= Broadwell) or Broxton_On);
+   Alderlake_On      : <tglbool> :=
+     (Gen_Tigerlake and then CPU >= Alderlake);
 
    PCH_Cougar_Point  : <genbool> := Gen_Ironlake and then PCH = Cougar_Point;
 
@@ -502,6 +505,41 @@ private package HW.GFX.GMA.Config is
       Device_Id = 16#9a68# or
       Device_Id = 16#9a70#);
 
+   function Is_Alder_Lake_P (Device_ID : Word16) return Boolean is
+     (Device_Id = 16#46a0# or
+      Device_Id = 16#46a1# or
+      Device_Id = 16#46a2# or
+      Device_Id = 16#46a3# or
+      Device_Id = 16#46a6# or
+      Device_Id = 16#46a8# or
+      Device_Id = 16#46aa# or
+      Device_Id = 16#462a# or
+      Device_Id = 16#4626# or
+      Device_Id = 16#4628# or
+      Device_Id = 16#46b0# or
+      Device_Id = 16#46b1# or
+      Device_Id = 16#46b2# or
+      Device_Id = 16#46b3# or
+      Device_Id = 16#46c0# or
+      Device_Id = 16#46c1# or
+      Device_Id = 16#46c2# or
+      Device_Id = 16#46c3#);
+   function Is_Alder_Lake_N (Device_ID : Word16) return Boolean is
+     (Device_Id = 16#46d0# or
+      Device_Id = 16#46d1# or
+      Device_Id = 16#46d2#);
+   function Is_Raptor_Lake_P (Device_ID : Word16) return Boolean is
+     (Device_Id = 16#a720# or
+      Device_Id = 16#a721# or
+      Device_Id = 16#a7a0# or
+      Device_Id = 16#a7a1# or
+      Device_Id = 16#a7a8# or
+      Device_Id = 16#a7a9#);
+   function Is_Alder_Lake (Device_Id : Word16) return Boolean is
+     (Is_Alder_Lake_P (Device_Id) or
+      Is_Alder_Lake_N (Device_Id) or
+      Is_Raptor_Lake_P (Device_Id));
+
    function Is_GPU (Device_Id : Word16; CPU : CPU_Type; CPU_Var : CPU_Variant)
       return Boolean is
      (case CPU is
@@ -540,7 +578,12 @@ private package HW.GFX.GMA.Config is
                                 when Normal =>
                                    Is_Tiger_Lake_H (Device_Id),
                                 when ULT | ULX =>
-                                   Is_Tiger_Lake_U (Device_Id)));
+                                   Is_Tiger_Lake_U (Device_Id)),
+         when Alderlake    => (case CPU_Var is
+                                when Normal =>
+                                   False,
+                                when ULT | ULX =>
+                                   Is_Alder_Lake (Device_ID)));
 
    function Compatible_GPU (Device_Id : Word16) return Boolean is
      (Is_GPU (Device_Id, CPU, CPU_Var));
