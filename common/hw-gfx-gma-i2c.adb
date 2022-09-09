@@ -27,10 +27,12 @@ package body HW.GFX.GMA.I2C is
 
    PCH_DSPCLK_GATE_D_GMBUS_UNIT_LVL : constant :=   1 * 2 ** 31;
 
+   function GMBUS0_PIN_PAIR_SELECT_MASK return Word32 is
+      (if Config.Has_Type_C_Ports then 15 * 2 ** 0 else 7 * 2 ** 0);
+
    GMBUS0_GMBUS_RATE_SELECT_MASK    : constant :=   7 * 2 **  8;
    GMBUS0_GMBUS_RATE_SELECT_100KHZ  : constant :=   0 * 2 **  8;
    GMBUS0_GMBUS_RATE_SELECT_50KHZ   : constant :=   1 * 2 **  8;
-   GMBUS0_PIN_PAIR_SELECT_MASK      : constant :=   7 * 2 **  0;
    GMBUS0_PIN_PAIR_SELECT_NONE      : constant :=   0 * 2 **  0;
    GMBUS0_PIN_PAIR_SELECT_DAC       : constant :=   2 * 2 **  0;
    GMBUS0_PIN_PAIR_SELECT_LVDS      : constant :=   3 * 2 **  0;
@@ -42,6 +44,16 @@ package body HW.GFX.GMA.I2C is
    GMBUS0_PIN_PAIR_SELECT_BXT_B     : constant :=   1 * 2 **  0;
    GMBUS0_PIN_PAIR_SELECT_BXT_C     : constant :=   2 * 2 **  0;
    GMBUS0_PIN_PAIR_SELECT_BXT_D     : constant :=   3 * 2 **  0;
+   -- Tiger Lake and later use even different pins
+   GMBUS0_PIN_PAIR_SELECT_TGL_1     : constant :=   1 * 2 **  0;
+   GMBUS0_PIN_PAIR_SELECT_TGL_2     : constant :=   2 * 2 **  0;
+   GMBUS0_PIN_PAIR_SELECT_TGL_3     : constant :=   3 * 2 **  0;
+   GMBUS0_PIN_PAIR_SELECT_TGL_TC1   : constant :=   9 * 2 **  0;
+   GMBUS0_PIN_PAIR_SELECT_TGL_TC2   : constant :=  10 * 2 **  0;
+   GMBUS0_PIN_PAIR_SELECT_TGL_TC3   : constant :=  11 * 2 **  0;
+   GMBUS0_PIN_PAIR_SELECT_TGL_TC4   : constant :=  12 * 2 **  0;
+   GMBUS0_PIN_PAIR_SELECT_TGL_TC5   : constant :=  13 * 2 **  0;
+   GMBUS0_PIN_PAIR_SELECT_TGL_TC6   : constant :=  14 * 2 **  0;
 
    GMBUS1_SOFTWARE_CLEAR_INTERRUPT  : constant :=   1 * 2 ** 31;
    GMBUS1_SOFTWARE_READY            : constant :=   1 * 2 ** 30;
@@ -106,7 +118,19 @@ package body HW.GFX.GMA.I2C is
    function GMBUS0_PIN_PAIR_SELECT (Port : PCH_Port) return Word32 is
    begin
       return
-        (if Config.GMBUS_Alternative_Pins then
+        (if Config.Has_Type_C_Ports then
+	   (case Port is
+	       when PCH_HDMI_A   => GMBUS0_PIN_PAIR_SELECT_TGL_1,
+	       when PCH_HDMI_B   => GMBUS0_PIN_PAIR_SELECT_TGL_2,
+	       when PCH_HDMI_C   => GMBUS0_PIN_PAIR_SELECT_TGL_3,
+	       when PCH_TC1      => GMBUS0_PIN_PAIR_SELECT_TGL_TC1,
+	       when PCH_TC2      => GMBUS0_PIN_PAIR_SELECT_TGL_TC2,
+	       when PCH_TC3      => GMBUS0_PIN_PAIR_SELECT_TGL_TC3,
+	       when PCH_TC4      => GMBUS0_PIN_PAIR_SELECT_TGL_TC4,
+	       when PCH_TC5      => GMBUS0_PIN_PAIR_SELECT_TGL_TC5,
+	       when PCH_TC6      => GMBUS0_PIN_PAIR_SELECT_TGL_TC6,
+	       when others       => GMBUS0_PIN_PAIR_SELECT_NONE)
+        elsif Config.GMBUS_Alternative_Pins then
            (case Port is
                when PCH_HDMI_B   => GMBUS0_PIN_PAIR_SELECT_BXT_B,
                when PCH_HDMI_C   => GMBUS0_PIN_PAIR_SELECT_BXT_C,

@@ -275,7 +275,7 @@ private package HW.GFX.GMA.Config is
      (not Haswell_On or else (CPU_Haswell and Is_ULX));
 
    ----------- GMBUS: -----------
-   Ungate_GMBUS_Unit_Level       : <genbool> := Skylake_On;
+   Ungate_GMBUS_Unit_Level       : <genbool> := Skylake_On and not Tigerlake_On;
    GMBUS_Alternative_Pins        : <genbool> := Gen_Broxton or Cannon_Point_On;
    Has_PCH_GMBUS                 : <genbool> := Ironlake_On;
 
