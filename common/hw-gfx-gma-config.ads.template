@@ -214,6 +214,16 @@ private package HW.GFX.GMA.Config is
 
    ----------- Transcoder -------
    Need_Early_Transcoder_Setup   : <genbool> := Tigerlake_On;
+   Need_Pipe_Arb_Slots           : <tglbool> := Alderlake_On;
+
+   ----------- Planes -----------
+   Has_Mbus_Dbox_Credits         : <genbool> := Tigerlake_On;
+   Has_Wide_Watermarks           : <genbool> := Tigerlake_On;
+   Has_Plane_Color_Control       : <genbool> := Tigerlake_On;
+   Has_New_Mbus_Dbox_Credits     : <tglbool> := (Alderlake_On and Is_LP);
+
+   ----------- Pipe -------------
+   Need_Underrun_Rec_Disable     : <tglbool> := Alderlake_On;
 
    --------- Panel power: -------
    Has_PP_Write_Protection       : <genbool> := Up_To_Ironlake;

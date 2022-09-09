@@ -100,6 +100,10 @@ private
          PLANE_WM          : PLANE_WM_Type;
          CUR_BUF_CFG       : Registers.Registers_Index;
          CUR_WM            : PLANE_WM_Type;
+         MBUS_DBOX_CTL     : Registers.Registers_Index;
+         PIPE_CHICKEN      : Registers.Registers_Index;
+         PLANE_COLOR_CTL   : Registers.Registers_Index;
+         PLANE_AUX_DIST    : Registers.Registers_Index;
       end record;
 
    type Controller_Array is array (Pipe_Index) of Controller_Type;
@@ -149,7 +153,11 @@ private
                               Registers.CUR_WM_A_4,
                               Registers.CUR_WM_A_5,
                               Registers.CUR_WM_A_6,
-                              Registers.CUR_WM_A_7)),
+                              Registers.CUR_WM_A_7),
+         MBUS_DBOX_CTL     => Registers.PIPE_MBUS_DBOX_CTL_A,
+         PIPE_CHICKEN      => Registers.PIPEA_CHICKEN,
+         PLANE_COLOR_CTL   => Registers.PLANE_COLOR_CTL_1_A,
+         PLANE_AUX_DIST    => Registers.PLANE_AUX_DIST_1_A),
       Secondary => Controller_Type'
         (Pipe              => Secondary,
          PIPESRC           => Registers.PIPEBSRC,
@@ -194,7 +202,11 @@ private
                               Registers.CUR_WM_B_4,
                               Registers.CUR_WM_B_5,
                               Registers.CUR_WM_B_6,
-                              Registers.CUR_WM_B_7)),
+                              Registers.CUR_WM_B_7),
+         MBUS_DBOX_CTL     => Registers.PIPE_MBUS_DBOX_CTL_B,
+         PIPE_CHICKEN      => Registers.PIPEB_CHICKEN,
+         PLANE_COLOR_CTL   => Registers.PLANE_COLOR_CTL_1_B,
+         PLANE_AUX_DIST    => Registers.PLANE_AUX_DIST_1_B),
       Tertiary => Controller_Type'
         (Pipe              => Tertiary,
          PIPESRC           => Registers.PIPECSRC,
@@ -239,7 +251,11 @@ private
                               Registers.CUR_WM_C_4,
                               Registers.CUR_WM_C_5,
                               Registers.CUR_WM_C_6,
-                              Registers.CUR_WM_C_7)));
+                              Registers.CUR_WM_C_7),
+         MBUS_DBOX_CTL     => Registers.PIPE_MBUS_DBOX_CTL_C,
+         PIPE_CHICKEN      => Registers.PIPEC_CHICKEN,
+         PLANE_COLOR_CTL   => Registers.PLANE_COLOR_CTL_1_C,
+         PLANE_AUX_DIST    => Registers.PLANE_AUX_DIST_1_C));
 
    type Cursor_Regs is record
       CTL      : Registers.Registers_Index;

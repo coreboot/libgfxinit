@@ -43,6 +43,8 @@ package body HW.GFX.GMA.Pipe_Setup is
       DSPCNTR_DISABLE_TRICKLE_FEED or
       DSPCNTR_TILED_SURFACE_X_TILED;
 
+   PLANE_COLOR_CTL_PLANE_GAMMA_DISABLE : constant := 1 * 2 ** 13;
+
    PLANE_CTL_PLANE_ENABLE              : constant := 1 * 2 ** 31;
    PLANE_CTL_SRC_PIX_FMT_RGB_32B_8888  : constant := 4 * 2 ** 24;
    PLANE_CTL_PLANE_GAMMA_DISABLE       : constant := 1 * 2 ** 13;
@@ -67,7 +69,11 @@ package body HW.GFX.GMA.Pipe_Setup is
    PLANE_WM_ENABLE                     : constant :=        1 * 2 ** 31;
    PLANE_WM_LINES_SHIFT                : constant :=                 14;
    PLANE_WM_LINES_MASK                 : constant := 16#001f# * 2 ** 14;
-   PLANE_WM_BLOCKS_MASK                : constant := 16#03ff# * 2 **  0;
+   PLANE_WM_BLOCKS_MASK                : constant :=
+      (if Config.Has_Wide_Watermarks then 16#7ff# else 16#3ff#);
+
+   PIPEMISC_HDR_MODE_PRECISION         : constant := 1 * 2 ** 23;
+   PIPEMISC_PIXEL_ROUNDING_TRUNC       : constant := 1 * 2 **  8;
 
    VGA_SR_INDEX                        : constant :=   16#03c4#;
    VGA_SR_DATA                         : constant :=   16#03c5#;
@@ -89,6 +95,9 @@ package body HW.GFX.GMA.Pipe_Setup is
         (Cursor_64x64   => 16#27#,
          Cursor_128x128 => 16#22#,
          Cursor_256x256 => 16#23#));
+   subtype ARB_Slots is Natural range 0 .. 7;
+   function MCURSOR_ARB_SLOTS (N : ARB_Slots) return Word32 is
+     (Shift_Left (Word32 (N), 28));
 
    function CUR_POS_Y (Y : Int32) return Word32 is
      ((if Y >= 0 then 0 else 1 * 2 ** 31) or Shift_Left (Word32 (abs Y), 16))
@@ -201,13 +210,6 @@ package body HW.GFX.GMA.Pipe_Setup is
      (Controller  : Controller_Type;
       FB          : HW.GFX.Framebuffer_Type)
    with
-      Global => (In_Out => Registers.Register_State),
-      Depends =>
-        (Registers.Register_State
-            =>+
-              (Registers.Register_State,
-               Controller,
-               FB)),
       Pre => FB.Height + FB.Start_Y <= FB.V_Stride
    is
       -- FIXME: setup correct format, based on framebuffer RGB format
@@ -221,6 +223,18 @@ package body HW.GFX.GMA.Pipe_Setup is
             Stride, Offset : Word32;
             Width : constant Width_Type := Rotated_Width (FB);
             Height : constant Width_Type := Rotated_Height (FB);
+
+            function PLANE_CTL_ARB_SLOTS (N : Word32) return Word32 is
+              (if Config.Need_Pipe_Arb_Slots then Shift_Left (N, 28) else 0);
+
+            Plane_Ctl : constant Word32 :=
+               PLANE_CTL_TILED_SURFACE (FB.Tiling) or
+               PLANE_CTL_PLANE_ROTATION (FB.Rotation) or
+               PLANE_CTL_SRC_PIX_FMT_RGB_32B_8888 or
+               PLANE_CTL_ARB_SLOTS (1) or
+              (if not Config.Has_Plane_Color_Control
+               then PLANE_CTL_PLANE_GAMMA_DISABLE
+               else 0);
          begin
             if Rotation_90 (FB) then
                Stride   := Word32 (FB_Pitch (FB.V_Stride, FB));
@@ -231,13 +245,14 @@ package body HW.GFX.GMA.Pipe_Setup is
                Offset   := Shift_Left (Word32 (FB.Start_Y), 16) or
                            Word32 (FB.Start_X);
             end if;
-            Registers.Write
-              (Register    => Controller.PLANE_CTL,
-               Value       => PLANE_CTL_PLANE_ENABLE or
-                              PLANE_CTL_SRC_PIX_FMT_RGB_32B_8888 or
-                              PLANE_CTL_PLANE_GAMMA_DISABLE or
-                              PLANE_CTL_TILED_SURFACE (FB.Tiling) or
-                              PLANE_CTL_PLANE_ROTATION (FB.Rotation));
+
+            if Config.Has_Plane_Color_Control then
+               Registers.Write
+                 (Register => Controller.PLANE_COLOR_CTL,
+                  Value    => PLANE_COLOR_CTL_PLANE_GAMMA_DISABLE);
+            end if;
+            Registers.Write (Controller.PLANE_AUX_DIST, 0);
+            Registers.Write (Controller.PLANE_CTL, Plane_Ctl);
             Registers.Write (Controller.PLANE_OFFSET, Offset);
             Registers.Write (Controller.PLANE_SIZE, Encode (Width, Height));
             Registers.Write (Controller.PLANE_STRIDE, Stride);
@@ -294,11 +309,85 @@ package body HW.GFX.GMA.Pipe_Setup is
       use type Word8;
 
       Reg8 : Word8;
+
+      type BW_Credit is new Natural range 0 .. 3;
+      function MBUS_DBOX_BW_CREDIT (C : BW_Credit) return Word32 is
+        (Shift_Left (Word32 (C), 14));
+
+      type B_Credit is new Natural range 0 .. 31;
+      function MBUS_DBOX_B_CREDIT (C : B_Credit) return Word32 is
+        (Shift_Left (Word32 (C), 8));
+
+      type A_Credit is new Natural range 0 .. 15;
+      function MBUS_DBOX_A_CREDIT (C : A_Credit) return Word32 is
+        (Word32 (C));
+
+      type B2B_Trans_Max is new Natural range 0 .. 31;
+      function MBUS_DBOX_B2B_TRANSACTIONS_MAX (B : B2B_Trans_Max) return Word32 is
+        (Shift_Left (Word32 (B), 20));
+
+      type B2B_Trans_Delay is new Natural range 0 .. 7;
+      function MBUS_DBOX_B2B_TRANSACTIONS_DELAY (B : B2B_Trans_Delay) return Word32 is
+        (Shift_Left (Word32 (B), 17));
+      MBUS_DBOX_REGULATE_B2B_TRANSACTIONS_EN : constant := 1 * 2 ** 16;
+
+      procedure Program_Mbus_Dbox_Credits is
+         Tmp : Word32;
+      begin
+         Tmp := MBUS_DBOX_B2B_TRANSACTIONS_MAX (16) or
+                MBUS_DBOX_B2B_TRANSACTIONS_DELAY (1) or
+                MBUS_DBOX_REGULATE_B2B_TRANSACTIONS_EN;
+
+         if Config.Has_New_Mbus_Dbox_Credits then
+            Tmp := Tmp or MBUS_DBOX_BW_CREDIT (2) or
+                          MBUS_DBOX_B_CREDIT (8) or
+                          MBUS_DBOX_A_CREDIT (6);
+         else
+            Tmp := Tmp or MBUS_DBOX_BW_CREDIT (2) or
+                          MBUS_DBOX_B_CREDIT (12) or
+                          MBUS_DBOX_A_CREDIT (2);
+         end if;
+
+         Registers.Write
+           (Register => Controller.MBUS_DBOX_CTL,
+            Value    => Tmp);
+      end Program_Mbus_Dbox_Credits;
+
+      -- Display WA # 1605353570: icl
+      -- Set the pixel rounding bit to 1 for allowing
+      -- passthrough of Frame buffer pixels unmodified
+      -- across pipe
+      PIXEL_ROUNDING_TRUNC_FB_PASSTHRU : constant := 1 * 2 ** 15;
+
+      -- Display WA #1153: icl
+      -- enable hardware to bypass the alpha math
+      -- and rounding for per-pixel values 00 and 0xff
+      PER_PIXEL_ALPHA_BYPASS_EN : constant := 1 * 2 ** 7;
+
+      -- ADL_P requires that we disable underrun recovery when
+      -- downscaling (or using the scaler for YUV420 pipe output),
+      -- using DSC, or using PSR2.
+      -- i915 always disables underrun recovery for gen 13+.
+      UNDERRUN_RECOVERY_DISABLE : constant := 1 * 2 ** 30;
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
+      if Config.Has_Type_C_Ports then
+         Registers.Set_Mask
+           (Register => Controller.PIPE_CHICKEN,
+            Mask     => PER_PIXEL_ALPHA_BYPASS_EN or
+                        PIXEL_ROUNDING_TRUNC_FB_PASSTHRU or
+                        (if Config.Need_Underrun_Rec_Disable
+                         then UNDERRUN_RECOVERY_DISABLE
+                         else 0));
+      end if;
+
       if Config.Has_Plane_Control then
          Setup_Watermarks (Controller);
+      end if;
+
+      if Config.Has_Mbus_Dbox_Credits then
+         Program_Mbus_Dbox_Credits;
       end if;
 
       if Framebuffer.Offset = VGA_PLANE_FRAMEBUFFER_OFFSET then
@@ -336,7 +425,10 @@ package body HW.GFX.GMA.Pipe_Setup is
       if Config.Has_Pipeconf_Misc then
          Registers.Write
            (Register => Controller.PIPEMISC,
-            Value    => Transcoder.BPC_Conf (Dither_BPC, Dither));
+            Value    => Transcoder.BPC_Conf (Dither_BPC, Dither) or
+                        -- FIXME: Should we set these at all?
+                        (if Config.Has_Plane_Color_Control then
+                           (PIPEMISC_PIXEL_ROUNDING_TRUNC or PIPEMISC_HDR_MODE_PRECISION) else 0));
       end if;
    end Setup_Display;
 
@@ -352,8 +444,10 @@ package body HW.GFX.GMA.Pipe_Setup is
       -- so keep it first
       Registers.Write
         (Register => Cursors (Pipe).CTL,
-         Value    => CUR_CTL_PIPE_SELECT (Pipe) or
-                     CUR_CTL_MODE (Cursor.Mode, Cursor.Size));
+         Value    => CUR_CTL_MODE (Cursor.Mode, Cursor.Size) or
+                     (if Config.Need_Pipe_Arb_Slots
+                      then MCURSOR_ARB_SLOTS (1)
+                      else CUR_CTL_PIPE_SELECT (Pipe)));
       Place_Cursor (Pipe, FB, Cursor);
    end Update_Cursor;
 
