@@ -18,36 +18,25 @@ with
 is
 
    -- XXX: Types should be private (but that triggers a bug in SPARK GPL 2016)
-   type T is (Invalid_PLL, DPLL0, DPLL1, DPLL4, DPLL2);
-   subtype Configurable_DPLLs is T range DPLL0 .. DPLL4;
+   type T is (Invalid_PLL, DPLL0, DPLL1, TCPLL1, TCPLL2, TCPLL3, TCPLL4, TCPLL5, TCPLL6);
+   subtype Configurable_DPLLs is T range DPLL0 .. TCPLL6;
+   subtype Combo_DPLLs is T range DPLL0 .. DPLL1;
+   subtype DKL_DPLLs is T range TCPLL1 .. TCPLL6;
    Invalid : constant T := Invalid_PLL;
 
    procedure Initialize
    with
       Global => (Output => State);
 
-   pragma Warnings (Off, "unused variable ""Port_Cfg""",
-                    Reason => "Not yet implemented.");
    procedure Alloc
      (Port_Cfg : in     Port_Config;
       PLL      :    out T;
       Success  :    out Boolean);
-   pragma Warnings (On, "unused variable ""Port_Cfg""");
 
-
-   pragma Warnings (Off, "subprogram ""Free"" has no effect",
-                    Reason => "Not yet implemented.");
    procedure Free (PLL : T);
-   pragma Warnings (On, "subprogram ""Free"" has no effect");
 
-   pragma Warnings (Off, "subprogram ""All_Off"" has no effect",
-                    Reason => "Not yet implemented.");
    procedure All_Off;
-   pragma Warnings (On, "subprogram ""All_Off"" has no effect");
 
-   pragma Warnings (Off, "unused variable ""PLL""",
-                    Reason => "Not yet implemented.");
    function Register_Value (PLL : T) return Word32;
-   pragma Warnings (On, "unused variable ""PLL""");
 
 end HW.GFX.GMA.PLLs;

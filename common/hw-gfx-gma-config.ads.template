@@ -261,6 +261,7 @@ private package HW.GFX.GMA.Config is
    Has_Broadwell_CDClk           : <hswbool> := CPU_Broadwell;
    Can_Switch_CDClk              : <hswbool> := Broadwell_On;
    Has_Fractional_RawClk         : <genbool> := Cannon_Point_On;
+   Has_New_Type_C_PLL_Enable     : <tglbool> := Alderlake_On;
 
    ----------- DDI: -------------
    End_EDP_Training_Late         : <genbool> := Gen_Haswell;
