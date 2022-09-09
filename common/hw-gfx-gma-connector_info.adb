@@ -27,14 +27,28 @@ package body HW.GFX.GMA.Connector_Info is
       Success     :    out Boolean)
    is
       DP_Port : constant GMA.DP_Port :=
-        (if Port_Cfg.Port = DIGI_A then
-            DP_A
+        (if Config.Has_Type_C_Ports
+         then
+           (case Port_Cfg.Port is
+              when DIGI_A => DP_A,
+              when DIGI_B => DP_B,
+              when DIGI_C => DP_C,
+              when DDI_TC1 => DP_D,
+              when DDI_TC2 => DP_E,
+              when DDI_TC3 => DP_F,
+              when DDI_TC4 => DP_G,
+              when DDI_TC5 => DP_H,
+              when DDI_TC6 => DP_I,
+              when others => GMA.DP_Port'First)
          else
-           (case Port_Cfg.PCH_Port is
-               when PCH_DP_B  => DP_B,
-               when PCH_DP_C  => DP_C,
-               when PCH_DP_D  => DP_D,
-               when others    => GMA.DP_Port'First));
+           (if Port_Cfg.Port = DIGI_A then
+               DP_A
+            else
+              (case Port_Cfg.PCH_Port is
+                  when PCH_DP_B  => DP_B,
+                  when PCH_DP_C  => DP_C,
+                  when PCH_DP_D  => DP_D,
+                  when others    => GMA.DP_Port'First)));
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 

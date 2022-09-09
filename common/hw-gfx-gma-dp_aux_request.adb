@@ -54,10 +54,10 @@ package body HW.GFX.GMA.DP_Aux_Request is
    type AUX_CH_Data_Regs is new Positive range 1 .. 5;
 
    type AUX_CH_Data_Regs_Array is
-      array (AUX_CH_Data_Regs) of Registers.Registers_Index;
+      array (AUX_CH_Data_Regs) of Registers.Registers_Invalid_Index;
 
    type AUX_CH_Registers is record
-      CTL   : Registers.Registers_Index;
+      CTL   : Registers.Registers_Invalid_Index;
       DATA  : AUX_CH_Data_Regs_Array;
       MUTEX : Registers.Registers_Invalid_Index;
    end record;
@@ -65,7 +65,90 @@ package body HW.GFX.GMA.DP_Aux_Request is
    type AUX_CH_Registers_Array is array (DP_Port) of AUX_CH_Registers;
 
    AUX_CH : constant AUX_CH_Registers_Array :=
-     (if Config.Has_PCH_Aux_Channels then
+     (if Config.Has_Type_C_Ports then
+         AUX_CH_Registers_Array'
+        (DP_A => AUX_CH_Registers'
+           (CTL   => Registers.DDI_AUX_CTL_A,
+            DATA  => AUX_CH_Data_Regs_Array'
+              (1  => Registers.DDI_AUX_DATA_A_1,
+               2  => Registers.DDI_AUX_DATA_A_2,
+               3  => Registers.DDI_AUX_DATA_A_3,
+               4  => Registers.DDI_AUX_DATA_A_4,
+               5  => Registers.DDI_AUX_DATA_A_5),
+            MUTEX => Registers.Invalid_Register),
+         DP_B => AUX_CH_Registers'
+           (CTL   => Registers.DDI_AUX_CTL_B,
+            DATA  => AUX_CH_Data_Regs_Array'
+              (1  => Registers.DDI_AUX_DATA_B_1,
+               2  => Registers.DDI_AUX_DATA_B_2,
+               3  => Registers.DDI_AUX_DATA_B_3,
+               4  => Registers.DDI_AUX_DATA_B_4,
+               5  => Registers.DDI_AUX_DATA_B_5),
+            MUTEX => Registers.Invalid_Register),
+         DP_C => AUX_CH_Registers'
+           (CTL   => Registers.DDI_AUX_CTL_C,
+            DATA  => AUX_CH_Data_Regs_Array'
+              (1  => Registers.DDI_AUX_DATA_C_1,
+               2  => Registers.DDI_AUX_DATA_C_2,
+               3  => Registers.DDI_AUX_DATA_C_3,
+               4  => Registers.DDI_AUX_DATA_C_4,
+               5  => Registers.DDI_AUX_DATA_C_5),
+            MUTEX => Registers.Invalid_Register),
+         DP_D => AUX_CH_Registers'
+           (CTL   => Registers.DDI_AUX_CTL_USBC1,
+            DATA  => AUX_CH_Data_Regs_Array'
+              (1  => Registers.DDI_AUX_DATA_USBC1_1,
+               2  => Registers.DDI_AUX_DATA_USBC1_2,
+               3  => Registers.DDI_AUX_DATA_USBC1_3,
+               4  => Registers.DDI_AUX_DATA_USBC1_4,
+               5  => Registers.DDI_AUX_DATA_USBC1_5),
+            MUTEX => Registers.Invalid_Register),
+         DP_E => AUX_CH_Registers'
+           (CTL   => Registers.DDI_AUX_CTL_USBC2,
+            DATA  => AUX_CH_Data_Regs_Array'
+              (1  => Registers.DDI_AUX_DATA_USBC2_1,
+               2  => Registers.DDI_AUX_DATA_USBC2_2,
+               3  => Registers.DDI_AUX_DATA_USBC2_3,
+               4  => Registers.DDI_AUX_DATA_USBC2_4,
+               5  => Registers.DDI_AUX_DATA_USBC2_5),
+            MUTEX => Registers.Invalid_Register),
+         DP_F => AUX_CH_Registers'
+           (CTL   => Registers.DDI_AUX_CTL_USBC3,
+            DATA  => AUX_CH_Data_Regs_Array'
+              (1  => Registers.DDI_AUX_DATA_USBC3_1,
+               2  => Registers.DDI_AUX_DATA_USBC3_2,
+               3  => Registers.DDI_AUX_DATA_USBC3_3,
+               4  => Registers.DDI_AUX_DATA_USBC3_4,
+               5  => Registers.DDI_AUX_DATA_USBC3_5),
+            MUTEX => Registers.Invalid_Register),
+         DP_G => AUX_CH_Registers'
+           (CTL   => Registers.DDI_AUX_CTL_USBC4,
+            DATA  => AUX_CH_Data_Regs_Array'
+              (1  => Registers.DDI_AUX_DATA_USBC4_1,
+               2  => Registers.DDI_AUX_DATA_USBC4_2,
+               3  => Registers.DDI_AUX_DATA_USBC4_3,
+               4  => Registers.DDI_AUX_DATA_USBC4_4,
+               5  => Registers.DDI_AUX_DATA_USBC5_5),
+            MUTEX => Registers.Invalid_Register),
+         DP_H => AUX_CH_Registers'
+           (CTL   => Registers.DDI_AUX_CTL_USBC5,
+            DATA  => AUX_CH_Data_Regs_Array'
+              (1  => Registers.DDI_AUX_DATA_USBC5_1,
+               2  => Registers.DDI_AUX_DATA_USBC5_2,
+               3  => Registers.DDI_AUX_DATA_USBC5_3,
+               4  => Registers.DDI_AUX_DATA_USBC5_4,
+               5  => Registers.DDI_AUX_DATA_USBC5_5),
+            MUTEX => Registers.Invalid_Register),
+         DP_I => AUX_CH_Registers'
+           (CTL   => Registers.DDI_AUX_CTL_USBC6,
+            DATA  => AUX_CH_Data_Regs_Array'
+              (1  => Registers.DDI_AUX_DATA_USBC6_1,
+               2  => Registers.DDI_AUX_DATA_USBC6_2,
+               3  => Registers.DDI_AUX_DATA_USBC6_3,
+               4  => Registers.DDI_AUX_DATA_USBC6_4,
+               5  => Registers.DDI_AUX_DATA_USBC6_5),
+            MUTEX => Registers.Invalid_Register))
+      elsif Config.Has_PCH_Aux_Channels then
          AUX_CH_Registers_Array'
         (DP_A => AUX_CH_Registers'
            (CTL   => Registers.DP_AUX_CTL_A,
@@ -102,7 +185,11 @@ package body HW.GFX.GMA.DP_Aux_Request is
                3  => Registers.PCH_DP_AUX_DATA_D_3,
                4  => Registers.PCH_DP_AUX_DATA_D_4,
                5  => Registers.PCH_DP_AUX_DATA_D_5),
-            MUTEX => Registers.Invalid_Register))
+            MUTEX => Registers.Invalid_Register),
+         others => AUX_CH_Registers'
+           (DATA => AUX_CH_Data_Regs_Array'
+             (others => Registers.Invalid_Register),
+            others => Registers.Invalid_Register))
       else
          AUX_CH_Registers_Array'
         (DP_A => AUX_CH_Registers'
@@ -140,7 +227,11 @@ package body HW.GFX.GMA.DP_Aux_Request is
                3  => Registers.DDI_AUX_DATA_D_3,
                4  => Registers.DDI_AUX_DATA_D_4,
                5  => Registers.DDI_AUX_DATA_D_5),
-            MUTEX => Registers.DDI_AUX_MUTEX_D)));
+            MUTEX => Registers.DDI_AUX_MUTEX_D),
+         others => AUX_CH_Registers'
+           (DATA => AUX_CH_Data_Regs_Array'
+             (others => Registers.Invalid_Register),
+            others => Registers.Invalid_Register)));
 
    ----------------------------------------------------------------------------
 
@@ -244,6 +335,11 @@ package body HW.GFX.GMA.DP_Aux_Request is
    begin
       Response := (others => 0); -- Don't care
       Response_Length := DP_Defs.Aux_Response_Length'First;
+
+      if not Config.Has_Type_C_Ports and Port > DP_D then
+         Success := False;
+         return;
+      end if;
 
       if Config.Need_DP_Aux_Mutex then
          Registers.Set_Mask
