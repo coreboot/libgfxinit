@@ -12,8 +12,6 @@
 -- GNU General Public License for more details.
 --
 
-with HW;
-
 with HW.Debug;
 with GNAT.Source_Info;
 

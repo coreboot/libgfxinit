@@ -12,7 +12,6 @@
 -- GNU General Public License for more details.
 --
 
-with HW;
 with HW.GFX.GMA.Config;
 
 private package HW.GFX.GMA.Config_Helpers

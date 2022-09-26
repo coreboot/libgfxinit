@@ -19,6 +19,8 @@ with HW.PCI;
 with HW.Port_IO;
 with HW.GFX.Framebuffer_Filler;
 
+use type HW.Word32;
+
 package HW.GFX.GMA
 with
    Abstract_State =>

@@ -13,11 +13,6 @@
 -- GNU General Public License for more details.
 --
 
-with HW;
-
-use type HW.Pos64;
-use type HW.Word32;
-
 package HW.GFX is
 
    -- such that the count of pixels in any framebuffer may fit

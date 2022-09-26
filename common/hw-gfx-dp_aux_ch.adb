@@ -16,6 +16,7 @@ with HW.Time;
 with HW.GFX.DP_Defs;
 
 use type HW.Word8;
+use type HW.Word32;
 use type HW.GFX.DP_Defs.Aux_Message_Command;
 
 package body HW.GFX.DP_Aux_Ch is

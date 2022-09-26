@@ -14,10 +14,6 @@
 
 with System;
 
-with HW;
-
-use type HW.Int32;
-
 package HW.GFX.Framebuffer_Filler
 with
    Abstract_State => ((State with External), Base_Address),
