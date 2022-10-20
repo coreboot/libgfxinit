@@ -328,7 +328,7 @@ package body HW.GFX.GMA.Power_And_Clocks is
          Wait_Ready => True,
          Success    => Success);
 
-      if not Success then
+      if not Success and not Config.CPU_Alderlake then
          pragma Debug (Debug.Put_Line
                        ("ERROR: PCODE not ready for frequency change."));
          return;
@@ -348,7 +348,8 @@ package body HW.GFX.GMA.Power_And_Clocks is
          Registers.Wait_Set_Mask
            (Register  => Registers.CDCLK_PLL_ENABLE,
             Mask      => CDCLK_PLL_ENABLE_PLL_LOCK or
-                         CDCLK_PLL_ENABLE_FREQ_REQ_ACK);
+                         CDCLK_PLL_ENABLE_FREQ_REQ_ACK,
+            Success  => Success);
          Registers.Write
            (Register => Registers.CDCLK_PLL_ENABLE,
             Value    => Word32(PLL_Ratio) or
@@ -413,7 +414,8 @@ package body HW.GFX.GMA.Power_And_Clocks is
          Command  => (if    CDClk <= 312_000_000 then 0
                       elsif CDClk <= 326_400_000 then 1
                       elsif CDClk <= 556_800_000 then 2
-                      else 3));
+                      else 3),
+         Wait_Ready => True);
       Config.CDClk := CDClk;
    end Set_CDClk;
 
