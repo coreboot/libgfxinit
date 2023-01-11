@@ -210,6 +210,10 @@ is
            ("Disabling port " & Port_Names (Pipe_Cfg.Port)));
          pragma Debug (Debug.New_Line);
 
+         if Pipe_Cfg.Framebuffer.Offset = VGA_PLANE_FRAMEBUFFER_OFFSET then
+            Display_Controller.Legacy_VGA_Off;
+         end if;
+
          Connectors.Pre_Off (Port_Cfg);
          Display_Controller.Off (Pipe);
          Connectors.Post_Off (Port_Cfg);
