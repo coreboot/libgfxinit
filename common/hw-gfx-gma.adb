@@ -652,12 +652,15 @@ is
      (GNATprove, Off, """Registers.Register_State"" * is not modified*",
       Reason => "Power_Up_VGA is only effective in certain configurations.");
    pragma Warnings
+     (GNATprove, Off, """PCode.Mailbox_Ready"" * is not modified*",
+      Reason => "Pcode is only used in certain configurations.");
+   pragma Warnings
      (GNATprove, Off, "no check message justified*", Reason => "see below");
    procedure Power_Up_VGA
    with
       Refined_Global =>
         (Input => (Cur_Configs, Config.Variable, Time.State),
-         In_Out => (Registers.Register_State),
+         In_Out => (Registers.Register_State, PCode.Mailbox_Ready),
          Proof_In => (Initialized))
    is
       Fake_Config : constant Pipe_Configs :=
@@ -677,6 +680,8 @@ is
    pragma Annotate
      (GNATprove, Intentional, "unused global",
       "Power_Up_VGA is only effective in certain configurations.");
+   pragma Warnings
+     (GNATprove, On, """PCode.Mailbox_Ready"" * is not modified*");
    pragma Warnings (GNATprove, On, "no check message justified*");
    pragma Warnings
      (GNATprove, On, """Registers.Register_State"" * is not modified*");

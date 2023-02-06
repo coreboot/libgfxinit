@@ -19,6 +19,8 @@ with HW.GFX.GMA.Config;
 with HW.GFX.GMA.PCode;
 with HW.GFX.GMA.Registers;
 with HW.GFX.GMA.Transcoder;
+with HW.GFX.GMA.Connectors;
+with HW.GFX.GMA.Connectors.TC;
 
 use type HW.Word64;
 
@@ -222,6 +224,7 @@ package body HW.GFX.GMA.Power_And_Clocks is
    procedure Pre_On (PD : Power_Domain)
    is
       DP_AUX_CH_CTL_TBT_IO : constant := 1 * 2 ** 11;
+      Success : Boolean;
    begin
       if PD in AUX_USBC_Domain then
          -- Disable TBT IO mode for AUX
@@ -229,8 +232,19 @@ package body HW.GFX.GMA.Power_And_Clocks is
            (Register => AUX_CTL_Regs (PD),
             Mask     => DP_AUX_CH_CTL_TBT_IO);
 
+         Connectors.TC.Connect (Aux_To_Port (PD), Success);
+         if not Success then
+            Debug.Put_Line ("Connection flow failed!");
+         end if;
       end if;
    end Pre_On;
+
+   procedure Pre_Off (PD : Power_Domain) is
+   begin
+      if PD in AUX_USBC_Domain then
+         Connectors.TC.Disconnect (Aux_To_Port (PD));
+      end if;
+   end Pre_Off;
 
    procedure Post_On (PD : Power_Domain)
    is
@@ -801,8 +815,14 @@ package body HW.GFX.GMA.Power_And_Clocks is
 
    procedure Power_Up (Old_Configs, New_Configs : Pipe_Configs)
    is
+      Success : Boolean;
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
+
+      Connectors.TC.TC_Cold_Request (Connectors.TC.Block, Success);
+      if not Success then
+         Debug.Put_Line ("Failed to unblock TCCOLD");
+      end if;
 
       for PD in Power_Domain loop
         if not Need_PD (PD, Old_Configs) and Need_PD (PD, New_Configs) then
@@ -813,6 +833,7 @@ package body HW.GFX.GMA.Power_And_Clocks is
 
    procedure Power_Down (Old_Configs, Tmp_Configs, New_Configs : Pipe_Configs)
    is
+      Success : Boolean;
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
       for PD in reverse Power_Domain loop
@@ -823,6 +844,10 @@ package body HW.GFX.GMA.Power_And_Clocks is
         end if;
       end loop;
 
+      Connectors.TC.TC_Cold_Request (Connectors.TC.Unblock, Success);
+      if not Success then
+         Debug.Put_Line ("Failed to unblock TCCOLD");
+      end if;
    end Power_Down;
 
    procedure Pre_All_Off is

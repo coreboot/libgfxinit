@@ -145,8 +145,8 @@ is
    procedure Power_Up_VGA
    with
       Global =>
-        (Input => (State, Time.State),
-         In_Out => (Device_State),
+        (Input => (Time.State),
+         In_Out => (Device_State, State),
          Proof_In => (Init_State)),
       Pre => Is_Initialized;
 

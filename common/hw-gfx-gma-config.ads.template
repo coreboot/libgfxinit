@@ -312,6 +312,9 @@ private package HW.GFX.GMA.Config is
    ----------- Rawclk -----------
    Need_Rawclk_Numerator         : <genbool> := Tigerlake_On;
 
+   ----------- Combo Phy --------
+   Has_TGL_Buffer_Translations   : <tglbool> := CPU_Tigerlake;
+
    ----------------------------------------------------------------------------
 
    Max_Pipe : <ilkvar> Pipe_Index :=
