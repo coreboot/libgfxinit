@@ -19,6 +19,7 @@ with HW.GFX.GMA.Config;
 with HW.GFX.GMA.PCode;
 with HW.GFX.GMA.Registers;
 with HW.GFX.GMA.Transcoder;
+with HW.GFX.GMA.Connectors.TC;
 
 use type HW.Word64;
 
@@ -38,6 +39,7 @@ package body HW.GFX.GMA.Power_And_Clocks is
    subtype Dynamic_Well    is Power_Domain range PW2 .. PW_Domain'Last;
    subtype Port_Domain     is Power_Domain range DDI_A .. AUX_USBC6;
    subtype DDI_Domain      is Power_Domain range DDI_A .. DDI_USBC6;
+   subtype DDI_USBC_Domain is Power_Domain range DDI_USBC1 .. DDI_USBC6;
    subtype AUX_Domain      is Power_Domain range AUX_A .. AUX_USBC6;
    subtype AUX_USBC_Domain is Power_Domain range AUX_USBC1 .. AUX_USBC6;
 
@@ -214,7 +216,7 @@ package body HW.GFX.GMA.Power_And_Clocks is
          when DDI_USBC5 | AUX_USBC5 => DDI_TC5,
          when DDI_USBC6 | AUX_USBC6 => DDI_TC6);
 
-   procedure Pre_PD_On (PD : Power_Domain)
+   procedure Pre_PD_On (PD : in Power_Domain; Success : out Boolean)
    is
       DP_AUX_CH_CTL_TBT_IO : constant := 1 * 2 ** 11;
    begin
@@ -223,10 +225,14 @@ package body HW.GFX.GMA.Power_And_Clocks is
          Registers.Unset_Mask
            (Register => AUX_CTL_Regs (PD),
             Mask     => DP_AUX_CH_CTL_TBT_IO);
+         Connectors.TC.Claimed (To_GPU_Port (PD), Success);
       elsif PD = PW1 then
          Registers.Wait_Set_Mask
            (Register => Registers.FUSE_STATUS,
-            Mask     => FUSE_STATUS_PG0_DIST_STATUS);
+            Mask     => FUSE_STATUS_PG0_DIST_STATUS,
+            Success  => Success);
+      else
+         Success := True;
       end if;
    end Pre_PD_On;
 
@@ -248,6 +254,17 @@ package body HW.GFX.GMA.Power_And_Clocks is
       end if;
    end Post_PD_On;
 
+   procedure Pre_PD_Off (PD : Power_Domain) is
+   begin
+      if PD in DDI_USBC_Domain then
+         -- Could be moved to a higher level, but right now it's
+         -- convenient to do it here: When requested to turn the
+         -- power off, we know exactly that we don't want to use
+         -- the port (anymore).
+         Connectors.TC.Disconnect (To_GPU_Port (PD));
+      end if;
+   end Pre_PD_Off;
+
    procedure PD_On (PD : Power_Domain)
    is
       Ctl1, Ctl2 : Word32;
@@ -265,7 +282,11 @@ package body HW.GFX.GMA.Power_And_Clocks is
       end if;
 
       if (Ctl2 and Power_Request_Mask (PD)) = 0 then
-         Pre_PD_On (PD);
+         Pre_PD_On (PD, Success);
+         if not Success then
+            pragma Debug (Debug.Put_Line ("Connection flow failed!"));
+            return;
+         end if;
 
          Registers.Set_Mask (PWR_CTL_DRIVER (PD_Type), Power_Request_Mask (PD));
 
@@ -297,6 +318,8 @@ package body HW.GFX.GMA.Power_And_Clocks is
            (Register => PWR_CTL_DRIVER (PD_Type),
             Mask     => Power_State_Mask (PD),
             TOut_MS  => 1);
+
+         Pre_PD_Off (PD);
 
          Registers.Unset_Mask (PWR_CTL_DRIVER (PD_Type), Power_Request_Mask (PD));
          Registers.Unset_Mask (PWR_CTL_BIOS (PD_Type), Power_Request_Mask (PD));
@@ -745,11 +768,20 @@ package body HW.GFX.GMA.Power_And_Clocks is
             PD_On (PW2);
             PD_On (PW3);
          end if;
-
          PD_On (DDI);
+
+         if GPU_Port in USBC_Port then
+            Connectors.TC.Claim
+              (Port     => GPU_Port,
+               DP_Alt   => Port in Physical_USBC_Ports,
+               Success  => Success);
+            if not Success then
+               return;
+            end if;
+         end if;
          PD_On (Aux);
 
-         Success := True;  -- FIXME: Handle port connection flow "claim" errors
+         Success := True;
       end On;
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));

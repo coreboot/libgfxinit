@@ -148,8 +148,8 @@ is
    procedure Power_Up_VGA
    with
       Global =>
-        (Input => (State, Time.State),
-         In_Out => (Device_State),
+        (Input => (Time.State),
+         In_Out => (Device_State, State),
          Proof_In => (Init_State)),
       Pre => Is_Initialized;
 
@@ -305,7 +305,9 @@ private
    subtype GMCH_HDMI_Port is GPU_Port range DIGI_B .. DIGI_C;
    subtype Combo_Port is GPU_Port range DIGI_A .. DIGI_C;
    subtype USBC_Port is GPU_Port range DDI_TC1 .. DDI_TC6;
-   subtype TGL_Digital_Port is GPU_Port range DIGI_A .. DDI_TC6;
+   subtype TGL_Digital_Port is GPU_Port range DIGI_A .. DDI_TC6
+   with
+      Static_Predicate => (TGL_Digital_Port /= DIGI_D and TGL_Digital_Port /= DIGI_E);
 
    function Is_Digital_Port (Port : GPU_Port) return Boolean is
       (Port in Digital_Port or Port in TGL_Digital_Port);
