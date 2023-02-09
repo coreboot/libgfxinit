@@ -27,6 +27,7 @@ is
    HOTPLUG_CTL_DDI_A_HPD_STATUS        : constant := 3 * 2 **  0;
    HOTPLUG_CTL_DDI_A_HPD_LONG_DETECT   : constant := 1 * 2 **  1;
 
+   SHOTPLUG_CTL_HPD_INVERT_MASK        : constant := 16#0808_0808#;
    SHOTPLUG_CTL_DETECT_MASK            : constant := 16#0303_0303#;
 
    type Digital_Port_Value is array (Digital_Port) of Word32;
@@ -41,6 +42,12 @@ is
       DIGI_C => 1 * 2 ** 12,
       DIGI_D => 1 * 2 ** 20,
       DIGI_A => 1 * 2 ** 28,
+      others => 0);
+   SHOTPLUG_CTL_HPD_INVERT : constant Digital_Port_Value :=
+     (DIGI_B => 1 * 2 **  3,
+      DIGI_C => 1 * 2 ** 11,
+      DIGI_D => 1 * 2 ** 19,
+      DIGI_A => 1 * 2 ** 27,
       others => 0);
    SHOTPLUG_CTL_HPD_STATUS : constant Digital_Port_Value :=
      (DIGI_B => 3 * 2 **  0,
@@ -73,6 +80,9 @@ is
         (DIGI_B => DP1,
          DIGI_C => DP2,
          DIGI_D => DP3);
+
+      Invert_Mask : constant Word32 :=
+        (if Config.Has_Hotplug_Invert then SHOTPLUG_CTL_HPD_INVERT_MASK else 0);
    begin
       if Config.Has_DDI_E and Config.Has_PCH_DAC then
          -- PCH_DAC (_A)
@@ -114,6 +124,7 @@ is
               (Register    => Registers.SHOTPLUG_CTL,
                Mask_Unset  => SHOTPLUG_CTL_DETECT_MASK,
                Mask_Set    => SHOTPLUG_CTL_HPD_INPUT_ENABLE (DIGI_A) or
+                              (SHOTPLUG_CTL_HPD_INVERT (DIGI_A) and Invert_Mask) or
                               SHOTPLUG_CTL_HPD_STATUS (DIGI_A));  -- clear
          end if;
       end if;
@@ -139,6 +150,7 @@ is
               (Register    => Registers.SHOTPLUG_CTL,
                Mask_Unset  => SHOTPLUG_CTL_DETECT_MASK,
                Mask_Set    => SHOTPLUG_CTL_HPD_INPUT_ENABLE (Port) or
+                              (SHOTPLUG_CTL_HPD_INVERT (Port) and Invert_Mask) or
                               SHOTPLUG_CTL_HPD_STATUS (Port)); -- clear status
          else
             Registers.Unset_Mask

@@ -296,6 +296,7 @@ private package HW.GFX.GMA.Config is
    Has_HOTPLUG_CTL               : <genbool> := Gen_Haswell;
    Has_SHOTPLUG_CTL_A            : <hswbool> :=
      ((Gen_Haswell and then Is_LP) or Skylake_On);
+   Has_Hotplug_Invert            : <genbool> := Gen_Broxton;
 
    Has_DDI_PHYs                  : <genbool> := Gen_Broxton;
 
