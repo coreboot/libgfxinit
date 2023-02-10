@@ -40,6 +40,8 @@ private package HW.GFX.GMA.Power_And_Clocks is
    procedure Power_Up (Old_Configs, New_Configs : Pipe_Configs);
    procedure Power_Down (Old_Configs, Tmp_Configs, New_Configs : Pipe_Configs);
 
+   procedure Power_Up_Aux;
+
    procedure Get_Refclk (Refclk : out Refclk_Range);
 
 end HW.GFX.GMA.Power_And_Clocks;

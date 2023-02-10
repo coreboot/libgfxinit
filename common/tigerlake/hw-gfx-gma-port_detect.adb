@@ -16,6 +16,7 @@ with HW.GFX.GMA.Config;
 with HW.GFX.GMA.Registers;
 with HW.GFX.GMA.Config_Helpers;
 with HW.GFX.GMA.Connectors.TC;
+with HW.GFX.GMA.Power_And_Clocks;
 
 with HW.Debug;
 with GNAT.Source_Info;
@@ -26,6 +27,7 @@ is
 
    function SDEISR_MASK (Port : Active_Port_Type) return Word32
    is (case Port is
+       when eDP         => 16#1_0000#,
        when DP1 | HDMI1 => 16#1_0000#,
        when DP2 | HDMI2 => 16#2_0000#,
        when DP3 | HDMI3 => 16#4_0000#,
@@ -64,21 +66,9 @@ is
    procedure Initialize
    is
       INIT_DISPLAY_DETECTED : constant := 1 * 2 ** 0;
-      Internal_Detected : Boolean;
       Success : Boolean;
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
-
-      -- only for DDI_A / eDP
-      if Config.Has_Presence_Straps and not Config.Ignore_Presence_Straps then
-         Registers.Is_Set_Mask
-           (Register => Registers.DDI_BUF_CTL_A,
-            Mask => INIT_DISPLAY_DETECTED,
-            Result => Internal_Detected);
-      else
-         Internal_Detected := True;
-      end if;
-      Config.Valid_Port (eDP) := Internal_Detected;
 
       Registers.Unset_And_Set_Mask
         (Register => Registers.SHPD_FILTER_CNT,
@@ -116,15 +106,25 @@ is
             TC_HOTPLUG_CTL_HPD_ENABLE (USBC6_DP));  -- also USBC6_HDMI
 
       -- Validity can only be detected via hotplug
+      Config.Valid_Port (eDP) := True;
       for Port in DP1 .. HDMI3 loop
          Config.Valid_Port (Port) := True;
       end loop;
 
-      -- For Type-C ports, we can check if the IOM PHY status is 'Complete'.
+      -- For Type-C ports, we can check if the IOM PHY status is 'Complete',
+      -- then perform the connection flow for all connected ports.
+      Power_And_Clocks.Power_Up_Aux ;
       for Port in USBC1_DP .. USBC6_HDMI loop
-         Connectors.TC.Is_DP_Phy_Mode_Status_Complete
-           (Port     => Config_Helpers.To_GPU_Port (Pipe_Index'First, Port),
-            Success  => Config.Valid_Port (Port));
+         declare
+            G : GPU_Port;
+            Success : Boolean;
+         begin
+            G := Config_Helpers.To_GPU_Port (Pipe_Index'First, Port);
+            if G in USBC_Port then
+               Connectors.TC.Connect (G, Success);
+               Config.Valid_Port (Port) := Success;
+            end if;
+         end;
       end loop;
 
       -- TCCOLD should be blocked first before accessing FIA registers
@@ -134,12 +134,14 @@ is
       -- In order to avoid keeping track of the state and constantly
       -- blocking and unblocking, we just block it once at the beginning and
       -- leave it that way.
-      Connectors.TC.TC_Cold_Request (Connectors.TC.Block, Success);
-      if not Success then
-         Debug.Put_Line ("Failed to bock TCCOLD, Type-C will not work!");
-         for Port in USBC1_DP .. USBC6_HDMI loop
-            Config.Valid_Port (Port) := False;
-         end loop;
+      if not Config.Has_XELPD_Power_Domains then
+         Connectors.TC.TC_Cold_Request (Connectors.TC.Block, Success);
+         if not Success then
+            Debug.Put_Line ("Failed to bock TCCOLD, Type-C will not work!");
+            for Port in USBC1_DP .. USBC6_HDMI loop
+               Config.Valid_Port (Port) := False;
+            end loop;
+         end if;
       end if;
    end Initialize;
 
