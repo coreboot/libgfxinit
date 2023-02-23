@@ -37,11 +37,11 @@ package body HW.GFX.GMA.PCH.Transcoder is
       return Word32
    is
    begin
-      return Shift_Left (PLL,
-        (case Port is
-            when FDI_A => 0,
-            when FDI_B => 4,
-            when FDI_C => 8));
+      case Port is
+         when FDI_A => return Shift_Left (PLL, 0);
+         when FDI_B => return Shift_Left (PLL, 4);
+         when FDI_C => return Shift_Left (PLL, 8);
+      end case;
    end DPLL_SEL_TRANSCODER_x_DPLL_SEL;
 
    TRANS_CONF_TRANSCODER_ENABLE        : constant := 1 * 2 ** 31;
