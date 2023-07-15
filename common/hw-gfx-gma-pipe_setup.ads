@@ -16,7 +16,6 @@ with HW.GFX.GMA.Config;
 with HW.GFX.GMA.Config_Helpers;
 with HW.GFX.GMA.Registers;
 
-use type HW.Int32;
 
 private package HW.GFX.GMA.Pipe_Setup
 is

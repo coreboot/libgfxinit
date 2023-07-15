@@ -33,7 +33,6 @@ with HW.GFX.GMA.Pipe_Setup;
 with HW.Debug;
 with GNAT.Source_Info;
 
-use type HW.Int32;
 
 package body HW.GFX.GMA
    with Refined_State =>
