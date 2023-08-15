@@ -105,7 +105,7 @@ package body HW.GFX.GMA.Connector_Info is
    is
    begin
       return
-        (if Port_Cfg.Port = DIGI_A or
+        (if (Port_Cfg.Port = DIGI_A and Port_Cfg.Display /= HDMI) or
            (Port_Cfg.Is_FDI and Port_Cfg.PCH_Port = PCH_LVDS) or
            Port_Cfg.Port = LVDS
          then 6
