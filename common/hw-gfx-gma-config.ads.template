@@ -542,7 +542,11 @@ private package HW.GFX.GMA.Config is
       Device_Id = 16#a7a0# or
       Device_Id = 16#a7a1# or
       Device_Id = 16#a7a8# or
-      Device_Id = 16#a7a9#);
+      Device_Id = 16#a7a9# or
+      Device_Id = 16#a7aa# or
+      Device_Id = 16#a7ab# or
+      Device_Id = 16#a7ac# or
+      Device_Id = 16#a7ad#);
    function Is_Alder_Lake (Device_Id : Word16) return Boolean is
      (Is_Alder_Lake_P (Device_Id) or
       Is_Alder_Lake_N (Device_Id) or
