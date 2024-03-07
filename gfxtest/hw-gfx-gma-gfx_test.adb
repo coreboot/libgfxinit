@@ -7,7 +7,6 @@ with HW.Time;
 with HW.Debug;
 with HW.PCI.Dev;
 with HW.MMIO_Range;
-with HW.GFX.GMA;
 with HW.GFX.GMA.Config;
 with HW.GFX.GMA.Display_Probing;
 
