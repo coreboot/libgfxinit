@@ -208,7 +208,7 @@ is
 
                   if not Success then
                      Display_Controller.Off (Pipe);
-                     Connectors.Post_Off (Port_Cfg);
+                     Connectors.Post_Off (Pipe, Port_Cfg);
                   end if;
                end if;
 
@@ -252,9 +252,9 @@ is
             Display_Controller.Legacy_VGA_Off;
          end if;
 
-         Connectors.Pre_Off (Port_Cfg);
+         Connectors.Pre_Off (Pipe, Port_Cfg);
          Display_Controller.Off (Pipe);
-         Connectors.Post_Off (Port_Cfg);
+         Connectors.Post_Off (Pipe, Port_Cfg);
 
          PLLs.Free (Allocated_PLLs (Pipe));
       end if;
