@@ -321,6 +321,7 @@ private
          Panel    : Panel_Control;
          Mode     : Mode_Type;
          Is_FDI   : Boolean;
+         Is_eDP   : Boolean;
          FDI      : DP_Link;
          DP       : DP_Link;
       end record;
