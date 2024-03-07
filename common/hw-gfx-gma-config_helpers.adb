@@ -224,6 +224,8 @@ is
             Panel    => To_Panel (Port),
             Mode     => Mode,
             Is_FDI   => Config.Is_FDI_Port (Port),
+            Is_eDP   => To_Display_Type (Port) = DP and
+                        To_Panel (Port) /= No_Panel,
             FDI      => Default_DP,
             DP       => Default_DP);
 
@@ -260,6 +262,7 @@ is
             Panel    => No_Panel,
             Mode     => Invalid_Mode,
             Is_FDI   => False,
+            Is_eDP   => False,
             FDI      => Default_DP,
             DP       => Default_DP);
       end if;
