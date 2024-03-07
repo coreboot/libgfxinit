@@ -51,14 +51,14 @@ package body HW.GFX.GMA.Connectors is
       Success := True;
    end Post_On;
 
-   procedure Pre_Off (Port_Cfg : Port_Config) is
+   procedure Pre_Off (Pipe : Pipe_Index; Port_Cfg : Port_Config) is
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
       Panel.Backlight_Off (Port_Cfg.Panel);
       Panel.Off (Port_Cfg.Panel);
    end Pre_Off;
 
-   procedure Post_Off (Port_Cfg : Port_Config) is
+   procedure Post_Off (Pipe : Pipe_Index; Port_Cfg : Port_Config) is
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
    end Post_Off;

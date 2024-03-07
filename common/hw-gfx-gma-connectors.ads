@@ -33,10 +33,10 @@ private package HW.GFX.GMA.Connectors is
       Port_Cfg : in     Port_Config;
       PLL_Hint : in     Word32;
       Success  :    out Boolean);
-   pragma Warnings (GNATprove, On, "unused variable ""P*""");
 
-   procedure Pre_Off (Port_Cfg : Port_Config);
-   procedure Post_Off (Port_Cfg : Port_Config);
+   procedure Pre_Off (Pipe : Pipe_Index; Port_Cfg : Port_Config);
+   procedure Post_Off (Pipe : Pipe_Index; Port_Cfg : Port_Config);
+   pragma Warnings (GNATprove, On, "unused variable ""P*""");
 
    procedure Pre_All_Off;
    procedure Post_All_Off;

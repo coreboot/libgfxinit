@@ -69,7 +69,7 @@ is
 
    ----------------------------------------------------------------------------
 
-   procedure Pre_Off (Port_Cfg : Port_Config)
+   procedure Pre_Off (Pipe : Pipe_Index; Port_Cfg : Port_Config)
    is
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
@@ -78,7 +78,7 @@ is
       Panel.Off (Port_Cfg.Panel);
    end Pre_Off;
 
-   procedure Post_Off (Port_Cfg : Port_Config)
+   procedure Post_Off (Pipe : Pipe_Index; Port_Cfg : Port_Config)
    is
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
