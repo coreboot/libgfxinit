@@ -314,6 +314,24 @@ package body HW.GFX.GMA.Power_And_Clocks is
 
    ----------------------------------------------------------------------------
 
+   -- WA #0854
+   -- Backlight PWM may stop in the asserted state, causing backlight
+   -- to stay fully on.
+   --
+   -- It was also observed that the PWM counter is not reset on writes
+   -- to the BLC_PWM_FREQ register. This can result in a counter value
+   -- out of range, effectively leaving the PWM signal low until a 32-
+   -- bit overflow at 19.2 MHz (almost 4min).
+   procedure Apply_Workaround_0854
+   is
+      PWM1_GATING_DIS : constant := 1 * 2 ** 13;
+      PWM2_GATING_DIS : constant := 1 * 2 ** 14;
+   begin
+      Registers.Set_Mask
+        (Register => Registers.GEN9_CLKGATE_DIS_0,
+         Mask     => PWM1_GATING_DIS or PWM2_GATING_DIS);
+   end Apply_Workaround_0854;
+
    procedure Pre_All_Off is
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
@@ -354,6 +372,8 @@ package body HW.GFX.GMA.Power_And_Clocks is
 
       Set_Mask (DBUF_CTL_S0, DBUF_CTL_DBUF_POWER_REQUEST);
       Wait_Set_Mask (DBUF_CTL_S0, DBUF_CTL_DBUF_POWER_STATE);
+
+      Apply_Workaround_0854;
 
       Config.Raw_Clock := Config.Default_RawClk_Freq;
    end Initialize;
