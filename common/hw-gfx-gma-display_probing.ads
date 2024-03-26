@@ -17,10 +17,14 @@ with HW.GFX.EDID;
 package HW.GFX.GMA.Display_Probing
 is
 
-   type Port_List_Range is range 0 .. 8;
+   type Port_List_Range is range 0 .. 20;
    type Port_List is array (Port_List_Range) of Port_Type;
    All_Ports : constant Port_List :=
-     (DP1, DP2, DP3, HDMI1, HDMI2, HDMI3, Analog, LVDS, eDP);
+     (DP1, DP2, DP3,
+      HDMI1, HDMI2, HDMI3,
+      USBC1_DP, USBC2_DP, USBC3_DP, USBC4_DP, USBC5_DP, USBC6_DP,
+      USBC1_HDMI, USBC2_HDMI, USBC3_HDMI, USBC4_HDMI, USBC5_HDMI, USBC6_HDMI,
+      Analog, LVDS, eDP);
 
    procedure Read_EDID
      (Raw_EDID :    out EDID.Raw_EDID_Data;
