@@ -43,6 +43,14 @@ is
          when DP1 => HDMI1,
          when DP2 => HDMI2,
          when DP3 => HDMI3,
+         when HDMI_TC1 => DP_TC1,
+         when HDMI_TC2 => DP_TC2,
+         when HDMI_TC3 => DP_TC3,
+         when HDMI_TC4 => DP_TC4,
+         when DP_TC1 => HDMI_TC1,
+         when DP_TC2 => HDMI_TC2,
+         when DP_TC3 => HDMI_TC3,
+         when DP_TC4 => HDMI_TC4,
          when others => Disabled);
 
    function Has_Sibling_Port (Port : Port_Type) return Boolean is
@@ -75,12 +83,25 @@ is
 
             declare
                DP_Port : constant GMA.DP_Port :=
-                 (case Port is
-                     when eDP       => DP_A,
-                     when DP1       => DP_B,
-                     when DP2       => DP_C,
-                     when DP3       => DP_D,
-                     when others    => GMA.DP_Port'First);
+                 (if Config.Has_Type_C_Ports then
+                    (case Config_Helpers.To_GPU_Port (Pipe_Index'First, Port) is
+                        when DIGI_A    => DP_A,
+                        when DIGI_B    => DP_B,
+                        when DIGI_C    => DP_C,
+                        when DDI_TC1   => DP_D,
+                        when DDI_TC2   => DP_E,
+                        when DDI_TC3   => DP_F,
+                        when DDI_TC4   => DP_G,
+                        when DDI_TC5   => DP_H,
+                        when DDI_TC6   => DP_I,
+                        when others    => GMA.DP_Port'First)
+                  else
+                    (case Port is
+                        when eDP       => DP_A,
+                        when DP1       => DP_B,
+                        when DP2       => DP_C,
+                        when DP3       => DP_D,
+                        when others    => GMA.DP_Port'First));
             begin
                DP_Aux_Ch.I2C_Read
                  (Port     => DP_Port,
