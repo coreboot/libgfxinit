@@ -27,7 +27,14 @@ is
    end record;
 
    type PLL_State_Array is array (Configurable_DPLLs) of PLL_State;
+
+   pragma Warnings (Off, "unused variable ""PLLs""",
+                    Reason => "Not yet implemented.");
+   pragma Warnings (Off, "variable ""PLLs"" is assigned but never read",
+                    Reason => "Not yet implemented.");
    PLLs : PLL_State_Array;
+   pragma Warnings (On, "variable ""PLLs"" is assigned but never read");
+   pragma Warnings (On, "unused variable ""PLLs""");
 
    procedure Initialize is
    begin
