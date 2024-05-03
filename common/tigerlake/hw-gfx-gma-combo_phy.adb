@@ -32,16 +32,16 @@ package body HW.GFX.GMA.Combo_Phy is
    type Combo_Phy is (DDI_A, DDI_B, DDI_C);
 
    type Phy_Regs_Record is record
-      PHY_MISC         : Registers.Registers_Index;
-      PORT_CL_DW5      : Registers.Registers_Index;
-      PORT_COMP_DW0    : Registers.Registers_Index;
-      PORT_COMP_DW1    : Registers.Registers_Index;
-      PORT_COMP_DW3    : Registers.Registers_Index;
-      PORT_TX_DW8_LN0  : Registers.Registers_Index;
-      PORT_TX_DW8_GRP  : Registers.Registers_Index;
-      PORT_PCS_DW1_LN0 : Registers.Registers_Index;
-      PORT_PCS_DW1_GRP : Registers.Registers_Index;
-      PORT_COMP_DW8    : Registers.Registers_Index;
+      PHY_MISC          : Registers.Registers_Index;
+      PORT_CL_DW5       : Registers.Registers_Index;
+      PORT_COMP_DW0     : Registers.Registers_Index;
+      PORT_COMP_DW1     : Registers.Registers_Index;
+      PORT_COMP_DW3     : Registers.Registers_Index;
+      PORT_TX_DW8_LN0   : Registers.Registers_Index;
+      PORT_TX_DW8_GRP   : Registers.Registers_Index;
+      PORT_PCS_DW1_LN0  : Registers.Registers_Index;
+      PORT_PCS_DW1_GRP  : Registers.Registers_Index;
+      PORT_COMP_DW8     : Registers.Registers_Index;
       PORT_COMP_DW9     : Registers.Registers_Index;
       PORT_COMP_DW10    : Registers.Registers_Index;
    end record;
@@ -88,22 +88,34 @@ package body HW.GFX.GMA.Combo_Phy is
         PORT_COMP_DW9    => Registers.PORT_COMP_DW9_C,
         PORT_COMP_DW10   => Registers.PORT_COMP_DW10_C));
 
-   procedure Config_DCC_SusClk (Phy : Combo_Phy)
+   procedure Propagate_To_Group
+     (Lane0_Register : Registers.Registers_Index;
+      Mask_Unset     : Word32;
+      Mask_Set       : Word32;
+      Group_Register : Registers.Registers_Index)
    is
-      DW8 : Word32;
-      DW1 : Word32;
+      Value : Word32;
    begin
       -- Read from lane 0 and write to the group
-      Registers.Read (Phy_Regs (Phy).PORT_TX_DW8_LN0, DW8);
-      DW8 := DW8 and not PORT_TX_DW8_ODCC_DIV_SEL_MASK;
-      DW8 := DW8 or PORT_TX_DW8_ODCC_CLKSEL;
-      DW8 := DW8 or ICL_PORT_TX_DW8_ODCC_CLK_DIV_SEL_DIV2;
-      Registers.Write (Phy_Regs (Phy).PORT_TX_DW8_GRP, DW8);
+      Registers.Read (Lane0_Register, Value);
+      Value := (Value and not Mask_Unset) or Mask_Set;
+      Registers.Write (Group_Register, Value);
+   end Propagate_To_Group;
 
-      Registers.Read (Phy_Regs (Phy).PORT_PCS_DW1_LN0, DW1);
-      DW1 := DW1 and not PORT_PCS_DW1_DCC_MODE_SELECT_MASK;
-      DW1 := DW1 or PORT_PCS_DW1_DCC_MODE_SELECT_CONTINUOUS;
-      Registers.Write (Phy_Regs (Phy).PORT_PCS_DW1_GRP, DW1);
+   procedure Config_DCC_SusClk (Phy : Combo_Phy) is
+   begin
+      Propagate_To_Group
+        (Lane0_Register => Phy_Regs (Phy).PORT_TX_DW8_LN0,
+         Mask_Unset     => PORT_TX_DW8_ODCC_DIV_SEL_MASK,
+         Mask_Set       => PORT_TX_DW8_ODCC_CLKSEL or
+                           ICL_PORT_TX_DW8_ODCC_CLK_DIV_SEL_DIV2,
+         Group_Register => Phy_Regs (Phy).PORT_TX_DW8_GRP);
+
+      Propagate_To_Group
+        (Lane0_Register => Phy_Regs (Phy).PORT_PCS_DW1_LN0,
+         Mask_Unset     => PORT_PCS_DW1_DCC_MODE_SELECT_MASK,
+         Mask_Set       => PORT_PCS_DW1_DCC_MODE_SELECT_CONTINUOUS,
+         Group_Register => Phy_Regs (Phy).PORT_PCS_DW1_GRP);
    end Config_DCC_SusClk;
 
    procedure Config_Procmon_Reference (Phy : Combo_Phy)
