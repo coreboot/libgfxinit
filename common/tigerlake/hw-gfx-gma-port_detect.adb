@@ -113,7 +113,7 @@ is
 
       -- For Type-C ports, we can check if the IOM PHY status is 'Complete',
       -- then perform the connection flow for all connected ports.
-      Power_And_Clocks.Power_Up_Aux ;
+      Power_And_Clocks.Power_Up_Aux;
       for Port in USBC1_DP .. USBC6_HDMI loop
          declare
             G : GPU_Port;
@@ -137,7 +137,7 @@ is
       if not Config.Has_XELPD_Power_Domains then
          Connectors.TC.TC_Cold_Request (Connectors.TC.Block, Success);
          if not Success then
-            Debug.Put_Line ("Failed to bock TCCOLD, Type-C will not work!");
+            Debug.Put_Line ("Failed to block TCCOLD, Type-C will not work!");
             for Port in USBC1_DP .. USBC6_HDMI loop
                Config.Valid_Port (Port) := False;
             end loop;

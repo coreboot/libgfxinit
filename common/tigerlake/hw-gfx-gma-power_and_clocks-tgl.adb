@@ -27,6 +27,7 @@ package body HW.GFX.GMA.Power_And_Clocks.TGL is
    subtype DDI_Domain is Power_Domain range DDI_A .. DDI_USBC6;
    subtype AUX_Domain is Power_Domain range AUX_A .. AUX_USBC6;
    subtype AUX_USBC_Domain is Power_Domain range AUX_USBC1 .. AUX_USBC6;
+   subtype Display_Domain is Power_Domain range AUX_A .. DDI_USBC6;
 
    function HIP_INDEX_REG (A : AUX_USBC_Domain) return Registers.Registers_Index
    is (if A <= AUX_USBC4
@@ -50,9 +51,10 @@ package body HW.GFX.GMA.Power_And_Clocks.TGL is
    ----------------------------------------------------------------------------
 
    function Power_Domain_Type (PD : Power_Domain) return Power_Domain_Types is
-     (if    PD in PW_Domain  then Power_Well
-      elsif PD in DDI_Domain then Power_DDI
-      else                        Power_AUX);
+     (case PD is
+      when  PW_Domain'Range => Power_Well,
+      when DDI_Domain'Range => Power_DDI,
+      when AUX_Domain'Range => Power_AUX);
 
    type Power_Well_Regs is array (Power_Domain_Types) of Registers.Registers_Index;
    PWR_CTL_BIOS : constant Power_Well_Regs :=
@@ -64,59 +66,36 @@ package body HW.GFX.GMA.Power_And_Clocks.TGL is
       Power_DDI  => Registers.PWR_DDI_CTL_DRIVER,
       Power_AUX  => Registers.PWR_AUX_CTL_DRIVER);
 
-   package Rep is
-      function PW_Index (PW : PW_Domain) return natural
-         with Post => PW_Index'Result < PW_Domain'Range_Length;
-      function DDI_Index (DDI : DDI_Domain) return natural
-         with Post => DDI_Index'Result < DDI_Domain'Range_Length;
-      function AUX_Index (AUX : AUX_Domain) return natural
-         with Post => Aux_Index'Result < AUX_Domain'Range_Length;
-   end Rep;
+   function Domain_Range_Length (PD : Power_Domain) return Word32 is
+     (case PD is
+      when  PW_Domain'Range =>  PW_Domain'Range_Length,
+      when DDI_Domain'Range => DDI_Domain'Range_Length,
+      when AUX_Domain'Range => AUX_Domain'Range_Length);
 
-   package body Rep is
-      function PW_Index (PW : PW_Domain) return natural
-      with
-         SPARK_Mode => Off
-      is
-      begin
-         return PW'Enum_Rep - PW1'Enum_Rep;
-      end PW_Index;
+   function Domain_First (PD : Power_Domain) return Power_Domain is
+     (case PD is
+      when  PW_Domain'Range =>  PW_Domain'First,
+      when DDI_Domain'Range => DDI_Domain'First,
+      when AUX_Domain'Range => AUX_Domain'First);
 
-      function DDI_Index (DDI : DDI_Domain) return natural
-      with
-         SPARK_Mode => Off
-      is
-      begin
-         return DDI'Enum_Rep - DDI_A'Enum_Rep;
-      end DDI_Index;
+   function Domain_Index (PD : Power_Domain) return Natural
+   with
+      SPARK_Mode => Off,
+      Post => Domain_Index'Result < Domain_Range_Length (PD)
+   is
+   begin
+     return Power_Domain'Pos (PD) - Power_Domain'Pos (Domain_First (PD));
+   end Domain_Index;
 
-      function AUX_Index (AUX : AUX_Domain) return natural
-      with
-         SPARK_Mode => Off
-      is
-      begin
-         return AUX'Enum_Rep - AUX_A'Enum_Rep;
-      end AUX_Index;
-   end Rep;
+   function Power_Request_Mask (PD : Power_Domain) return Word32 is
+    (2 * 2 ** (2 * Domain_Index (PD)));
 
-   function PW_Request_Mask (PW : PW_Domain) return Word32 is
-      (2 * 2 ** (2 * Rep.PW_Index (PW)));
-   function PW_State_Mask (PW : PW_Domain) return Word32 is
-      (1 * 2 ** (2 * Rep.PW_Index (PW)));
-
-   function DDI_Request_Mask (DDI : DDI_Domain) return Word32 is
-      (2 * 2 ** (2 * Rep.DDI_Index (DDI)));
-   function DDI_State_Mask (DDI : DDI_Domain) return Word32 is
-      (1 * 2 ** (2 * Rep.DDI_Index (DDI)));
-
-   function AUX_Request_Mask (AUX : AUX_Domain) return Word32 is
-      (2 * 2 ** (2 * Rep.AUX_Index (AUX)));
-   function AUX_State_Mask (AUX : AUX_Domain) return Word32 is
-      (1 * 2 ** (2 * Rep.AUX_Index (AUX)));
+   function Power_State_Mask (PD : Power_Domain) return Word32 is
+     (1 * 2 ** (2 * Domain_Index (PD)));
 
    ----------------------------------------------------------------------------
 
-   FUSE_STATUS_PG0_DIST_STATUS                    : constant := 1 * 2 ** 27;
+   FUSE_STATUS_PG0_DIST_STATUS   : constant := 1 * 2 ** 27;
    type Power_Well_Values is array (PW_Domain) of Word32;
    FUSE_STATUS_PGx_DIST_STATUS : constant Power_Well_Values :=
      (PW1   => 1 * 2 ** 26,
@@ -124,30 +103,6 @@ package body HW.GFX.GMA.Power_And_Clocks.TGL is
       PW3   => 1 * 2 ** 24,
       PW4   => 1 * 2 ** 23,
       PW5   => 1 * 2 ** 22);
-
-   ----------------------------------------------------------------------------
-
-   function Power_Request_Mask (PD : Power_Domain) return Word32 is
-   begin
-      if PD in PW_Domain then
-            return PW_Request_Mask (PD);
-         elsif PD in DDI_Domain then
-            return DDI_Request_Mask (PD);
-         else
-            return AUX_Request_Mask (PD);
-         end if;
-   end Power_Request_Mask;
-
-   function Power_State_Mask (PD : Power_Domain) return Word32 is
-   begin
-      if PD in PW_Domain then
-            return PW_State_Mask (PD);
-         elsif PD in DDI_Domain then
-            return DDI_State_Mask (PD);
-         else
-            return AUX_State_Mask (PD);
-         end if;
-   end Power_State_Mask;
 
    ----------------------------------------------------------------------------
 
@@ -161,14 +116,14 @@ package body HW.GFX.GMA.Power_And_Clocks.TGL is
       AUX_USBC5 => Registers.DDI_AUX_CTL_USBC5,
       AUX_USBC6 => Registers.DDI_AUX_CTL_USBC6);
 
-   function Aux_To_Port (PD : AUX_USBC_Domain) return USBC_Port
-   is (case PD is
-       when AUX_USBC1 => DDI_TC1,
-       when AUX_USBC2 => DDI_TC2,
-       when AUX_USBC3 => DDI_TC3,
-       when AUX_USBC4 => DDI_TC4,
-       when AUX_USBC5 => DDI_TC5,
-       when AUX_USBC6 => DDI_TC6);
+   function Aux_To_Port (PD : AUX_USBC_Domain) return USBC_Port is
+     (case PD is
+      when AUX_USBC1 => DDI_TC1,
+      when AUX_USBC2 => DDI_TC2,
+      when AUX_USBC3 => DDI_TC3,
+      when AUX_USBC4 => DDI_TC4,
+      when AUX_USBC5 => DDI_TC5,
+      when AUX_USBC6 => DDI_TC6);
 
    procedure Pre_On (PD : Power_Domain)
    is
@@ -270,31 +225,20 @@ package body HW.GFX.GMA.Power_And_Clocks.TGL is
       end if;
    end PD_Off;
 
-   type Port_Array is array (natural range <>) of Active_Port_Type;
-   DDI_TC : constant Port_Array :=
-      Port_Array'
-      (USBC1_DP, USBC2_DP, USBC3_DP, USBC4_DP, USBC5_DP, USBC6_DP,
-       USBC1_HDMI, USBC2_HDMI, USBC3_HDMI, USBC4_HDMI, USBC5_HDMI,
-       USBC6_HDMI);
-
    function Need_PD (PD : Power_Domain; Configs : Pipe_Configs) return Boolean
    is
-      function Any_Port_Is (Port : Active_Port_Type) return Boolean is
-        (Configs (Primary).Port = Port or Configs (Secondary).Port = Port or
-         Configs (Tertiary).Port = Port);
+      generic
+         type T is new Port_Type;
+         First : Port_Type := Port_Type (T'First);
+         Last  : Port_Type := Port_Type (T'Last);
+      function Any_Port_Of return Boolean;
+      function Any_Port_Of return Boolean is
+        (Configs (Primary).Port   in First .. Last or else
+         Configs (Secondary).Port in First .. Last or else
+         Configs (Tertiary).Port  in First .. Last);
 
-      function Any_Port_In (Ports : Port_Array) return Boolean is
-      begin
-         for P of Ports loop
-            if (Configs (Primary).Port = P) or
-               (Configs (Secondary).Port = P) or
-               (Configs (Tertiary).Port = P)
-            then
-               return True;
-            end if;
-         end loop;
-         return False;
-      end Any_Port_In;
+      function Any_Port_Combo is new Any_Port_Of (T => Combo_Port_Type);
+      function Any_Port_USBC  is new Any_Port_Of (T =>  USBC_Port_Type);
 
       function Num_Active_Pipes return Natural is
          Count : Natural := 0;
@@ -306,48 +250,35 @@ package body HW.GFX.GMA.Power_And_Clocks.TGL is
          end loop;
          return Count;
       end Num_Active_Pipes;
-   begin
-      case PD is
-         when PW1 | PW2 =>
-            if Num_Active_Pipes >= 1 or Any_Port_In (DDI_TC) then
-               return True;
-            end if;
-         when PW3 =>
-            if Num_Active_Pipes >= 2 or Any_Port_In (DDI_TC) then
-               return True;
-            end if;
-         when PW4 =>
-            if Num_Active_Pipes >= 3 then
-               return True;
-            end if;
-         when PW5 => return False;
-         when DDI_A | AUX_A =>
-            if Any_Port_Is (DP1) or Any_Port_Is (HDMI1) or Any_Port_Is (eDP) then
-               return True;
-            end if;
-         when DDI_B | AUX_B =>
-            if Any_Port_Is (DP2) or Any_Port_Is (HDMI2) then
-               return True;
-            end if;
-         when DDI_C | AUX_C =>
-            if Any_Port_Is (DP3) or Any_Port_Is (HDMI3) then
-               return True;
-            end if;
-         when DDI_USBC1 | AUX_USBC1 =>
-            return Any_Port_Is (USBC1_DP) or Any_Port_Is (USBC1_HDMI);
-         when DDI_USBC2 | AUX_USBC2 =>
-            return Any_Port_Is (USBC2_DP) or Any_Port_Is (USBC2_HDMI);
-         when DDI_USBC3 | AUX_USBC3 =>
-            return Any_Port_Is (USBC3_DP) or Any_Port_Is (USBC3_HDMI);
-         when DDI_USBC4 | AUX_USBC4 =>
-            return Any_Port_Is (USBC4_DP) or Any_Port_Is (USBC4_HDMI);
-         when DDI_USBC5 | AUX_USBC5 =>
-            return Any_Port_Is (USBC5_DP) or Any_Port_Is (USBC5_HDMI);
-         when DDI_USBC6 | AUX_USBC6 =>
-            return Any_Port_Is (USBC6_DP) or Any_Port_Is (USBC6_HDMI);
-      end case;
 
-      return False;
+      function PW_Need_PD (PD : PW_Domain) return Boolean is
+        (case PD is
+            when PW1 |
+                 PW2 => Num_Active_Pipes >= 1 or else Any_Port_USBC,
+            when PW3 => Num_Active_Pipes >= 2 or else Any_Port_USBC,
+            when PW4 => Num_Active_Pipes >= 3,
+            when PW5 => False);
+
+      function Port_Need_PD (PD : Display_Domain; Port : Port_Type) return Boolean is
+        (case PD is
+            when DDI_A | AUX_A         => Port in DP1 | HDMI1 | eDP,
+            when DDI_B | AUX_B         => Port in DP2 | HDMI2,
+            when DDI_C | AUX_C         => Port in DP3 | HDMI3,
+            when DDI_USBC1 | AUX_USBC1 => Port in USBC1_DP | USBC1_HDMI,
+            when DDI_USBC2 | AUX_USBC2 => Port in USBC2_DP | USBC2_HDMI,
+            when DDI_USBC3 | AUX_USBC3 => Port in USBC3_DP | USBC3_HDMI,
+            when DDI_USBC4 | AUX_USBC4 => Port in USBC4_DP | USBC4_HDMI,
+            when DDI_USBC5 | AUX_USBC5 => Port in USBC5_DP | USBC5_HDMI,
+            when DDI_USBC6 | AUX_USBC6 => Port in USBC6_DP | USBC6_HDMI);
+
+      function Display_Need_PD (PD : Display_Domain) return Boolean is
+        (Port_Need_PD (PD, Configs (Primary).Port)   or else
+         Port_Need_PD (PD, Configs (Secondary).Port) or else
+         Port_Need_PD (PD, Configs (Tertiary).Port));
+   begin
+      return (case PD is
+         when PW_Domain      => PW_Need_PD (PD),
+         when Display_Domain => Display_Need_PD (PD));
    end Need_PD;
 
    procedure Aux_Off is

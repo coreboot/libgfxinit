@@ -24,7 +24,7 @@ use type HW.Word64;
 
 package body HW.GFX.GMA.Connectors.TC is
 
-   function HIP_INDEX_REG (P : USBC_Port) return Registers.Registers_Index
+   function HIP_INDEX_REG (P : USBC_Port) return Registers.Registers_Invalid_Index
    is (if P <= DDI_TC4
        then Registers.HIP_INDEX_REG0
        else Registers.HIP_INDEX_REG1);
@@ -34,7 +34,7 @@ package body HW.GFX.GMA.Connectors.TC is
       when DDI_TC1 | DDI_TC3 | DDI_TC5 => Val * 2 ** 0,
       when DDI_TC2 | DDI_TC4 | DDI_TC6 => Val * 2 ** 8);
 
-   type Port_Regs_Array is array (USBC_Port) of Registers.Registers_Index;
+   type Port_Regs_Array is array (USBC_Port) of Registers.Registers_Invalid_Index;
    DKL_DP_MODE : constant Port_Regs_Array :=
       Port_Regs_Array'
      (DDI_TC1 => Registers.DKL_DP_MODE_1,
@@ -50,7 +50,7 @@ package body HW.GFX.GMA.Connectors.TC is
       DDI_TC2 => Registers.DKL_PCS_DW5_2,
       DDI_TC3 => Registers.DKL_PCS_DW5_3,
       DDI_TC4 => Registers.DKL_PCS_DW5_4,
-      others  => Registers.DKL_PCS_DW5_1);
+      others  => Registers.Invalid_Register);
 
    TCSS_DDI_STATUS : constant Port_Regs_Array :=
       Port_Regs_Array'
@@ -58,7 +58,7 @@ package body HW.GFX.GMA.Connectors.TC is
       DDI_TC2 => Registers.TCSS_DDI_STATUS_2,
       DDI_TC3 => Registers.TCSS_DDI_STATUS_3,
       DDI_TC4 => Registers.TCSS_DDI_STATUS_4,
-      others  => Registers.TCSS_DDI_STATUS_1);
+      others  => Registers.Invalid_Register);
 
    TCSS_DDI_STATUS_HPD_LIVE_STATUS_ALT : constant := 1 * 2 ** 0;
    TCSS_DDI_STATUS_READY               : constant := 1 * 2 ** 2;
@@ -476,7 +476,7 @@ package body HW.GFX.GMA.Connectors.TC is
             Registers.Set_Mask
               (Register => DDI_BUF_CTL (Port),
                Mask     => DDI_BUF_CTL_TC_PHY_OWNERSHIP);
-	 end if;
+         end if;
       else
          -- TODO: also check SDEISR for legacy "connection"
          Registers.Is_Set_Mask
@@ -531,10 +531,10 @@ package body HW.GFX.GMA.Connectors.TC is
          Shift_Left (Buf_Trans.Preshoot_Control, 13);
       DKL_TX_DP20BITMODE : constant := 1 * 2 ** 2;
 
-      function DKL_TX_DPCNTL2_CFG_LOADGENSELECT_TX1 (N : Word32) return Word32
-      is (Shift_Left (N and 16#3#, 3));
-      function DKL_TX_DPCNTL2_CFG_LOADGENSELECT_TX2 (N : Word32) return Word32
-      is (Shift_Left (N and 16#3#, 5));
+      function DKL_TX_DPCNTL2_CFG_LOADGENSELECT_TX1 (N : Word32) return Word32 is
+         (Shift_Left (N and 16#3#, 3));
+      function DKL_TX_DPCNTL2_CFG_LOADGENSELECT_TX2 (N : Word32) return Word32 is
+         (Shift_Left (N and 16#3#, 5));
 
       DKL_TX_DPCNTL2_CFG_LOADGENSELECT_TX1_MASK : constant := 16#18#;
       DKL_TX_DPCNTL2_CFG_LOADGENSELECT_TX2_MASK : constant := 16#60#;

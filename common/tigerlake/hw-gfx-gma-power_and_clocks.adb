@@ -216,7 +216,7 @@ package body HW.GFX.GMA.Power_And_Clocks is
 
    procedure Set_CDClk (CDClk_In : Frequency_Type)
    is
-      subtype PLL_Ratio_Range is natural range 0 .. 68;
+      subtype PLL_Ratio_Range is Word32 range 0 .. 68;
       function Ratio_For_19_2_MHz (CDClk : Frequency_Type) return PLL_Ratio_Range is
       begin
          if Config.Has_CDClk_PLL_Crawl then
@@ -337,11 +337,11 @@ package body HW.GFX.GMA.Power_And_Clocks is
       if Config.Has_CDClk_PLL_Crawl then
          Registers.Write
            (Register => Registers.CDCLK_PLL_ENABLE,
-            Value    => Word32(PLL_Ratio) or
+            Value    => PLL_Ratio or
                         CDCLK_PLL_ENABLE_PLL_ENABLE);
          Registers.Write
            (Register => Registers.CDCLK_PLL_ENABLE,
-            Value    => Word32(PLL_Ratio) or
+            Value    => PLL_Ratio or
                         CDCLK_PLL_ENABLE_PLL_ENABLE or
                         CDCLK_PLL_ENABLE_FREQ_REQ);
 
@@ -352,7 +352,7 @@ package body HW.GFX.GMA.Power_And_Clocks is
             Success  => Success);
          Registers.Write
            (Register => Registers.CDCLK_PLL_ENABLE,
-            Value    => Word32(PLL_Ratio) or
+            Value    => PLL_Ratio or
                         CDCLK_PLL_ENABLE_PLL_ENABLE);
       else
          Registers.Unset_Mask
@@ -364,10 +364,10 @@ package body HW.GFX.GMA.Power_And_Clocks is
 
          Registers.Write
            (Register => Registers.CDCLK_PLL_ENABLE,
-            Value    => Word32(PLL_Ratio));
+            Value    => PLL_Ratio);
          Registers.Write
            (Register => Registers.CDCLK_PLL_ENABLE,
-            Value    => Word32(PLL_Ratio) or CDCLK_PLL_ENABLE_PLL_ENABLE);
+            Value    => PLL_Ratio or CDCLK_PLL_ENABLE_PLL_ENABLE);
          Registers.Wait_Set_Mask
            (Register => Registers.CDCLK_PLL_ENABLE,
             Mask     => CDCLK_PLL_ENABLE_PLL_LOCK,
@@ -390,24 +390,8 @@ package body HW.GFX.GMA.Power_And_Clocks is
 
       Registers.Write
         (Register => Registers.CDCLK_CTL,
-         Value => (case CDClk is
-                   when 168_000_000 => 16#14e#,
-                   when 172_800_000 => 16#158#,
-                   when 179_200_000 => 16#164#,
-                   when 180_000_000 => 16#166#,
-                   when 192_000_000 => 16#17e#,
-                   when 307_200_000 => 16#264#,
-                   when 312_000_000 => 16#26e#,
-                   when 324_000_000 => 16#286#,
-                   when 326_400_000 => 16#28b#,
-                   when 480_000_000 => 16#3be#,
-                   when 552_000_000 => 16#44e#,
-                   when 556_800_000 => 16#458#,
-                   when 648_000_000 => 16#50e#,
-                   when 652_800_000 => 16#518#,
-                   when others      => CDCLK_CTL_CD_FREQ_DECIMAL (CDClk)) or
-                   CDCLK_CD2X_PIPE_NONE or
-                   CD2X);
+         Value    => CDCLK_CTL_CD_FREQ_DECIMAL (CDClk) or
+                     CDCLK_CD2X_PIPE_NONE or CD2X);
 
       PCode.Mailbox_Write
         (MBox     => TGL_PCODE_CDCLK_CONTROL,
@@ -440,7 +424,6 @@ package body HW.GFX.GMA.Power_And_Clocks is
       Module_Type: DRAM_Module_Type;
       Channels : Natural;
       Success : Boolean;
-      Found : Boolean := False;
    begin
       PCode.Mailbox_Read(MBox => TGL_PCODE_MEM_SUBSYSTEM_INFO or
                                  TGL_PCODE_MEM_SS_READ_GLOBAL_INFO,
@@ -484,15 +467,12 @@ package body HW.GFX.GMA.Power_And_Clocks is
                Mask_Unset => BW_BUDDY_TLB_REQ_TIMER_MASK,
                Mask_Set   => 8 * 2 ** 16);
 
-            Found := True;
+            return;
          end if;
-         exit when Found;
       end loop;
 
-      if not Found then
-         Registers.Write (Registers.BW_BUDDY1_CTL, BW_BUDDY_DISABLE);
-         Registers.Write (Registers.BW_BUDDY2_CTL, BW_BUDDY_DISABLE);
-      end if;
+      Registers.Write (Registers.BW_BUDDY1_CTL, BW_BUDDY_DISABLE);
+      Registers.Write (Registers.BW_BUDDY2_CTL, BW_BUDDY_DISABLE);
    end Configure_Bandwidth_Buddy;
 
    ----------------------------------------------------------------------------
@@ -514,7 +494,7 @@ package body HW.GFX.GMA.Power_And_Clocks is
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
-      if Config.Has_CDClk_PLL_Crawl then
+      if Config.Has_XELPD_Power_Domains then
          XELPD.Aux_Off;
       else
          TGL.Aux_Off;
@@ -546,7 +526,7 @@ package body HW.GFX.GMA.Power_And_Clocks is
 
       Combo_Phy.Initialize;
 
-      if Config.Has_CDClk_PLL_Crawl then
+      if Config.Has_XELPD_Power_Domains then
          XELPD.Init_Power;
       else
          TGL.Init_Power;

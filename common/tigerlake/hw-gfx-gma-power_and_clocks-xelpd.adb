@@ -43,6 +43,7 @@ package body HW.GFX.GMA.Power_And_Clocks.XELPD is
    subtype DDI_Domain      is Power_Domain range DDI_A .. DDI_USBC4;
    subtype AUX_Domain      is Power_Domain range AUX_A .. AUX_USBC4;
    subtype AUX_USBC_Domain is Power_Domain range AUX_USBC1 .. AUX_USBC4;
+   subtype Display_Domain  is Power_Domain range AUX_A .. DDI_USBC4;
 
    function Power_Domain_Type (PD : Power_Domain) return Power_Domain_Types is
      (if    PD in PW_Domain  then Power_Well
@@ -232,28 +233,18 @@ package body HW.GFX.GMA.Power_And_Clocks.XELPD is
 
    function Need_PD (PD : Power_Domain; Configs : Pipe_Configs) return Boolean
    is
-      function Any_Port_Is (Port : Active_Port_Type) return Boolean is
-        (Configs (Primary).Port = Port or Configs (Secondary).Port = Port or
-         Configs (Tertiary).Port = Port);
+      generic
+         type T is new Port_Type;
+         First : Port_Type := Port_Type (T'First);
+         Last  : Port_Type := Port_Type (T'Last);
+      function Any_Port_Of return Boolean;
+      function Any_Port_Of return Boolean is
+        (Configs (Primary).Port   in First .. Last or else
+         Configs (Secondary).Port in First .. Last or else
+         Configs (Tertiary).Port  in First .. Last);
 
-      type Port_Array is array (natural range <>) of Active_Port_Type;
-      function Any_Port_In (Ports : Port_Array) return Boolean is
-      begin
-         for P of Ports loop
-            if (Configs (Primary).Port = P) or
-               (Configs (Secondary).Port = P) or
-               (Configs (Tertiary).Port = P)
-            then
-               return True;
-            end if;
-         end loop;
-         return False;
-      end Any_Port_In;
-
-      DDI_UBSC : constant Port_Array :=
-         Port_Array'
-        (USBC1_DP, USBC2_DP, USBC3_DP, USBC4_DP,
-         USBC1_HDMI, USBC2_HDMI, USBC3_HDMI, USBC4_HDMI);
+      function Any_Port_Combo is new Any_Port_Of (T => Combo_Port_Type);
+      function Any_Port_USBC  is new Any_Port_Of (T =>  USBC_Port_Type);
 
       function Num_Active_Pipes return Natural is
          Count : Natural := 0;
@@ -265,34 +256,33 @@ package body HW.GFX.GMA.Power_And_Clocks.XELPD is
          end loop;
          return Count;
       end Num_Active_Pipes;
+
+      function PW_Need_PD (PD : PW_Domain) return Boolean is
+        (case PD is
+            when PW1 => True,
+            when PW2 => Any_Port_USBC,
+            when PWA => Num_Active_Pipes >= 1,
+            when PWB => Num_Active_Pipes >= 2,
+			when PWC => Num_Active_Pipes >= 3,
+            when PWD => Num_Active_Pipes >= 4);
+
+      function Port_Need_PD (PD : Display_Domain; Port : Port_Type) return Boolean is
+        (case PD is
+            when DDI_A | AUX_A         => Port in DP1 | HDMI1 | eDP,
+            when DDI_B | AUX_B         => Port in DP2 | HDMI2,
+            when DDI_USBC1 | AUX_USBC1 => Port in USBC1_DP | USBC1_HDMI,
+            when DDI_USBC2 | AUX_USBC2 => Port in USBC2_DP | USBC2_HDMI,
+            when DDI_USBC3 | AUX_USBC3 => Port in USBC3_DP | USBC3_HDMI,
+            when DDI_USBC4 | AUX_USBC4 => Port in USBC4_DP | USBC4_HDMI);
+
+      function Display_Need_PD (PD : Display_Domain) return Boolean is
+        (Port_Need_PD (PD, Configs (Primary).Port)   or else
+         Port_Need_PD (PD, Configs (Secondary).Port) or else
+         Port_Need_PD (PD, Configs (Tertiary).Port));
    begin
-      case PD is
-         when PW1 =>
-            return True;
-         when PW2 =>
-            return Any_Port_In (DDI_UBSC);
-         when PWA =>
-            return Num_Active_Pipes >= 1;
-         when PWB =>
-            return Num_Active_Pipes >= 2;
-         when PWC =>
-            return Num_Active_Pipes >= 3;
-         when PWD =>
-            return Num_Active_Pipes >= 4;
-         when DDI_A | AUX_A =>
-            return Any_Port_Is (DP1) or else Any_Port_Is (HDMI1) or else
-                   Any_Port_Is (eDP);
-         when DDI_B | AUX_B =>
-            return Any_Port_Is (DP2) or else Any_Port_Is (HDMI2);
-         when DDI_USBC1 | AUX_USBC1 =>
-            return Any_Port_Is (USBC1_DP) or Any_Port_Is (USBC1_HDMI);
-         when DDI_USBC2 | AUX_USBC2 =>
-            return Any_Port_Is (USBC2_DP) or Any_Port_Is (USBC2_HDMI);
-         when DDI_USBC3 | AUX_USBC3 =>
-            return Any_Port_Is (USBC3_DP) or Any_Port_Is (USBC3_HDMI);
-         when DDI_USBC4 | AUX_USBC4 =>
-            return Any_Port_Is (USBC4_DP) or Any_Port_Is (USBC4_HDMI);
-      end case;
+      return (case PD is
+         when PW_Domain      => PW_Need_PD (PD),
+         when Display_Domain => Display_Need_PD (PD));
    end Need_PD;
 
    procedure Aux_Off is
