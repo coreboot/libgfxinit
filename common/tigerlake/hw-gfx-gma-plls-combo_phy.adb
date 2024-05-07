@@ -58,7 +58,7 @@ package body HW.GFX.GMA.PLLs.Combo_Phy is
       DCO_Fraction   : Word32;
       PDiv           : PDiv_Range;
       KDiv           : KDiv_Range;
-      QDiv_Mode      : natural range 0 .. 1;
+      QDiv_Mode      : Natural range 0 .. 1;
       QDiv_Ratio     : QDiv_Range;
    end record;
 
@@ -130,8 +130,7 @@ package body HW.GFX.GMA.PLLs.Combo_Phy is
       Success  :    out Boolean)
    is
       subtype Div_Range is Pos64 range 2 .. 102;
-      subtype Candidate_Index is Positive range 1 .. 46;
-      type Candidate_Array is array (Candidate_Index) of Div_Range;
+      type Candidate_Array is array (Positive range <>) of Div_Range;
       Candidates : constant Candidate_Array := Candidate_Array'
         (2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 30, 32, 36, 40, 42, 44,
          48, 50, 52, 54, 56, 60, 64, 66, 68, 70, 72, 76, 78, 80, 84, 88, 90,
@@ -139,8 +138,7 @@ package body HW.GFX.GMA.PLLs.Combo_Phy is
       AFE_Clk : constant Int64 := Dotclock * 5;
       DCO_Mid : constant Int64 := (DCO_Range'First + DCO_Range'Last) / 2;
       Best_DCO_Centrality : Int64 := Frequency_Type'Last;
-      Best_Div_Index : Candidate_Index := Candidate_Index'First;
-      Best_Div : Div_Range;
+      Best_Div : Div_Range := Div_Range'First;
       Best_DCO : DCO_Range := DCO_Range'First;
       DCO_Found : Boolean := False;
       PDiv : PDiv_Range := PDiv_Range'First;
@@ -155,11 +153,11 @@ package body HW.GFX.GMA.PLLs.Combo_Phy is
                  KDiv => KDiv,
                  QDiv_Mode => 0,
                  QDiv_Ratio => QDiv_Range'First);
-      for Index in Candidate_Index loop
+      for Div of Candidates loop
          pragma Loop_Invariant
            (Best_DCO >= DCO_Range'First and Best_DCO <= DCO_Range'Last);
          declare
-            DCO : constant Int64 := AFE_Clk * Candidates(Index);
+            DCO : constant Int64 := AFE_Clk * Div;
             DCO_Centrality : constant Int64 := abs (DCO - DCO_Mid);
          begin
             if DCO <= DCO_Range'Last and DCO >= DCO_Range'First and
@@ -167,7 +165,7 @@ package body HW.GFX.GMA.PLLs.Combo_Phy is
             then
                DCO_Found := True;
                Best_DCO_Centrality := DCO_Centrality;
-               Best_Div_Index := Index;
+               Best_Div := Div;
                Best_DCO := DCO;
             end if;
          end;
@@ -177,9 +175,7 @@ package body HW.GFX.GMA.PLLs.Combo_Phy is
          return;
       end if;
 
-      Best_Div := Candidates(Best_Div_Index);
       if Best_Div mod 2 = 0 then
-         pragma Assert (Best_Div > 1);
          if Best_Div = 2 then
             PDiv := 2;
             QDiv := 1;

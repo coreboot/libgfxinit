@@ -26,8 +26,8 @@ is
    type PLL_Type is (PLL_Unknown, PLL_Combo_Phy, PLL_DKL);
    function Port_PLL_Type (Port : GPU_Port) return PLL_Type is
      (case Port is
-         when DIGI_A | DIGI_B | DIGI_C => PLL_Combo_Phy,
-         when DDI_TC1 | DDI_TC2 | DDI_TC3 | DDI_TC4 | DDI_TC5 | DDI_TC6 => PLL_DKL,
+         when Combo_Port => PLL_Combo_Phy,
+         when USBC_Port => PLL_DKL,
          when others => PLL_Unknown);
 
    type Count_Range is new Natural range 0 .. 2;
@@ -64,25 +64,16 @@ is
       PLL      :    out T;
       Success  :    out Boolean)
    is
-      function Port_PLL_Match (Port : GPU_Port; PLL : T) return Boolean
-      is
-      begin
-         if Port in Combo_Port and PLL in Combo_DPLLs then
-            return True;
-         elsif Port in USBC_Port and PLL in DKL_DPLLs then
-            if (Port = DDI_TC1 and PLL = TCPLL1) or
-               (Port = DDI_TC2 and PLL = TCPLL2) or
-               (Port = DDI_TC3 and PLL = TCPLL3) or
-               (Port = DDI_TC4 and PLL = TCPLL4) or
-               (Port = DDI_TC5 and PLL = TCPLL5) or
-               (Port = DDI_TC6 and PLL = TCPLL6)
-            then
-               return True;
-            end if;
-         end if;
-
-         return False;
-      end Port_PLL_Match;
+      function Port_PLL_Match (Port : GPU_Port; PLL : T) return Boolean is
+        (case Port is
+            when Combo_Port => PLL in Combo_DPLLs,
+            when DDI_TC1    => PLL = TCPLL1,
+            when DDI_TC2    => PLL = TCPLL2,
+            when DDI_TC3    => PLL = TCPLL3,
+            when DDI_TC4    => PLL = TCPLL4,
+            when DDI_TC5    => PLL = TCPLL5,
+            when DDI_TC6    => PLL = TCPLL6,
+            when others     => False);
 
       function Config_Matches (PE : HW.GFX.GMA.PLLs.PLL_State) return Boolean
       is
@@ -110,12 +101,10 @@ is
       for P in Configurable_DPLLs loop
          if PLLs (P).Use_Count = 0 and Port_PLL_Match (Port_Cfg.Port, P) then
             PLL := P;
-            if P in Combo_DPLLs then
-               Combo_Phy.On (PLL, Port_Cfg, Success);
-            else--if P in DKL_DPLLs then
-               DKL.On (PLL, Port_Cfg, Success);
-            end if;
-
+            case P is
+               when Combo_DPLLs => Combo_Phy.On (PLL, Port_Cfg, Success);
+               when DKL_DPLLs   => DKL.On (PLL, Port_Cfg, Success);
+            end case;
             if Success then
                PLLs (PLL) :=
                  (Use_Count   => 1,
@@ -139,11 +128,11 @@ is
          PLLs (PLL).Use_Count := 0;
       end if;
 
-      if PLL in Combo_DPLLs then
-         Combo_Phy.Free (PLL);
-      elsif PLL in DKL_DPLLs then
-         DKL.Free (PLL);
-      end if;
+      case PLL is
+         when Combo_DPLLs => Combo_Phy.Free (PLL);
+         when DKL_DPLLs   => DKL.Free (PLL);
+         when Invalid_PLL => null;
+      end case;
    end Free;
 
    procedure All_Off is

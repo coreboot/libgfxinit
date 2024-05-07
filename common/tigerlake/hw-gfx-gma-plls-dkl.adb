@@ -43,32 +43,23 @@ package body HW.GFX.GMA.PLLs.DKL is
       when TCPLL5 => Val * 2 ** 0,
       when TCPLL6 => Val * 2 ** 8);
 
-   function DKL_PLL_ENABLE (P : DKL_DPLLs) return Registers.Registers_Index
-   is
-      type PLL_Enable_Regs_Array is array (DKL_DPLLs) of Registers.Registers_Index;
-      DKL_ENABLE : constant PLL_Enable_Regs_Array :=
-         PLL_Enable_Regs_Array'
-        (TCPLL1 => Registers.MGPLL1_ENABLE,
-         TCPLL2 => Registers.MGPLL2_ENABLE,
-         TCPLL3 => Registers.MGPLL3_ENABLE,
-         TCPLL4 => Registers.MGPLL4_ENABLE,
-         TCPLL5 => Registers.MGPLL5_ENABLE,
-         TCPLL6 => Registers.MGPLL6_ENABLE);
-      DKL_NEW_TYPE_C_ENABLE : constant PLL_Enable_Regs_Array :=
-         PLL_Enable_Regs_Array'
-        (TCPLL1 => Registers.PORTTC1_PLL1_ENABLE,
-         TCPLL2 => Registers.PORTTC2_PLL1_ENABLE,
-         TCPLL3 => Registers.PORTTC3_PLL1_ENABLE,
-         TCPLL4 => Registers.PORTTC4_PLL1_ENABLE,
-         TCPLL5 => Registers.MGPLL5_ENABLE,
-         TCPLL6 => Registers.MGPLL6_ENABLE);
-   begin
-      if Config.Has_New_Type_C_PLL_Enable then
-         return DKL_NEW_TYPE_C_ENABLE (P);
+   function DKL_PLL_ENABLE (P : DKL_DPLLs) return Registers.Registers_Index is
+     (if Config.Has_New_Type_C_PLL_Enable then
+        (case P is
+            when TCPLL1 => Registers.PORTTC1_PLL1_ENABLE,
+            when TCPLL2 => Registers.PORTTC2_PLL1_ENABLE,
+            when TCPLL3 => Registers.PORTTC3_PLL1_ENABLE,
+            when TCPLL4 => Registers.PORTTC4_PLL1_ENABLE,
+            when TCPLL5 => Registers.MGPLL5_ENABLE,
+            when TCPLL6 => Registers.MGPLL6_ENABLE)
       else
-         return DKL_ENABLE (P);
-      end if;
-   end DKL_PLL_ENABLE;
+        (case P is
+            when TCPLL1 => Registers.MGPLL1_ENABLE,
+            when TCPLL2 => Registers.MGPLL2_ENABLE,
+            when TCPLL3 => Registers.MGPLL3_ENABLE,
+            when TCPLL4 => Registers.MGPLL4_ENABLE,
+            when TCPLL5 => Registers.MGPLL5_ENABLE,
+            when TCPLL6 => Registers.MGPLL6_ENABLE));
 
    type PLL_Regs_Record is record
       DKL_REFCLKIN_CTL        : Registers.Registers_Index;

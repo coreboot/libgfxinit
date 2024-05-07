@@ -19,7 +19,7 @@ is
 
    -- XXX: Types should be private (but that triggers a bug in SPARK GPL 2016)
    type T is (Invalid_PLL, DPLL0, DPLL1, TCPLL1, TCPLL2, TCPLL3, TCPLL4, TCPLL5, TCPLL6);
-   subtype Configurable_DPLLs is T range DPLL0 .. TCPLL6;
+   subtype Configurable_DPLLs is T range T'Succ (Invalid_PLL) .. T'Last;
    subtype Combo_DPLLs is T range DPLL0 .. DPLL1;
    subtype DKL_DPLLs is T range TCPLL1 .. TCPLL6;
    Invalid : constant T := Invalid_PLL;
