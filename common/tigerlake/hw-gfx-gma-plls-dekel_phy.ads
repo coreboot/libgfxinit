@@ -15,7 +15,7 @@
 with HW.Debug;
 with GNAT.Source_Info;
 
-private package HW.GFX.GMA.PLLs.DKL is
+private package HW.GFX.GMA.PLLs.Dekel_Phy is
 
    procedure On
      (PLL      : in     DKL_DPLLs;
@@ -26,4 +26,4 @@ private package HW.GFX.GMA.PLLs.DKL is
 
    procedure All_Off;
 
-end HW.GFX.GMA.PLLs.DKL;
+end HW.GFX.GMA.PLLs.Dekel_Phy;

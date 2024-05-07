@@ -16,5 +16,5 @@ gfxinit-y += hw-gfx-gma-plls.adb
 gfxinit-y += hw-gfx-gma-plls.ads
 gfxinit-y += hw-gfx-gma-plls-combo_phy.adb
 gfxinit-y += hw-gfx-gma-plls-combo_phy.ads
-gfxinit-y += hw-gfx-gma-plls-dkl.adb
-gfxinit-y += hw-gfx-gma-plls-dkl.ads
+gfxinit-y += hw-gfx-gma-plls-dekel_phy.adb
+gfxinit-y += hw-gfx-gma-plls-dekel_phy.ads

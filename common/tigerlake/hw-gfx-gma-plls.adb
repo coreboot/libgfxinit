@@ -15,7 +15,7 @@
 with HW.Debug;
 with GNAT.Source_Info;
 with HW.GFX.GMA.PLLs.Combo_Phy;
-with HW.GFX.GMA.PLLs.DKL;
+with HW.GFX.GMA.PLLs.Dekel_Phy;
 with HW.GFX.GMA.Config;
 
 package body HW.GFX.GMA.PLLs
@@ -103,7 +103,7 @@ is
             PLL := P;
             case P is
                when Combo_DPLLs => Combo_Phy.On (PLL, Port_Cfg, Success);
-               when DKL_DPLLs   => DKL.On (PLL, Port_Cfg, Success);
+               when DKL_DPLLs   => Dekel_Phy.On (PLL, Port_Cfg, Success);
             end case;
             if Success then
                PLLs (PLL) :=
@@ -130,7 +130,7 @@ is
 
       case PLL is
          when Combo_DPLLs => Combo_Phy.Free (PLL);
-         when DKL_DPLLs   => DKL.Free (PLL);
+         when DKL_DPLLs   => Dekel_Phy.Free (PLL);
          when Invalid_PLL => null;
       end case;
    end Free;
@@ -139,7 +139,7 @@ is
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
       Combo_Phy.All_Off;
-      DKL.All_Off;
+      Dekel_Phy.All_Off;
    end All_Off;
 
    function Register_Value (PLL : T) return Word32

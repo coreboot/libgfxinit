@@ -16,7 +16,7 @@ with HW.GFX.GMA.Config;
 with HW.GFX.GMA.Registers;
 with HW.GFX.GMA.Power_And_Clocks;
 
-package body HW.GFX.GMA.PLLs.DKL is
+package body HW.GFX.GMA.PLLs.Dekel_Phy is
 
    use type HW.Word64;
 
@@ -397,4 +397,4 @@ package body HW.GFX.GMA.PLLs.DKL is
       end loop;
    end All_Off;
 
-end HW.GFX.GMA.PLLs.DKL;
+end HW.GFX.GMA.PLLs.Dekel_Phy;
