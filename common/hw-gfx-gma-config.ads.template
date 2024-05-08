@@ -321,6 +321,9 @@ private package HW.GFX.GMA.Config is
    ----------- Combo Phy --------
    Has_TGL_Buffer_Translations   : <tglbool> := CPU_Tigerlake;
 
+   -----Early Graphics Init -----
+   Romstage_GFX_Init             : <tglbool> := CPU_Alderlake;
+
    ----------------------------------------------------------------------------
 
    Max_Pipe : <ilkvar> Pipe_Index :=

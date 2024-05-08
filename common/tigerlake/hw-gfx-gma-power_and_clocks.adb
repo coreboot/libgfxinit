@@ -328,7 +328,7 @@ package body HW.GFX.GMA.Power_And_Clocks is
          Wait_Ready => True,
          Success    => Success);
 
-      if not Success and not Config.CPU_Alderlake then
+      if not Success and not Config.Romstage_GFX_Init then
          pragma Debug (Debug.Put_Line
                        ("ERROR: PCODE not ready for frequency change."));
          return;
