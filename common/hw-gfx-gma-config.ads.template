@@ -563,7 +563,9 @@ private package HW.GFX.GMA.Config is
    function Is_Alder_Lake_N (Device_ID : Word16) return Boolean is
      (Device_Id = 16#46d0# or
       Device_Id = 16#46d1# or
-      Device_Id = 16#46d2#);
+      Device_Id = 16#46d2# or
+      Device_Id = 16#46d3# or
+      Device_Id = 16#46d4#);
    function Is_Raptor_Lake_P (Device_ID : Word16) return Boolean is
      (Device_Id = 16#a720# or
       Device_Id = 16#a721# or
