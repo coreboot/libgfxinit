@@ -341,6 +341,10 @@ private package HW.GFX.GMA.Config is
    Last_Digital_Port : <hswsklvar> Digital_Port :=
      (if Has_DDI_E then DIGI_E else DIGI_C);
 
+   Last_TC_Port   : constant TGL_Digital_Port :=
+     (if not Tigerlake_On  then DIGI_E    -- Makes 'First..Last_TC_Port empty.
+                           else DDI_TC4);
+
    ----------------------------------------------------------------------------
 
    type FDI_Per_Port is array (Port_Type) of Boolean;
