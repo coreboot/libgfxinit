@@ -72,27 +72,28 @@ is
       DP1,
       DP2,
       DP3,
-      HDMI1, -- or DVI
-      HDMI2, -- or DVI
-      HDMI3, -- or DVI
+      DP_TC1,     -- DP_TC ports use Type-C lanes to
+      DP_TC2,     -- implement physical DP or DP++ ports.
+      DP_TC3,
+      DP_TC4,
+      HDMI1,      -- HDMI ports share lanes with their DP siblings.
+      HDMI2,      -- They can also be implemented as DVI.
+      HDMI3,
+      HDMI_TC1,   -- HDMI_TC use Type-C lanes to implement
+      HDMI_TC2,   -- physical HDMI, DVI or the HDMI part of DP++.
+      HDMI_TC3,
+      HDMI_TC4,
       Analog,
-      USBC1_DP,
-      USBC2_DP,
-      USBC3_DP,
-      USBC4_DP,
-      USBC5_DP,
-      USBC6_DP,
-      USBC1_HDMI,
-      USBC2_HDMI,
-      USBC3_HDMI,
-      USBC4_HDMI,
-      USBC5_HDMI,
-      USBC6_HDMI);
+      USBC1,      -- Type-C lanes used to implement
+      USBC2,      -- physical USB-C ports with DP Alt Mode.
+      USBC3,
+      USBC4);
    subtype Active_Port_Type is Port_Type
       range Port_Type'Succ (Disabled) .. Port_Type'Last;
    subtype Internal_Port_Type is Port_Type range LVDS .. eDP;
-   subtype Combo_Port_Type is Port_Type range DP1 .. HDMI3;
-   subtype USBC_Port_Type is Port_Type range USBC1_DP .. USBC6_HDMI;
+   subtype Physical_DP_Ports is Port_Type range DP1 .. DP_TC4;
+   subtype Physical_HDMI_Ports is Port_Type range HDMI1 .. HDMI_TC4;
+   subtype Physical_USBC_Ports is Port_Type range USBC1 .. USBC4;
 
    type Cursor_Mode is (No_Cursor, ARGB_Cursor);
    type Cursor_Size is (Cursor_64x64, Cursor_128x128, Cursor_256x256);

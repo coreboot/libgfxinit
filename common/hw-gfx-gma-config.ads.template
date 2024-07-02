@@ -337,7 +337,8 @@ private package HW.GFX.GMA.Config is
      (Disabled       => False,
       eDP            => False,
       LVDS           => Gen_Ironlake,
-      DP1 .. HDMI3   => Gen_Ironlake,
+      DP1 .. DP3     => Gen_Ironlake,
+      HDMI1 .. HDMI3 => Gen_Ironlake,
       Analog         => Has_PCH_DAC,
       others         => False);
 
