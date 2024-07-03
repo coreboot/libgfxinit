@@ -14,7 +14,6 @@
 
 with HW.GFX.GMA.Connector_Info;
 with HW.GFX.GMA.DP_Info;
-with HW.GFX.GMA.Registers;
 
 with HW.Debug;
 
@@ -172,24 +171,11 @@ is
          Port_Cfg.Mode.H_Visible = Port_Cfg'Old.Mode.H_Visible and
          Port_Cfg.Mode.V_Visible = Port_Cfg'Old.Mode.V_Visible
    is
-      FDI_TX_CTL_FDI_TX_ENABLE : constant := 1 * 2 ** 31;
-      Enabled : Boolean;
    begin
       Port_Cfg.FDI.Receiver_Caps.Max_Link_Rate    := DP_Bandwidth_2_7;
       Port_Cfg.FDI.Receiver_Caps.Max_Lane_Count   :=
          Config.FDI_Lane_Count (Port_Cfg.Port);
       Port_Cfg.FDI.Receiver_Caps.Enhanced_Framing := True;
-
-      if Config.Has_FDI_C and then Port_Cfg.Port = DIGI_C then
-         -- if DIGI_D enabled: (FDI names are off by one)
-         Registers.Is_Set_Mask
-           (Register => Registers.FDI_TX_CTL_C,
-            Mask     => FDI_TX_CTL_FDI_TX_ENABLE,
-            Result   => Enabled);
-         if Enabled then
-            Port_Cfg.FDI.Receiver_Caps.Max_Lane_Count := DP_Lane_Count_2;
-         end if;
-      end if;
 
       DP_Info.Preferred_Link_Setting (Port_Cfg.FDI, Port_Cfg.Mode, Success);
    end Configure_FDI_Link;
