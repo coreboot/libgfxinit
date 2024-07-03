@@ -14,14 +14,24 @@
 
 private package HW.GFX.GMA.Connectors is
 
+   pragma Warnings (GNATprove, Off, "unused variable ""P*""",
+                    Reason => "Needed for a common interface");
+   pragma Warnings (GNATprove, Off, """P*"" is not modified, could be IN",
+                    Reason => "Needed for a common interface");
    pragma Warnings (GNATprove, Off, "subprogram ""*"" has no effect",
                     Reason => "Only effects some platforms");
    procedure Post_Reset_Off;
    procedure Initialize;
+   procedure Prepare
+     (Port     : in     Active_Port_Type;
+      Port_Cfg : in out Port_Config;
+      Success  :    out Boolean)
+   with
+      Post => Port_Cfg.Mode = Port_Cfg'Old.Mode;
+
+   pragma Warnings (GNATprove, On, """P*"" is not modified, could be IN");
    pragma Warnings (GNATprove, On, "subprogram ""*"" has no effect");
 
-   pragma Warnings (GNATprove, Off, "unused variable ""P*""",
-                    Reason => "Needed for a common interface");
    procedure Pre_On
      (Pipe        : in     Pipe_Index;
       Port_Cfg    : in     Port_Config;

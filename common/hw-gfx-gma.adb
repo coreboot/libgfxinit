@@ -162,6 +162,10 @@ is
          Connector_Info.Preferred_Link_Setting (Port_Cfg, Success);
       end if;
 
+      if Success then
+         Connectors.Prepare (Pipe_Cfg.Port, Port_Cfg, Success);
+      end if;
+
       -- loop over all possible DP-lane configurations
       -- (non-DP ports use a single fake configuration)
       while Success loop
@@ -217,6 +221,9 @@ is
          end if;
 
          Connector_Info.Next_Link_Setting (Port_Cfg, Success);
+         exit when not Success;
+
+         Connectors.Prepare (Pipe_Cfg.Port, Port_Cfg, Success);
       end loop;
 
       if Success then

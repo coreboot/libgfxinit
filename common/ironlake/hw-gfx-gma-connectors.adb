@@ -32,6 +32,19 @@ is
    procedure Post_Reset_Off is null;
    procedure Initialize is null;
 
+   ----------------------------------------------------------------------------
+
+   procedure Prepare
+     (Port     : in     Active_Port_Type;
+      Port_Cfg : in out Port_Config;
+      Success  :    out Boolean)
+   is
+   begin
+      Success := True;
+   end Prepare;
+
+   ----------------------------------------------------------------------------
+
    function Is_Internal (Port_Cfg : Port_Config) return Boolean
    is
    begin

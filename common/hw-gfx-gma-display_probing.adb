@@ -19,6 +19,7 @@ with HW.GFX.GMA.Config_Helpers;
 with HW.GFX.GMA.I2C;
 with HW.GFX.GMA.DP_Aux_Ch;
 with HW.GFX.GMA.Panel;
+with HW.GFX.GMA.Connectors;
 with HW.GFX.GMA.Port_Detect;
 with HW.GFX.GMA.Power_And_Clocks;
 

@@ -33,6 +33,19 @@ package body HW.GFX.GMA.Connectors is
       DDI.Initialize;
    end Initialize;
 
+   ----------------------------------------------------------------------------
+
+   procedure Prepare
+     (Port     : in     Active_Port_Type;
+      Port_Cfg : in out Port_Config;
+      Success  :    out Boolean)
+   is
+   begin
+      Success := True;
+   end Prepare;
+
+   ----------------------------------------------------------------------------
+
    procedure Pre_On
      (Pipe     : in     Pipe_Index;
       Port_Cfg : in     Port_Config;
