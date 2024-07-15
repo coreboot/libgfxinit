@@ -373,7 +373,10 @@ package body HW.GFX.GMA.Transcoder is
       end if;
 
       if Config.Has_Pipe_DDI_Func then
-         Registers.Write (Trans.DDI_FUNC_CTL, 0);
+         Registers.Is_Set_Mask (Trans.DDI_FUNC_CTL, DDI_FUNC_CTL_ENABLE, Enabled);
+         if Enabled then
+            Registers.Write (Trans.DDI_FUNC_CTL, 0);
+         end if;
       end if;
    end Trans_Off;
 
