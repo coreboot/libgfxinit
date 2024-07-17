@@ -614,8 +614,6 @@ is
       end if;
 
       Panel.Setup_PP_Sequencer;
-      Port_Detect.Initialize;
-      Connectors.Initialize;
 
       if Clean_State then
          Power_And_Clocks.Pre_All_Off;
@@ -635,6 +633,8 @@ is
 
       -------------------- Now restart from a clean state ---------------------
       Power_And_Clocks.Initialize;
+      Port_Detect.Initialize;
+      Connectors.Initialize;
 
       if Config.Has_PCH then
          Registers.Unset_And_Set_Mask
