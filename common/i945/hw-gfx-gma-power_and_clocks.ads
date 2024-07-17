@@ -34,6 +34,10 @@ private package HW.GFX.GMA.Power_And_Clocks is
 
    procedure Power_Set_To (Configs : Pipe_Configs) is null;
 
+   pragma Warnings (GNATprove, Off, "unused variable ""Port""",
+                    Reason => "Needed for a common interface");
+   procedure Power_Up (Port : Active_Port_Type; Success : out Boolean);
+   pragma Warnings (GNATprove, On, "unused variable ""Port""");
    procedure Power_Up (Old_Configs, New_Configs : Pipe_Configs) is null;
 
    procedure Power_Down (Old_Configs, Tmp_Configs, New_Configs : Pipe_Configs)

@@ -73,13 +73,9 @@ is
       for I in 1 .. 2 loop
          if Config_Helpers.To_Display_Type (Port) = DP then
             -- May need power and CDClk to read EDID
-            declare
-               Temp_Configs : Pipe_Configs := Cur_Configs;
-            begin
-               Temp_Configs (Primary).Port := Port;
-               Power_And_Clocks.Power_Up (Cur_Configs, Temp_Configs);
-               Power_And_Clocks.Enable_CDClk;
-            end;
+            Power_And_Clocks.Power_Up (Port, Success);
+            exit when not Success;
+            Power_And_Clocks.Enable_CDClk;
 
             declare
                DP_Port : constant GMA.DP_Port :=
@@ -134,7 +130,7 @@ is
       Success  :    out Boolean)
    with Pre => True
    is
-      Raw_EDID : EDID.Raw_EDID_Data := (others => 16#00#);
+      Raw_EDID : EDID.Raw_EDID_Data with Relaxed_Initialization;
    begin
       Success := Config.Valid_Port (Port);
 

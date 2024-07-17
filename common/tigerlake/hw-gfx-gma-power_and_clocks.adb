@@ -52,6 +52,11 @@ package body HW.GFX.GMA.Power_And_Clocks is
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
    end Power_Set_To;
 
+   procedure Power_Up (Port : Active_Port_Type; Success : out Boolean) is
+   begin
+      Success := False;
+   end Power_Up;
+
    procedure Power_Up (Old_Configs, New_Configs : Pipe_Configs) is
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));

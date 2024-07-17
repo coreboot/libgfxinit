@@ -128,4 +128,9 @@ package body HW.GFX.GMA.Power_And_Clocks is
       CDClk_Switch := False;
    end Limit_Dotclocks;
 
+   procedure Power_Up (Port : Active_Port_Type; Success : out Boolean) is
+   begin
+      Success := True;
+   end Power_Up;
+
 end HW.GFX.GMA.Power_And_Clocks;

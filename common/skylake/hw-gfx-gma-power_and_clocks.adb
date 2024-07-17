@@ -409,6 +409,18 @@ package body HW.GFX.GMA.Power_And_Clocks is
       end loop;
    end Power_Set_To;
 
+   procedure Power_Up (Port : Active_Port_Type; Success : out Boolean) is
+   begin
+      case Port is
+         when eDP          => PD_On (DDI_AE);
+         when DP1 | HDMI1  => PD_On (PW2); PD_On (DDI_B);
+         when DP2 | HDMI2  => PD_On (PW2); PD_On (DDI_C);
+         when DP3 | HDMI3  => PD_On (PW2); PD_On (DDI_D);
+         when others       => null;
+      end case;
+      Success := True;
+   end Power_Up;
+
    procedure Power_Up (Old_Configs, New_Configs : Pipe_Configs) is
    begin
       for PD in Dynamic_Domain loop

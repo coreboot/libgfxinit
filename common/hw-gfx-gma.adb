@@ -155,6 +155,10 @@ is
         (Port_Cfg, Pipe, Pipe_Cfg.Port, Pipe_Cfg.Mode, Success);
 
       if Success then
+         Power_And_Clocks.Power_Up (Pipe_Cfg.Port, Success);
+      end if;
+
+      if Success then
          Connector_Info.Preferred_Link_Setting (Port_Cfg, Success);
       end if;
 

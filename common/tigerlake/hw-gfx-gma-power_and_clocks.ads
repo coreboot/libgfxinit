@@ -37,6 +37,7 @@ private package HW.GFX.GMA.Power_And_Clocks is
    procedure Enable_CDClk is null;
 
    procedure Power_Set_To (Configs : Pipe_Configs);
+   procedure Power_Up (Port : Active_Port_Type; Success : out Boolean);
    procedure Power_Up (Old_Configs, New_Configs : Pipe_Configs);
    procedure Power_Down (Old_Configs, Tmp_Configs, New_Configs : Pipe_Configs);
    pragma Warnings (On, "subprogram ""*"" has no effect");

@@ -334,6 +334,14 @@ package body HW.GFX.GMA.Power_And_Clocks is
       end if;
    end Power_Set_To;
 
+   procedure Power_Up (Port : Active_Port_Type; Success : out Boolean) is
+   begin
+      if Port /= eDP then
+         PDW_On;
+      end if;
+      Success := True;
+   end Power_Up;
+
    procedure Power_Up (Old_Configs, New_Configs : Pipe_Configs) is
    begin
       if not Need_PDW (Old_Configs) and Need_PDW (New_Configs) then

@@ -30,7 +30,8 @@ is
       Port     : in     Active_Port_Type;
       Success  :    out Boolean)
    with
-      Post => (if Success then EDID.Valid (Raw_EDID));
+      Relaxed_Initialization => Raw_EDID,
+      Post => (if Success then Raw_EDID'Initialized and EDID.Valid (Raw_EDID));
 
    procedure Scan_Ports
      (Configs     :    out Pipe_Configs;
