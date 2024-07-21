@@ -38,8 +38,9 @@ private package HW.GFX.GMA.Config is
          when Tigerlake => Alderlake);
    CPU_Var_Last : constant CPU_Variant :=
      (case Gen is
-         when Haswell | Skylake | Tigerlake  => ULX,
-         when others                         => Normal);
+         when Haswell | Skylake  => ULX,
+         when Tigerlake          => ULT,
+         when others             => Normal);
    subtype Gen_CPU_Type is CPU_Type range CPU_First .. CPU_Last;
    subtype Gen_CPU_Variant is CPU_Variant range Normal .. CPU_Var_Last;
 
@@ -205,8 +206,8 @@ private package HW.GFX.GMA.Config is
    Has_Presence_Straps           : <genbool> := not Gen_Broxton and not Gen_I945;
    Is_ULT                        : <hswskltglbool> :=
      ((Gen_Haswell or Gen_Skylake or Gen_Tigerlake) and then CPU_Var = ULT);
-   Is_ULX                        : <hswskltglbool> :=
-     ((Gen_Haswell or Gen_Skylake or Gen_Tigerlake) and then CPU_Var = ULX);
+   Is_ULX                        : <hswsklbool> :=
+     ((Gen_Haswell or Gen_Skylake) and then CPU_Var = ULX);
    Is_LP                         : <hswskltglbool> := Is_ULT or Is_ULX;
 
    ---------- CPU pipe: ---------
@@ -666,15 +667,17 @@ private package HW.GFX.GMA.Config is
                                     Is_Kaby_Lake_Y_AML (Device_Id) or
                                     Is_Coffee_Lake_Y_AML (Device_Id)),
          when Tigerlake    => (case CPU_Var is
-                                when Normal =>
-                                   Is_Tiger_Lake_H (Device_Id),
-                                when ULT | ULX =>
-                                   Is_Tiger_Lake_U (Device_Id)),
+                                 when Normal =>
+                                    Is_Tiger_Lake_H (Device_Id),
+                                 when ULT =>
+                                    Is_Tiger_Lake_U (Device_Id),
+                                 when ULX =>
+                                    False),
          when Alderlake    => (case CPU_Var is
-                                when Normal =>
-                                   False,
-                                when ULT | ULX =>
-                                   Is_Alder_Lake (Device_Id)));
+                                 when ULT =>
+                                    Is_Alder_Lake (Device_Id),
+                                 when others =>
+                                    False));
 
    function Compatible_GPU (Device_Id : Word16) return Boolean is
      (Is_GPU (Device_Id, CPU, CPU_Var));
