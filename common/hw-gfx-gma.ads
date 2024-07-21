@@ -35,7 +35,15 @@ is
    subtype GTT_Range is Natural range 0 .. 16#8_0000# - 1;
    GTT_Rotation_Offset : constant GTT_Range := GTT_Range'Last / 2 + 1;
 
-   type Generation is (I945, G45, Ironlake, Haswell, Broxton, Skylake, Tigerlake);
+   type Generation is
+     (I945,
+      G45,
+      Ironlake,
+      Haswell,
+      Broxton,
+      Skylake,
+      Tigerlake,
+      AlderlakeP);
 
    type CPU_Type is
      (I945G,
@@ -54,7 +62,7 @@ is
       Skylake,
       Kabylake,
       Tigerlake,
-      Alderlake);
+      AlderlakeP);
 
    type CPU_Variant is (Normal, ULT, ULX);
 

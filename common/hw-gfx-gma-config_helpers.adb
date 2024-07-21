@@ -58,7 +58,7 @@ is
                      when Primary   => DIGI_B,
                      when Secondary => DIGI_C,
                      when Tertiary  => DIGI_D)),
-            when Tigerlake =>
+            when Tigerlake | AlderlakeP =>
                  (case Port is
                      when DP_TC1 | HDMI_TC1 | USBC1   => DDI_TC1,
                      when DP_TC2 | HDMI_TC2 | USBC2   => DDI_TC2,
@@ -68,7 +68,7 @@ is
                         Combo_PHY (Config.Panel_Ports (Panel_1)),
                      when others =>
                         Combo_PHY (Port)),
-            when others =>             -- everything but VGA directly on CPU
+            when Haswell | Broxton | Skylake => -- everything but VGA directly on CPU
               (case Port is
                   when LVDS         => LVDS,    -- n/a, actually
                   when eDP          => DIGI_A,
