@@ -12,10 +12,13 @@
 -- GNU General Public License for more details.
 --
 
+with HW.GFX.DP_Defs;
+
 with HW.GFX.GMA.Config;
 with HW.GFX.GMA.Panel;
 with HW.GFX.GMA.DP_Dual_Mode;
 with HW.GFX.GMA.DP_Info;
+with HW.GFX.GMA.DP_Aux_Ch;
 
 with HW.Debug;
 with GNAT.Source_Info;
@@ -26,6 +29,8 @@ package body HW.GFX.GMA.Connector_Info is
      (Port_Cfg    : in out Port_Config;
       Success     :    out Boolean)
    is
+      use type Word8;
+
       DP_Port : constant GMA.DP_Port :=
         (if Config.Has_Type_C_Ports
          then
@@ -75,6 +80,23 @@ package body HW.GFX.GMA.Connector_Info is
                Mode     => Port_Cfg.Mode,
                Success  => Success);
             pragma Debug (Success, DP_Info.Dump_Link_Setting (Port_Cfg.DP));
+         end if;
+
+         -- Get DP sinks out of power-save mode
+         if Success and Port_Cfg.DP.Receiver_Caps.Rev >= 16#11# then
+            declare
+               DPCD_SINK_CONTROL    : constant := 16#00600#;
+               DPCD_SINK_CONTROL_D0 : constant DP_Defs.Aux_Payload :=
+                 (1 * 2 ** 0, others => 0);
+               Ignored : Boolean;
+            begin
+               DP_Aux_Ch.Aux_Write
+                 (Port     => DP_Port,
+                  Address  => DPCD_SINK_CONTROL,
+                  Length   => 1,
+                  Data     => DPCD_SINK_CONTROL_D0,
+                  Success  => Ignored);
+            end;
          end if;
       else
          Success := True;
