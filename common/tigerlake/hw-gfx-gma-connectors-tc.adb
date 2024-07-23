@@ -12,8 +12,6 @@
 -- GNU General Public License for more details.
 --
 
-with HW.GFX.GMA.Config;
-with HW.GFX.GMA.Registers;
 with HW.GFX.DP_Info;
 with HW.GFX.GMA.PCode;
 
@@ -57,80 +55,6 @@ package body HW.GFX.GMA.Connectors.TC is
    TCCOLD_BLOCK_REQ         : constant := 16#00#;
    TCCOLD_UNBLOCK_REQ       : constant := 16#01#;
    TCCOLD_BLOCK_RESULT_FAIL : constant := 16#01#;
-
-   type Fia_Regs_Record is record
-      PORT_TX_DFLEXDPMLE1 : Registers.Registers_Index;
-      PORT_TX_DFLEXDPSP   : Registers.Registers_Index;
-      PORT_TX_DFLEXDPPMS  : Registers.Registers_Index;
-      PORT_TX_DFLEXDPCSSS : Registers.Registers_Index;
-      PORT_TX_DFLEXPA1    : Registers.Registers_Index;
-   end record;
-
-   Fia_Regs : constant array (USBC_Port) of Fia_Regs_Record :=
-     (DDI_TC1 =>
-        (Registers.PORT_TX_DFLEXDPMLE1_FIA1,
-         Registers.PORT_TX_DFLEXDPSP_FIA1,
-         Registers.PORT_TX_DFLEXDPPMS_FIA1,
-         Registers.PORT_TX_DFLEXDPCSSS_FIA1,
-         Registers.PORT_TX_DFLEXPA1_FIA1),
-      DDI_TC2 =>
-        (Registers.PORT_TX_DFLEXDPMLE1_FIA1,
-         Registers.PORT_TX_DFLEXDPSP_FIA1,
-         Registers.PORT_TX_DFLEXDPPMS_FIA1,
-         Registers.PORT_TX_DFLEXDPCSSS_FIA1,
-         Registers.PORT_TX_DFLEXPA1_FIA1),
-      DDI_TC3 =>
-        (Registers.PORT_TX_DFLEXDPMLE1_FIA2,
-         Registers.PORT_TX_DFLEXDPSP_FIA2,
-         Registers.PORT_TX_DFLEXDPPMS_FIA2,
-         Registers.PORT_TX_DFLEXDPCSSS_FIA2,
-         Registers.PORT_TX_DFLEXPA1_FIA2),
-      DDI_TC4 =>
-        (Registers.PORT_TX_DFLEXDPMLE1_FIA2,
-         Registers.PORT_TX_DFLEXDPSP_FIA2,
-         Registers.PORT_TX_DFLEXDPPMS_FIA2,
-         Registers.PORT_TX_DFLEXDPCSSS_FIA2,
-         Registers.PORT_TX_DFLEXPA1_FIA2),
-      DDI_TC5 =>
-        (Registers.PORT_TX_DFLEXDPMLE1_FIA3,
-         Registers.PORT_TX_DFLEXDPSP_FIA3,
-         Registers.PORT_TX_DFLEXDPPMS_FIA3,
-         Registers.PORT_TX_DFLEXDPCSSS_FIA3,
-         Registers.PORT_TX_DFLEXPA1_FIA3),
-      DDI_TC6 =>
-        (Registers.PORT_TX_DFLEXDPMLE1_FIA3,
-         Registers.PORT_TX_DFLEXDPSP_FIA3,
-         Registers.PORT_TX_DFLEXDPPMS_FIA3,
-         Registers.PORT_TX_DFLEXDPCSSS_FIA3,
-         Registers.PORT_TX_DFLEXPA1_FIA3));
-
-   function Fia_Index (Port : USBC_Port) return Natural
-   is (case Port is
-       when DDI_TC1 | DDI_TC3 | DDI_TC5 => 0,
-       when DDI_TC2 | DDI_TC4 | DDI_TC6 => 1);
-
-   function DFLEXDPMLE1_DPMLETC_MASK (Port : USBC_Port) return Word32 is
-      (Shift_Left (15, 4 * Fia_Index (Port)));
-   function DFLEXDPMLE1_DPMLETC_ML0 (Port : USBC_Port) return Word32 is
-      (Shift_Left (1, 4 * Fia_Index (Port)));
-   function DFLEXDPMLE1_DPMLETC_ML1_0 (Port : USBC_Port) return Word32 is
-      (Shift_Left (3, 4 * Fia_Index (Port)));
-   function DFLEXDPMLE1_DPMLETC_ML3 (Port : USBC_Port) return Word32 is
-      (Shift_Left (8, 4 * Fia_Index (Port)));
-   function DFLEXDPMLE1_DPMLETC_ML3_2 (Port : USBC_Port) return Word32 is
-      (Shift_Left (12, 4 * Fia_Index (Port)));
-   function DFLEXDPMLE1_DPMLETC_ML3_0 (Port : USBC_Port) return Word32 is
-      (Shift_Left (15, 4 * Fia_Index (Port)));
-   function DP_PHY_MODE_STATUS_COMPLETE (Port : USBC_Port) return Word32 is
-      (Shift_Left (1, Fia_Index (Port)));
-   function DP_PHY_MODE_STATUS_NOT_SAFE (Port : USBC_Port) return Word32 is
-      (Shift_Left (1, Fia_Index (Port)));
-   function TC_LIVE_STATE_TC (Port : USBC_Port) return Word32 is
-      (Shift_Left (1, Fia_Index (Port) * 8 + 5));
-   function DP_LANE_ASSIGNMENT_MASK (Port : USBC_Port) return Word32 is
-      (Shift_Left (16#f#, Fia_Index (Port) * 8));
-   function DP_LANE_ASSIGNMENT_SHIFT (Port : USBC_Port) return Natural is
-      (Fia_Index (Port) * 8);
 
    DDI_BUF_CTL_BUFFER_ENABLE        : constant :=      1 * 2 ** 31;
    DDI_BUF_CTL_TRANS_SELECT_MASK    : constant :=  16#f# * 2 ** 24;
@@ -365,116 +289,38 @@ package body HW.GFX.GMA.Connectors.TC is
 
    ---------------------------------------------------------------------
 
-   procedure Claim
-     (Port     : in     USBC_Port;
-      DP_Alt   : in     Boolean;
-      Success  :    out Boolean)
+   procedure Set_Lane_Count (Port : USBC_Port; Lanes : DP_Lane_Count) is
+   begin
+      Registers.Unset_And_Set_Mask
+        (Register   => Fia_Regs (Port).PORT_TX_DFLEXDPMLE1,
+         Mask_Unset => DFLEXDPMLE1_DPMLETC_MASK (Port),
+         Mask_Set   =>
+           (case Lanes is
+               -- ML0 is not lane-reversed, ML3 is reverse
+               when DP_Lane_Count_1 => DFLEXDPMLE1_DPMLETC_ML0 (Port),
+               -- ML1_0 is not reversed, ML3_2 is reverse
+               when DP_Lane_Count_2 => DFLEXDPMLE1_DPMLETC_ML1_0 (Port),
+               -- symmetric
+               when DP_Lane_Count_4 => DFLEXDPMLE1_DPMLETC_ML3_0 (Port)));
+   end Set_Lane_Count;
+
+   procedure Get_Lane_Assignment_Count
+     (Port  : in     USBC_Port;
+      Lanes : out DP_Lane_Count)
    is
+      Lane_Mask : Word32;
+      Tmp : Word32;
    begin
-      -- For legacy ports, this is supposed to be
-      -- initialized once during boot, hence wait.
-      Registers.Wait_Set_Mask
-        (Register => Fia_Regs (Port).PORT_TX_DFLEXDPPMS,
-         Mask     => DP_PHY_MODE_STATUS_COMPLETE (Port),
-         TOut_MS  => (if DP_Alt then 0 else 100),
-         Success  => Success);
-      if not Success then
-         pragma Debug (Debug.Put_Line ("DP PHY mode status not complete"));
-         return;
-      end if;
-
-      Registers.Set_Mask
-        (Register => Fia_Regs (Port).PORT_TX_DFLEXDPCSSS,
-         Mask     => DP_PHY_MODE_STATUS_NOT_SAFE (Port));
-   end Claim;
-
-   procedure Claimed (Port : USBC_Port; Is_Claimed : out Boolean) is
-   begin
-      if Port not in DDI_TC1 .. Config.Last_TC_Port then
-         Is_Claimed := False;
-         return;
-      end if;
-
-      Registers.Is_Set_Mask
-        (Register => Fia_Regs (Port).PORT_TX_DFLEXDPCSSS,
-         Mask     => DP_PHY_MODE_STATUS_NOT_SAFE (Port),
-         Result   => Is_Claimed);
-   end Claimed;
-
-   ---------------------------------------------------------------------
-
-   procedure Connect
-     (Port     : in     USBC_Port;
-      DP_Alt   : in     Boolean;
-      Lanes    : in     DP_Lane_Count;
-      Success  :    out Boolean)
-   is
-      procedure Get_Lane_Assignment_Count (Lanes : out DP_Lane_Count)
-      is
-         Lane_Mask : Word32;
-         Tmp : Word32;
-      begin
-         Registers.Read (Fia_Regs (Port).PORT_TX_DFLEXDPSP, Tmp);
-         Lane_Mask := Shift_Right (Tmp and DP_LANE_ASSIGNMENT_MASK (Port),
-                                   DP_LANE_ASSIGNMENT_SHIFT (Port));
-         Lanes :=
-           (case Lane_Mask is
-               when 16#1# | 16#2# | 16#4# | 16#8#  => DP_Lane_Count_1,
-               when 16#3# | 16#c#                  => DP_Lane_Count_2,
-               when 16#f#                          => DP_Lane_Count_4,
-               when others                         => DP_Lane_Count_1);
-      end Get_Lane_Assignment_Count;
-
-      procedure Set_Lane_Count (Lanes : DP_Lane_Count) is
-      begin
-         Registers.Unset_And_Set_Mask
-           (Register   => Fia_Regs (Port).PORT_TX_DFLEXDPMLE1,
-            Mask_Unset => DFLEXDPMLE1_DPMLETC_MASK (Port),
-            Mask_Set   =>
-              (case Lanes is
-                  -- ML0 is not lane-reversed, ML3 is reverse
-                  when DP_Lane_Count_1 => DFLEXDPMLE1_DPMLETC_ML0 (Port),
-                  -- ML1_0 is not reversed, ML3_2 is reverse
-                  when DP_Lane_Count_2 => DFLEXDPMLE1_DPMLETC_ML1_0 (Port),
-                  -- symmetric
-                  when DP_Lane_Count_4 => DFLEXDPMLE1_DPMLETC_ML3_0 (Port)));
-      end Set_Lane_Count;
-
-      Assigned_Lanes : DP_Lane_Count;
-   begin
-      Claimed (Port, Success);
-      if not Success then
-         pragma Debug (Debug.Put_Line ("Tried to connect to unclaimed port."));
-         return;
-      end if;
-
-      if DP_Alt then
-         Registers.Is_Set_Mask
-           (Register => Fia_Regs (Port).PORT_TX_DFLEXDPSP,
-            Mask     => TC_LIVE_STATE_TC (Port),
-            Result   => Success);
-         if not Success then
-            pragma Debug (Debug.Put_Line ("DP-Alt is not connected."));
-            return;
-         end if;
-
-         Get_Lane_Assignment_Count (Assigned_Lanes);
-         Set_Lane_Count (Assigned_Lanes);
-      else
-         Set_Lane_Count (Lanes);
-      end if;
-   end Connect;
-
-   ---------------------------------------------------------------------
-
-   procedure Disconnect (Port : USBC_Port) is
-   begin
-      if Port in DDI_TC1 .. Config.Last_TC_Port then
-         Registers.Unset_Mask
-           (Register => Fia_Regs (Port).PORT_TX_DFLEXDPCSSS,
-            Mask     => DP_PHY_MODE_STATUS_NOT_SAFE (Port));
-      end if;
-   end Disconnect;
+      Registers.Read (Fia_Regs (Port).PORT_TX_DFLEXDPSP, Tmp);
+      Lane_Mask := Shift_Right (Tmp and DP_LANE_ASSIGNMENT_MASK (Port),
+                                DP_LANE_ASSIGNMENT_SHIFT (Port));
+      Lanes :=
+        (case Lane_Mask is
+            when 16#1# | 16#2# | 16#4# | 16#8#  => DP_Lane_Count_1,
+            when 16#3# | 16#c#                  => DP_Lane_Count_2,
+            when 16#f#                          => DP_Lane_Count_4,
+            when others                         => DP_Lane_Count_1);
+   end Get_Lane_Assignment_Count;
 
    ---------------------------------------------------------------------
 

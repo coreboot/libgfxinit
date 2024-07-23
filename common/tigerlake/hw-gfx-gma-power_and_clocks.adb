@@ -19,7 +19,7 @@ with HW.GFX.GMA.Config;
 with HW.GFX.GMA.PCode;
 with HW.GFX.GMA.Registers;
 with HW.GFX.GMA.Transcoder;
-with HW.GFX.GMA.Connectors.TC;
+with HW.GFX.GMA.Connectors.TC.Ownership;
 
 use type HW.Word64;
 
@@ -225,7 +225,7 @@ package body HW.GFX.GMA.Power_And_Clocks is
          Registers.Unset_Mask
            (Register => AUX_CTL_Regs (PD),
             Mask     => DP_AUX_CH_CTL_TBT_IO);
-         Connectors.TC.Claimed (To_GPU_Port (PD), Success);
+         Connectors.TC.Ownership.Claimed (To_GPU_Port (PD), Success);
       elsif PD = PW1 then
          Registers.Wait_Set_Mask
            (Register => Registers.FUSE_STATUS,
@@ -261,7 +261,7 @@ package body HW.GFX.GMA.Power_And_Clocks is
          -- convenient to do it here: When requested to turn the
          -- power off, we know exactly that we don't want to use
          -- the port (anymore).
-         Connectors.TC.Disconnect (To_GPU_Port (PD));
+         Connectors.TC.Ownership.Disconnect (To_GPU_Port (PD));
       end if;
    end Pre_PD_Off;
 
@@ -771,7 +771,7 @@ package body HW.GFX.GMA.Power_And_Clocks is
          PD_On (DDI);
 
          if GPU_Port in USBC_Port then
-            Connectors.TC.Claim
+            Connectors.TC.Ownership.Claim
               (Port     => GPU_Port,
                DP_Alt   => Port in Physical_USBC_Ports,
                Success  => Success);

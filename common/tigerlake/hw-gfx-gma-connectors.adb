@@ -18,6 +18,7 @@ with HW.GFX.GMA.Combo_Phy;
 with HW.GFX.GMA.Config;
 with HW.GFX.GMA.Config_Helpers;
 with HW.GFX.GMA.Connectors.TC;
+with HW.GFX.GMA.Connectors.TC.Ownership;
 with HW.GFX.GMA.Connectors.Combo_Phy;
 with HW.GFX.GMA.DP_Aux_Request;
 with HW.GFX.GMA.DP_Info;
@@ -292,7 +293,7 @@ package body HW.GFX.GMA.Connectors is
    is
    begin
       if Port_Cfg.Port in USBC_Port then
-         TC.Connect
+         TC.Ownership.Connect
            (Port     => Port_Cfg.Port,
             DP_Alt   => Port in Physical_USBC_Ports,
             Lanes    => Port_Cfg.DP.Lane_Count,
