@@ -36,6 +36,30 @@ private
    -- And so far, no SKU needs more.
    subtype Valid_TC_Port is USBC_Port range DDI_TC1 .. Config.Last_TC_Port;
 
+   type Port_Regs_Array is array (USBC_Port) of Registers.Registers_Index;
+
+   DDI_BUF_CTL_BUFFER_ENABLE        : constant :=      1 * 2 ** 31;
+   DDI_BUF_CTL_TRANS_SELECT_MASK    : constant :=  16#f# * 2 ** 24;
+   DDI_BUF_CTL_PORT_REVERSAL        : constant :=      1 * 2 ** 16;
+   DDI_BUF_CTL_PORT_WIDTH_MASK      : constant :=      7 * 2 **  1;
+   DDI_BUF_CTL_PORT_WIDTH_1_LANE    : constant :=      0 * 2 **  1;
+   DDI_BUF_CTL_PORT_WIDTH_2_LANES   : constant :=      1 * 2 **  1;
+   DDI_BUF_CTL_PORT_WIDTH_4_LANES   : constant :=      3 * 2 **  1;
+   DDI_BUF_CTL_IDLE_STATUS          : constant :=      1 * 2 **  7;
+   DDI_BUF_CTL_TC_PHY_OWNERSHIP     : constant :=      1 * 2 **  6;
+
+   DDI_BUF_CTL_PORT_WIDTH : constant array (DP_Lane_Count) of Word32 :=
+     (HW.GFX.DP_Lane_Count_1 => DDI_BUF_CTL_PORT_WIDTH_1_LANE,
+      HW.GFX.DP_Lane_Count_2 => DDI_BUF_CTL_PORT_WIDTH_2_LANES,
+      HW.GFX.DP_Lane_Count_4 => DDI_BUF_CTL_PORT_WIDTH_4_LANES);
+   DDI_BUF_CTL : constant Port_Regs_Array :=
+     (DDI_TC1  => Registers.DDI_BUF_CTL_USBC1,
+      DDI_TC2  => Registers.DDI_BUF_CTL_USBC2,
+      DDI_TC3  => Registers.DDI_BUF_CTL_USBC3,
+      DDI_TC4  => Registers.DDI_BUF_CTL_USBC4,
+      DDI_TC5  => Registers.DDI_BUF_CTL_USBC5,
+      DDI_TC6  => Registers.DDI_BUF_CTL_USBC6);
+
    type Fia_Regs_Record is record
       PORT_TX_DFLEXDPMLE1 : Registers.Registers_Index;
       PORT_TX_DFLEXDPSP   : Registers.Registers_Index;
