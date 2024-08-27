@@ -117,10 +117,12 @@ is
       -- In order to avoid keeping track of the state and constantly
       -- blocking and unblocking, we just block it once at the beginning
       -- and leave it that way.
-      Connectors.TC.TC_Cold_Request (Connectors.TC.Block, Success);
-      if not Success then
-         Debug.Put_Line ("Failed to block TCCOLD, Type-C will not work!");
-         return;
+      if Config.Block_TC_Cold then
+         Connectors.TC.TC_Cold_Request (Connectors.TC.Block, Success);
+         if not Success then
+            Debug.Put_Line ("Failed to block TCCOLD, Type-C will not work!");
+            return;
+         end if;
       end if;
    end Initialize;
 

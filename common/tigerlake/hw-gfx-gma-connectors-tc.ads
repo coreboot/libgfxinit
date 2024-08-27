@@ -36,7 +36,8 @@ private
    -- And so far, no SKU needs more.
    subtype Valid_TC_Port is USBC_Port range DDI_TC1 .. Config.Last_TC_Port;
 
-   type Port_Regs_Array is array (USBC_Port) of Registers.Registers_Index;
+   type Port_Regs_Array is
+      array (USBC_Port) of Registers.Registers_Invalid_Index;
 
    DDI_BUF_CTL_BUFFER_ENABLE        : constant :=      1 * 2 ** 31;
    DDI_BUF_CTL_TRANS_SELECT_MASK    : constant :=  16#f# * 2 ** 24;

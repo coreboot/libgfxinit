@@ -28,7 +28,8 @@ package body HW.GFX.GMA.Connectors.TC is
       then Registers.HIP_INDEX_REG0
       else Registers.HIP_INDEX_REG1);
 
-   function HIP_INDEX_VAL (P : USBC_Port; Val : Word32) return Word32 is
+   function HIP_INDEX_VAL (P : USBC_Port; Val : Word32) return Word32
+   is
      (Val * 2 ** (8 * ((GPU_Port'Pos (P) - GPU_Port'Pos (DDI_TC1)) mod 4)));
 
    DKL_DP_MODE : constant Port_Regs_Array :=
@@ -39,7 +40,15 @@ package body HW.GFX.GMA.Connectors.TC is
       DDI_TC5 => Registers.DKL_DP_MODE_5,
       DDI_TC6 => Registers.DKL_DP_MODE_6);
 
-   function DP_PIN_ASSIGNMENT_SHIFT (P : USBC_Port) return Natural is
+   DKL_PCS_DW5 : constant Port_Regs_Array :=
+     (DDI_TC1 => Registers.DKL_PCS_DW5_1,
+      DDI_TC2 => Registers.DKL_PCS_DW5_2,
+      DDI_TC3 => Registers.DKL_PCS_DW5_3,
+      DDI_TC4 => Registers.DKL_PCS_DW5_4,
+      others  => Registers.Invalid_Register);
+
+   function DP_PIN_ASSIGNMENT_SHIFT (P : USBC_Port) return Natural
+   is
      (case P is
       when DDI_TC1 => 0,
       when DDI_TC2 => 4,
@@ -303,8 +312,9 @@ package body HW.GFX.GMA.Connectors.TC is
    ---------------------------------------------------------------------
 
    procedure Set_Vswing_And_Deemphasis
-      (Port      : USBC_Port;
-       Buf_Trans : Buffer_Trans)
+     (Port        : USBC_Port;
+      Buf_Trans   : Buffer_Trans;
+      HDMI        : Boolean := False)
    is
       -- Preshoot Coeff, Deemphasis Coeff, VSwing Control,
       DPcnt_Mask : constant Word32 := 16#3_ff07#;
@@ -313,6 +323,17 @@ package body HW.GFX.GMA.Connectors.TC is
          Shift_Left (Buf_Trans.Deemphasis_Control, 8) or
          Shift_Left (Buf_Trans.Preshoot_Control, 13);
       DKL_TX_DP20BITMODE : constant := 1 * 2 ** 2;
+
+      function DKL_TX_DPCNTL2_CFG_LOADGENSELECT_TX1 (N : Word32) return Word32
+      is
+        (Shift_Left (N and 16#3#, 3));
+
+      function DKL_TX_DPCNTL2_CFG_LOADGENSELECT_TX2 (N : Word32) return Word32
+      is
+        (Shift_Left (N and 16#3#, 5));
+
+      DKL_TX_DPCNTL2_CFG_LOADGENSELECT_TX1_MASK : constant := 16#18#;
+      DKL_TX_DPCNTL2_CFG_LOADGENSELECT_TX2_MASK : constant := 16#60#;
    begin
       for Lane in 0 .. 1 loop
          Set_HIP_For_Port (Port, Lane);
@@ -323,6 +344,31 @@ package body HW.GFX.GMA.Connectors.TC is
             (Vswing_Regs (Port).DKL_TX_DPCNTL1, DPcnt_Mask, DPcnt_Val);
          Registers.Unset_Mask
             (Vswing_Regs (Port).DKL_TX_DPCNTL2, DKL_TX_DP20BITMODE);
+
+         if Config.Need_TC_Loadgen_Select then
+            declare
+               Val : Word32;
+            begin
+               if HDMI then
+                  if Lane = 0 then
+                     Val := DKL_TX_DPCNTL2_CFG_LOADGENSELECT_TX1 (0) or
+                            DKL_TX_DPCNTL2_CFG_LOADGENSELECT_TX2 (2);
+                  else
+                     Val := DKL_TX_DPCNTL2_CFG_LOADGENSELECT_TX1 (3) or
+                            DKL_TX_DPCNTL2_CFG_LOADGENSELECT_TX2 (3);
+                  end if;
+               else
+                  Val := DKL_TX_DPCNTL2_CFG_LOADGENSELECT_TX1 (0) or
+                         DKL_TX_DPCNTL2_CFG_LOADGENSELECT_TX2 (0);
+               end if;
+
+               Registers.Unset_And_Set_Mask
+                 (Register   => Vswing_Regs (Port).DKL_TX_DPCNTL2,
+                  Mask_Unset => DKL_TX_DPCNTL2_CFG_LOADGENSELECT_TX1_MASK or
+                                DKL_TX_DPCNTL2_CFG_LOADGENSELECT_TX2_MASK,
+                  Mask_Set   => Val);
+            end;
+         end if;
       end loop;
 
    end Set_Vswing_And_Deemphasis;
@@ -334,6 +380,7 @@ package body HW.GFX.GMA.Connectors.TC is
       Link        : DP_Link;
       Train_Set   : DP_Info.Train_Set)
    is
+      DKL_PCS_DW5_CORE_SOFTRESET : constant := 1 * 2 ** 11;
       function To_Buf_Trans_Index
          (Set : DP_Info.Train_Set) return Buffer_Trans_Range
       is
@@ -395,13 +442,29 @@ package body HW.GFX.GMA.Connectors.TC is
 
       Set_Vswing_And_Deemphasis (Port, Buf_Trans);
 
+      -- Wa_1309179469: Taken from i915's adlp_tbt_to_dp_alt_switch_wa()
+      if Config.Need_TBT_DP_Alt_Switch_Wa and then
+         Port in Valid_TC_Port and then
+         not Was_Enabled
+      then
+         for Lane in 0 .. 1 loop
+            Set_HIP_For_Port (Port, Lane);
+            Registers.Unset_Mask
+              (Register => DKL_PCS_DW5 (Port),
+               Mask     => DKL_PCS_DW5_CORE_SOFTRESET);
+         end loop;
+      end if;
+
       Registers.Unset_And_Set_Mask
         (Register    => DDI_BUF_CTL (Port),
          Mask_Unset  => DDI_BUF_CTL_TRANS_SELECT_MASK or
                         DDI_BUF_CTL_PORT_REVERSAL or
                         DDI_BUF_CTL_PORT_WIDTH_MASK,
          Mask_Set    => DDI_BUF_CTL_BUFFER_ENABLE or
-                        DDI_BUF_CTL_PORT_WIDTH (Link.Lane_Count));
+                        DDI_BUF_CTL_PORT_WIDTH (Link.Lane_Count) or
+                        (if Config.Need_TC_PHY_Ownership
+                         then DDI_BUF_CTL_TC_PHY_OWNERSHIP else 0));
+
       Registers.Posting_Read (DDI_BUF_CTL (Port));
 
       if not Was_Enabled then
@@ -416,7 +479,7 @@ package body HW.GFX.GMA.Connectors.TC is
          Buffer_Trans_HDMI (Buffer_Trans_HDMI'Last);
    begin
       Program_DP_Mode (Port, HDMI_Lane_Count);
-      Set_Vswing_And_Deemphasis (Port, Buf_Trans);
+      Set_Vswing_And_Deemphasis (Port, Buf_Trans, HDMI => True);
 
       Registers.Unset_And_Set_Mask
            (Register    => DDI_BUF_CTL (Port),
