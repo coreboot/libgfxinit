@@ -1,0 +1,51 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "version": 1,
+  "metadata": {
+    "authors": [
+      {
+        "name": "@VCS_SBOM_AUTHORS@"
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg:github/coreboot/libgfxinit@@VCS_TAG@",
+      "cpe": "cpe:2.3:a:coreboot:libgfxinit:@VCS_TAG@:*:*:*:*:*:*:*",
+      "name": "libgfxinit",
+      "version": "@VCS_VERSION@",
+      "description": "A graphics initialization library for embedded environments",
+      "supplier": {
+        "name": "coreboot developers"
+      },
+      "authors": [
+        {
+          "name": "@VCS_AUTHORS@"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-or-later"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.coreboot.org/"
+        },
+        {
+          "type": "vcs",
+          "url": "https://github.com/coreboot/libgfxinit"
+        },
+        {
+          "type": "vcs",
+          "url": "https://review.coreboot.org/libgfxinit.git"
+        }
+      ]
+    }
+  ]
+}
