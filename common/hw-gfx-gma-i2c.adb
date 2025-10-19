@@ -256,10 +256,15 @@ package body HW.GFX.GMA.I2C is
                         GMBUS1_DIRECTION_READ);
 
          while Success and then Transfered < Length loop
+	    -- Some GMBUS state machines never set HW_RDY nor NAK.
+	    --
+	    -- Keep delay at a minimum, but big enough that
+	    -- regular EDID transfers can be finished within
+	    -- the timeout.
             Registers.Wait_Set_Mask
               (Register => GMBUS_Regs (2),
                Mask     => GMBUS2_HARDWARE_READY,
-               TOut_MS  => 500);
+               TOut_MS  => 50);
 
             Registers.Read (GMBUS_Regs (2), GMBUS2);
             Success :=  (GMBUS2 and GMBUS2_HARDWARE_READY) /= 0 and
