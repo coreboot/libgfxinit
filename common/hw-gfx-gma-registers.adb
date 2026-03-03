@@ -45,13 +45,19 @@ is
 
    ----------------------------------------------------------------------------
 
+   MMIO_GTT_32_Size : constant := 16#20_0000#;
+   -- Limit Broadwell+ to 4MiB to have a stable
+   -- interface (i.e. same number of entries):
+   MMIO_GTT_64_Size : constant := 16#40_0000#;
+
    type GTT_PTE_32 is mod 2 ** 32;
    type GTT_Registers_32 is array (GTT_Range) of GTT_PTE_32
    with
       Volatile_Components,
       Size => MMIO_GTT_32_Size * 8;
    package GTT_32 is new MMIO_Range
-     (Base_Addr   => Config.Default_MMIO_Base + MMIO_GTT_32_Offset,
+     (Base_Addr   =>
+        Config.Default_MMIO_Base + Word64 (Config.Default_MMIO_GTT_32_Offset),
       Element_T   => GTT_PTE_32,
       Index_T     => GTT_Range,
       Array_T     => GTT_Registers_32);
@@ -62,7 +68,7 @@ is
       Volatile_Components,
       Size => MMIO_GTT_64_Size * 8;
    package GTT_64 is new MMIO_Range
-     (Base_Addr   => Config.Default_MMIO_Base + MMIO_GTT_64_Offset,
+     (Base_Addr   => Config.Default_MMIO_Base + Word64 (Config.MMIO_GTT_64_Offset),
       Element_T   => GTT_PTE_64,
       Index_T     => GTT_Range,
       Array_T     => GTT_Registers_64);
@@ -347,6 +353,14 @@ is
       pragma Debug (Verbose, Debug.Put_Line (Registers_Index'Image (Register)));
    end Read;
 
+   procedure Read_AUD_VID_DID (Value : out Word32)
+   is
+   begin
+      Regs.Read
+        (Value,
+         Registers_Range (Config.AUD_VID_DID_Offset / Register_Width));
+   end Read_AUD_VID_DID;
+
    ----------------------------------------------------------------------------
 
    -- Read a specific register to post a previous write
@@ -566,8 +580,9 @@ is
    begin
       Regs.Set_Base_Address (Base);
       if GTT_Base = 0 then
-         GTT_32.Set_Base_Address (Base + MMIO_GTT_32_Offset);
-         GTT_64.Set_Base_Address (Base + MMIO_GTT_64_Offset);
+         GTT_32.Set_Base_Address
+           (Base + Word64 (Config.Default_MMIO_GTT_32_Offset));
+         GTT_64.Set_Base_Address (Base + Word64 (Config.MMIO_GTT_64_Offset));
       else
          GTT_32.Set_Base_Address (GTT_Base);
          GTT_64.Set_Base_Address (GTT_Base);

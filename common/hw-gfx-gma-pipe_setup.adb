@@ -310,7 +310,8 @@ package body HW.GFX.GMA.Pipe_Setup is
          end if;
 
          if Config.Has_DSP_Linoff and then FB.Tiling = Linear then
-            pragma Assert_And_Cut (True);
+            pragma Assert_And_Cut
+              (FB.Start_Y * FB.Stride + FB.Start_X in Pixel_Type);
             declare
                Linear_Offset : constant Pixel_Type :=
                   FB.Start_Y * FB.Stride + FB.Start_X;

@@ -24,14 +24,6 @@ with
    Initializes => Address_State
 is
 
-   MMIO_GTT_32_Size     : constant := 16#20_0000#;
-   MMIO_GTT_32_Offset   : constant := 16#20_0000#;
-
-   -- Limit Broadwell+ to 4MiB to have a stable
-   -- interface (i.e. same number of entries):
-   MMIO_GTT_64_Size     : constant := 16#40_0000#;
-   MMIO_GTT_64_Offset   : constant := 16#80_0000#;
-
    type Registers_Invalid_Index is
      (Invalid_Register, -- Allow a placeholder when access is not acceptable
 
@@ -2319,6 +2311,13 @@ is
       Pre     => True,
       Post    => True;
    pragma Warnings (GNATprove, On, "unused variable ""Verbose""");
+
+   procedure Read_AUD_VID_DID (Value : out Word32)
+   with
+      Global  => (In_Out => Register_State),
+      Depends => ((Value, Register_State) => Register_State),
+      Pre     => True,
+      Post    => True;
 
    procedure Write
       (Register : Registers_Index;

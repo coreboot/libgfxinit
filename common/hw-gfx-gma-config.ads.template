@@ -19,7 +19,7 @@ private package HW.GFX.GMA.Config is
    CPU_First : constant CPU_Type :=
      (case Gen is
          when I945      => I945G,
-         when G45       => G45,
+         when G45       => GM965,
          when Ironlake  => Ironlake,
          when Haswell   => Haswell,
          when Broxton   => Broxton,
@@ -159,6 +159,7 @@ private package HW.GFX.GMA.Config is
    Tigerlake_On      : <genbool> := Gen >= Tigerlake;
 
    GMCH_I945GM       : <i945bool> := Gen_I945 and then CPU = I945GM;
+   GMCH_GM965        : <g45bool> := Gen_G45 and then CPU = GM965;
    GMCH_GM45         : <g45bool> := Gen_G45 and then CPU = GM45;
    CPU_Ironlake      : <ilkbool> := Gen_Ironlake and then CPU = Ironlake;
    CPU_Sandybridge   : <ilkbool> := Gen_Ironlake and then CPU = Sandybridge;
@@ -268,7 +269,7 @@ private package HW.GFX.GMA.Config is
 
    ---------- Clocks: -----------
    Has_GMCH_RawClk               : <genbool> := Up_To_G45;
-   Has_GMCH_Mobile_VCO           : <g45bool> := GMCH_GM45;
+   Has_GMCH_Mobile_VCO           : <g45bool> := GMCH_GM45 or GMCH_GM965;
 
    ---------- I945-specific: ----
    Has_I945_GTT_BAR              : <genbool> := Gen_I945;
@@ -454,6 +455,19 @@ private package HW.GFX.GMA.Config is
 
    GMA_Base_Is_64bit : constant Boolean := Config.Tigerlake_On;
 
+   AUD_VID_DID_Offset : <ilkhswvar> Natural :=
+     (if    Gen_G45       then 16#06_2020#
+      elsif Gen_Ironlake  then 16#0e_5020#
+      else                     16#06_5020#);
+
+   -- Default 32-bit GTT offset for static MMIO instantiation.
+   Default_MMIO_GTT_32_Offset : constant Natural :=
+     (if Has_I945_GTT_BAR then 16#00_0000# else 16#20_0000#);
+   MMIO_GTT_32_Offset : <g45var> Natural :=
+     (if GMCH_GM965 then 16#0008_0000# else Default_MMIO_GTT_32_Offset);
+   MMIO_GTT_64_Offset : constant Natural := 16#80_0000#;
+   MMIO_GTT_Offset : <g45hswvar> Natural :=
+     (if Has_64bit_GTT then MMIO_GTT_64_Offset else MMIO_GTT_32_Offset);
    GTT_PTE_Size : <hswvar> Natural := (if Has_64bit_GTT then 8 else 4);
 
    Fence_Base : <i945ilkvar> Natural :=
@@ -607,6 +621,7 @@ private package HW.GFX.GMA.Config is
       return Boolean is
      (case CPU is
          when I945G        => Device_Id = 16#2772#,
+         when GM965        => (Device_Id and 16#ffef#) = 16#2a02#,
          when I945GM       => Device_Id = 16#27a2# or Device_Id = 16#27ae#,
          when G45          => (Device_Id and 16#ff02#) = 16#2e02#,
          when GM45         => (Device_Id and 16#fffe#) = 16#2a42#,

@@ -506,13 +506,10 @@ is
    is
       use type HW.Word64;
 
-      function MMIO_GTT_Offset return Natural is
-        (if Config.Has_I945_GTT_BAR
-         then 0  -- i945: GTT is on separate BAR3, not within BAR0
-         elsif Config.Has_64bit_GTT
-         then Registers.MMIO_GTT_64_Offset
-         else Registers.MMIO_GTT_32_Offset);
       PCI_MMIO_Base, PCI_GTT_Base : Word64;
+
+      function Default_GTT_Base return Word64 is
+        (Config.Default_MMIO_Base + Word64 (Config.MMIO_GTT_Offset));
 
       Now : constant Time.T := Time.Now;
 
@@ -520,21 +517,12 @@ is
       is
          Audio_VID_DID : Word32;
       begin
-         if Config.Gen_I945 then
-            -- i945 has no integrated audio DID to verify
+         if Config.Gen_I945 or Config.GMCH_GM965 then
+            -- i945 and GM965 have no integrated audio DID to verify.
             Success := True;
             return;
          end if;
-         case Config.Gen is
-            when I945 =>
-               Audio_VID_DID := 0;  -- unreachable due to early return
-            when G45 =>
-               Registers.Read (Registers.G4X_AUD_VID_DID, Audio_VID_DID);
-            when Ironlake =>
-               Registers.Read (Registers.PCH_AUD_VID_DID, Audio_VID_DID);
-            when Haswell .. Tigerlake =>
-               Registers.Read (Registers.AUD_VID_DID, Audio_VID_DID);
-         end case;
+         Registers.Read_AUD_VID_DID (Audio_VID_DID);
          Success :=
            ((Config.Gen_Broxton        and Audio_VID_DID = 16#8086_280a#) or
             (Config.CPU_Kabylake       and Audio_VID_DID = 16#8086_280b#) or
@@ -580,7 +568,7 @@ is
             Cursor      => Default_Cursor,
             Mode        => HW.GFX.Invalid_Mode));
       Config.Variable := Config.Initial_Settings;
-      Registers.Set_Register_Base (Config.Default_MMIO_Base);
+      Registers.Set_Register_Base (Config.Default_MMIO_Base, Default_GTT_Base);
       PLLs.Initialize;
 
       Dev.Initialize (Success);
@@ -593,8 +581,10 @@ is
                Dev.Map (PCI_MMIO_Base, PCI.Res0);
                Dev.Map (PCI_GTT_Base, PCI.Res3);
             else
-               Dev.Map (PCI_MMIO_Base, PCI.Res0, Length => MMIO_GTT_Offset);
-               Dev.Map (PCI_GTT_Base, PCI.Res0, Offset => MMIO_GTT_Offset);
+               Dev.Map
+                 (PCI_MMIO_Base, PCI.Res0, Length => Config.MMIO_GTT_Offset);
+               Dev.Map
+                 (PCI_GTT_Base, PCI.Res0, Offset => Config.MMIO_GTT_Offset);
             end if;
             if PCI_MMIO_Base /= 0 and PCI_GTT_Base /= 0 then
                Registers.Set_Register_Base (PCI_MMIO_Base, PCI_GTT_Base);
@@ -869,6 +859,11 @@ is
          -- from Gen4+.  Match the Linux driver and use the BAR size.
          Dev.Resource_Size (GTT_Size, PCI.Res3);
          Stolen_Size := Stolen_Size_Gen4 (GGC);
+      elsif Config.GMCH_GM965 then
+         -- GM965 has no GGMS field in GGC. The GTT is a fixed 512 KiB
+         -- region in the upper half of the 1 MiB GTTMMADR BAR.
+         GTT_Size    := 512 * 2 ** 10;
+         Stolen_Size := Stolen_Size_Gen4 (GGC);
       elsif Config.Gen_G45 or Config.CPU_Ironlake then
          GTT_Size    := GTT_Size_Gen4 (GGC);
          Stolen_Size := Stolen_Size_Gen4 (GGC);
@@ -901,6 +896,9 @@ is
       if Config.Has_I945_GTT_BAR then
          -- i945 GTT is on a separate BAR3; its size is the BAR size.
          Dev.Resource_Size (GTT_Size, PCI.Res3);
+      elsif Config.GMCH_GM965 then
+         -- GM965 has no GGMS field in GGC; its GTT is fixed at 512 KiB.
+         GTT_Size := 512 * 2 ** 10;
       else
          -- Gen4+: GTT size is encoded in the GGC register.
          declare

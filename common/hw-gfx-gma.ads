@@ -40,6 +40,7 @@ is
    type CPU_Type is
      (I945G,
       I945GM,
+      GM965,
       G45,
       GM45,
       Ironlake,

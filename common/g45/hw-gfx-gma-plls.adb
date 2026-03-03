@@ -140,6 +140,18 @@ is
       P2_Fast      =>   5,           P2_Slow   =>  10,
       P2_Threshold =>   165_000_000,
       VCO_Lower    => 1_750_000_000, VCO_Upper => 3_500_000_000);
+   -- I9XX limits are used by GM965 (Crestline) and older non-G4x chips.
+   I9XX_LVDS_Limits : constant Limits_Type := Limits_Type'
+     (N_Lower      =>   3,           N_Upper   =>   8,
+      M_Lower      =>  70,           M_Upper   => 120,
+      M1_Lower     =>  10,           M1_Upper  =>  20,
+      M2_Lower     =>   5,           M2_Upper  =>   9,
+      P_Lower      =>   7,           P_Upper   =>  98,
+      P1_Lower     =>   1,           P1_Upper  =>   8,
+      P2_Fast      =>   7,           P2_Slow   =>  14,
+      P2_Threshold => 112_000_000,
+      VCO_Lower    => 1_400_000_000, VCO_Upper => 2_800_000_000);
+   -- The All_Other/I9XX_SDVO limits match Linux' intel_limits_i9xx_sdvo.
    All_Other_Limits : constant Limits_Type := Limits_Type'
      (N_Lower      =>   3,           N_Upper   =>   8,
       M_Lower      =>  70,           M_Upper   => 120,
@@ -279,9 +291,9 @@ is
    end Verify_Parameters;
 
    procedure Calculate_Clock_Parameters
-     (Display         : in     Display_Type;
-      Target_Dotclock : in     Clock_Range;
+     (Target_Dotclock : in     Clock_Range;
       Reference_Clock : in     Clock_Range;
+      Limits          : in     Limits_Type;
       Best_Clock      :    out Clock_Type;
       Valid           :    out Boolean)
    with
@@ -289,17 +301,6 @@ is
      Pre => True,
      Post => True
    is
-      Limits : constant Limits_Type :=
-      (case Display is
-          when LVDS   =>
-             (if Target_Dotclock >= Config.LVDS_Dual_Threshold then
-                LVDS_Dual_Limits
-              else
-                LVDS_Single_Limits),
-          when HDMI   => HDMI_Analog_Limits,
-          when VGA    => HDMI_Analog_Limits,
-          when others => All_Other_Limits); --TODO add SDVO type, needs other limits
-
       P2               : P2_Range;
       Best_Delta       : Int64 := Int64'Last;
       Current_Delta    : Int64;
@@ -420,6 +421,34 @@ is
                      Shift_Left (Encoded_P1, DPLL_P1_DIVIDER_SHIFT));
    end Program_DPLL;
 
+   function Select_Limits
+     (Display         : Display_Type;
+      Target_Dotclock : Clock_Range)
+      return Limits_Type
+   is
+   begin
+      if Config.GMCH_GM965 then
+         -- i9xx PLL limits for GM965 (Crestline)
+         case Display is
+            when LVDS   => return I9XX_LVDS_Limits;
+            when others => return All_Other_Limits;
+         end case;
+      else
+         -- G4x PLL limits for G45/GM45
+         case Display is
+            when LVDS   =>
+               if Target_Dotclock >= Config.LVDS_Dual_Threshold then
+                  return LVDS_Dual_Limits;
+               else
+                  return LVDS_Single_Limits;
+               end if;
+            when HDMI   => return HDMI_Analog_Limits;
+            when VGA    => return HDMI_Analog_Limits;
+            when others => return All_Other_Limits;
+         end case;
+      end if;
+   end Select_Limits;
+
    procedure On
      (PLL      : in     T;
       Port_Cfg : in     Port_Config;
@@ -459,10 +488,10 @@ is
             end case;
          elsif Target_Clock <= 340_000_000 then
             Calculate_Clock_Parameters
-              (Display           => Port_Cfg.Display,
-               Target_Dotclock   => Target_Clock,
+              (Target_Dotclock   => Target_Clock,
                -- should be, but doesn't has to be always the same:
                Reference_Clock   => 96_000_000,
+               Limits            => Select_Limits (Port_Cfg.Display, Target_Clock),
                Best_Clock        => Clk,
                Valid             => Success);
          else

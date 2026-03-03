@@ -74,25 +74,27 @@ is
 
    begin
       Config.Valid_Port (Analog) := True;
-      Config.Valid_Port (LVDS)   := Config.GMCH_GM45;
-      for HDMI_Port in GMCH_HDMI_Port loop
-         Registers.Is_Set_Mask
-           (Register => GMCH_HDMI (HDMI_Port),
-            Mask     => PORT_DETECTED,
-            Result   => Detected);
-         Config.Valid_Port (To_HDMI_Port (HDMI_Port)) := Detected;
-         hotplug_mask_set := hotplug_mask_set or
-           (if Detected then HDMI_PORT_HOTPLUG_EN (HDMI_Port) else 0);
-      end loop;
-      for DP_Port in GMCH_DP_Port loop
-         Registers.Is_Set_Mask
-           (Register => GMCH_DP (DP_Port),
-            Mask     => PORT_DETECTED,
-            Result   => Detected);
-         Config.Valid_Port (To_DP_Port (DP_Port)) := Detected;
-         hotplug_mask_set := hotplug_mask_set or
-           (if Detected then DP_PORT_HOTPLUG_EN (DP_Port) else 0);
-      end loop;
+      Config.Valid_Port (LVDS)   := Config.GMCH_GM45 or Config.GMCH_GM965;
+      if not Config.GMCH_GM965 then
+         for HDMI_Port in GMCH_HDMI_Port loop
+            Registers.Is_Set_Mask
+              (Register => GMCH_HDMI (HDMI_Port),
+               Mask     => PORT_DETECTED,
+               Result   => Detected);
+            Config.Valid_Port (To_HDMI_Port (HDMI_Port)) := Detected;
+            hotplug_mask_set := hotplug_mask_set or
+              (if Detected then HDMI_PORT_HOTPLUG_EN (HDMI_Port) else 0);
+         end loop;
+         for DP_Port in GMCH_DP_Port loop
+            Registers.Is_Set_Mask
+              (Register => GMCH_DP (DP_Port),
+               Mask     => PORT_DETECTED,
+               Result   => Detected);
+            Config.Valid_Port (To_DP_Port (DP_Port)) := Detected;
+            hotplug_mask_set := hotplug_mask_set or
+              (if Detected then DP_PORT_HOTPLUG_EN (DP_Port) else 0);
+         end loop;
+      end if;
       Registers.Write
         (Register => Registers.PORT_HOTPLUG_EN,
          Value => hotplug_mask_set);

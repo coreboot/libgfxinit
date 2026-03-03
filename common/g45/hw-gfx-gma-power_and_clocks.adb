@@ -46,10 +46,32 @@ package body HW.GFX.GMA.Power_And_Clocks is
         (0 => GM45_3200, 1 => GM45_4000, 2 => GM45_5333, 4 => GM45_2667,
          others => (others => 1));
 
+      -- Crestline (GM965) VCO divisor tables from Linux' i965gm_get_cdclk
+      CL_3200 : constant Div_Array := (16, 10,  8, others => 1);
+      CL_4000 : constant Div_Array := (20, 12, 10, others => 1);
+      CL_5333 : constant Div_Array := (24, 16, 14, others => 1);
+      CL_Divs : constant array (Natural range 0 .. 7) of Div_Array :=
+        (0 => CL_3200, 1 => CL_4000, 2 => CL_5333,
+         others => (others => 1));
+
       HPLLVCO : Word32;
       VCO_Sel : Natural range 0 .. 7;
    begin
-      if Config.Has_GMCH_Mobile_VCO then
+      if Config.GMCH_GM965 then
+         Registers.Read (Registers.GMCH_HPLLVCO_MOBILE, HPLLVCO);
+         VCO_Sel := Natural (HPLLVCO and 7);
+         VCO :=
+           (case VCO_Sel is
+               when 0 => 3_200_000_000,
+               when 1 => 4_000_000_000,
+               when 2 => 5_333_333_333,
+               when 3 => 6_400_000_000,
+               when 4 => 3_333_333_333,
+               when 5 => 3_566_666_667,
+               when 6 => 4_266_666_667,
+               when others => 0);
+         Divisors := CL_Divs (VCO_Sel);
+      elsif Config.Has_GMCH_Mobile_VCO then
          Registers.Read (Registers.GMCH_HPLLVCO_MOBILE, HPLLVCO);
          VCO_Sel := Natural (HPLLVCO and 7);
          VCO :=
@@ -91,7 +113,14 @@ package body HW.GFX.GMA.Power_And_Clocks is
       if PCI_Usable then
          Get_VCO (VCO, Divisors);
          PCI_Read16 (GCFGC, 16#f0#);
-         if Config.Has_GMCH_Mobile_VCO then
+         if Config.GMCH_GM965 then
+            -- Linux i965gm_get_cdclk: cdclk_sel = ((tmp >> 8) & 0x1f) - 1
+            if (Shift_Right (GCFGC, 8) and 16#1f#) in 1 .. 3 then
+               CDClk_Sel := Natural (Shift_Right (GCFGC, 8) and 16#1f#) - 1;
+            else
+               CDClk_Sel := Div_Array'Last;
+            end if;
+         elsif Config.Has_GMCH_Mobile_VCO then
             CDClk_Sel := Natural (Shift_Right (GCFGC, 12) and 1);
          else
             CDClk_Sel := Natural (Shift_Right (GCFGC, 4) and 7);
@@ -102,7 +131,9 @@ package body HW.GFX.GMA.Power_And_Clocks is
       if Tmp_Clk in Config.CDClk_Range then
          CDClk := Tmp_Clk;
       else
-         if Config.Has_GMCH_Mobile_VCO then
+         if Config.GMCH_GM965 then
+            CDClk := 4_000_000_000 / 20;  -- 200 MHz
+         elsif Config.Has_GMCH_Mobile_VCO then
             CDClk := 5_333_333_333 / 24;
          else
             CDClk := 5_333_333_333 / 28;
