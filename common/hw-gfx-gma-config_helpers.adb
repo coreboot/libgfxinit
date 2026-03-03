@@ -29,15 +29,22 @@ is
    begin
       return
         (case Config.Gen is
+            when I945 =>               -- LVDS, VGA, SDVO B/C on GMCH
+              (case Port is
+                  when LVDS         => LVDS,
+                  when HDMI1 | DP1  => DIGI_B, -- SDVO B
+                  when HDMI2 | DP2  => DIGI_C, -- SDVO C
+                  when Analog       => VGA,
+                  when others       => DIGI_A), -- n/a, actually
             when G45 =>                -- everything on GMCH
-               (case Port is
-                   when LVDS         => LVDS,
-                   when eDP          => DIGI_A, -- n/a, actually
-                   when HDMI1 | DP1  => DIGI_B,
-                   when HDMI2 | DP2  => DIGI_C,
-                   when HDMI3 | DP3  => DIGI_D,
-                   when Analog       => VGA,
-                   when others       => DIGI_A), -- n/a, actually
+              (case Port is
+                  when LVDS         => LVDS,
+                  when eDP          => DIGI_A, -- n/a, actually
+                  when HDMI1 | DP1  => DIGI_B,
+                  when HDMI2 | DP2  => DIGI_C,
+                  when HDMI3 | DP3  => DIGI_D,
+                  when Analog       => VGA,
+                  when others       => DIGI_A), -- n/a, actually
             when Ironlake =>           -- everything but eDP through FDI/PCH
               (if Port = eDP then
                   DIGI_A

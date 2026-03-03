@@ -35,10 +35,12 @@ is
    subtype GTT_Range is Natural range 0 .. 16#8_0000# - 1;
    GTT_Rotation_Offset : constant GTT_Range := GTT_Range'Last / 2 + 1;
 
-   type Generation is (G45, Ironlake, Haswell, Broxton, Skylake, Tigerlake);
+   type Generation is (I945, G45, Ironlake, Haswell, Broxton, Skylake, Tigerlake);
 
    type CPU_Type is
-     (G45,
+     (I945G,
+      I945GM,
+      G45,
       GM45,
       Ironlake,
       Sandybridge,
@@ -226,6 +228,13 @@ is
         (Input => State,
          In_Out => Device_State, Proof_In => Init_State),
       Pre => Is_Initialized;
+
+   procedure GTT_Entry_Count (Count : out Natural)
+   with
+      Global =>
+        (Input => State,
+         In_Out => Device_State, Proof_In => Init_State),
+      Pre => Is_Initialized and HW.Config.Dynamic_MMIO;
 
    procedure Setup_Default_FB
      (FB       : in     Framebuffer_Type;

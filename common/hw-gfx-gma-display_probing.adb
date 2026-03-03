@@ -209,6 +209,19 @@ is
          exit when not Success;
       end loop;
 
+      -- On pre-i965 hardware, LVDS must use Pipe B (Secondary).
+      -- If the scan assigned LVDS to Primary, swap with Secondary.
+      if Config.LVDS_Needs_Pipe_B and
+         Configs (Primary).Port = LVDS
+      then
+         declare
+            Tmp : constant Pipe_Config := Configs (Secondary);
+         begin
+            Configs (Secondary) := Configs (Primary);
+            Configs (Primary) := Tmp;
+         end;
+      end if;
+
       -- Restore power settings
       if not Keep_Power then
          Power_And_Clocks.Power_Set_To (Cur_Configs);

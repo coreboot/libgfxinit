@@ -27,6 +27,8 @@ package body HW.GFX.GMA.Pipe_Setup is
    DSPCNTR_ENABLE                      : constant :=  1 * 2 ** 31;
    DSPCNTR_GAMMA_CORRECTION            : constant :=  1 * 2 ** 30;
    DSPCNTR_FORMAT_MASK                 : constant := 15 * 2 ** 26;
+   DSPCNTR_PIPE_SEL_MASK               : constant :=  3 * 2 ** 24;
+   DSPCNTR_PIPE_B_SELECT               : constant :=  1 * 2 ** 24;
    DSPCNTR_DISABLE_TRICKLE_FEED        : constant :=  1 * 2 ** 14;
    DSPCNTR_TILED_SURFACE_LINEAR        : constant :=  0 * 2 ** 10;
    DSPCNTR_TILED_SURFACE_X_TILED       : constant :=  1 * 2 ** 10;
@@ -36,10 +38,14 @@ package body HW.GFX.GMA.Pipe_Setup is
       X_Tiled  => DSPCNTR_TILED_SURFACE_X_TILED,
       Y_Tiled  => 0); -- unsupported
 
+   function DSPCNTR_PIPE_SEL (Pipe : Pipe_Index) return Word32 is
+     (if Pipe = Secondary then DSPCNTR_PIPE_B_SELECT else 0);
+
    DSPCNTR_MASK : constant Word32 :=
       DSPCNTR_ENABLE or
       DSPCNTR_GAMMA_CORRECTION or
       DSPCNTR_FORMAT_MASK or
+      DSPCNTR_PIPE_SEL_MASK or
       DSPCNTR_DISABLE_TRICKLE_FEED or
       DSPCNTR_TILED_SURFACE_X_TILED;
 
@@ -212,7 +218,7 @@ package body HW.GFX.GMA.Pipe_Setup is
    is
       -- FIXME: setup correct format, based on framebuffer RGB format
       Format : constant Word32 := 6 * 2 ** 26;
-      PRI : Word32 := DSPCNTR_ENABLE or Format;
+      PRI : Word32 := Format;
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
@@ -245,11 +251,19 @@ package body HW.GFX.GMA.Pipe_Setup is
             Registers.Write (Controller.PLANE_SURF, FB.Offset and 16#ffff_f000#);
          end;
       else
+         if Config.Has_DSPCNTR_Pipe_Select then
+            PRI := PRI or DSPCNTR_PIPE_SEL (Controller.Pipe);
+         end if;
          if Config.Disable_Trickle_Feed then
             PRI := PRI or DSPCNTR_DISABLE_TRICKLE_FEED;
          end if;
-         -- for now, just disable gamma LUT (can't do anything
-         -- useful without colorimetry information from display)
+
+         -- Write DSPCNTR *without* the enable bit first.  On pre-SKL
+         -- hardware the control register self-arms when the plane
+         -- transitions from disabled to enabled, latching whatever
+         -- stride/size/offset values happen to be in the registers at
+         -- that moment.  Programming format, pipe-select, and trickle-
+         -- feed now avoids a glitch with stale geometry values.
          Registers.Unset_And_Set_Mask
             (Register   => Controller.DSPCNTR,
              Mask_Unset => DSPCNTR_MASK,
@@ -257,6 +271,16 @@ package body HW.GFX.GMA.Pipe_Setup is
 
          Registers.Write
            (Controller.DSPSTRIDE, Word32 (Pixel_To_Bytes (FB.Stride, FB)));
+
+         -- Gen3 (i945): program DSPSIZE and DSPPOS before the surface
+         -- address write that arms the double-buffered plane registers.
+         if Config.Gen_I945 then
+            Registers.Write
+              (Controller.DSPSIZE,
+               Encode (Rotated_Width (FB), Rotated_Height (FB)));
+            Registers.Write (Controller.DSPPOS, 16#0000_0000#);
+         end if;
+
          if Config.Has_DSP_Linoff and then FB.Tiling = Linear then
             pragma Assert_And_Cut (True);
             declare
@@ -265,19 +289,33 @@ package body HW.GFX.GMA.Pipe_Setup is
             begin
                Registers.Write
                  (Register => Controller.DSPLINOFF,
-                  Value    => Word32 (Pixel_To_Bytes (Linear_Offset, FB)));
+                  Value    => (if Config.Has_DSPSURF
+                               then Word32 (Pixel_To_Bytes (Linear_Offset, FB))
+                               else (FB.Offset and 16#ffff_f000#) or
+                                    Word32 (Pixel_To_Bytes (Linear_Offset, FB))));
                Registers.Write (Controller.DSPTILEOFF, 0);
             end;
          else
             if Config.Has_DSP_Linoff then
-               Registers.Write (Controller.DSPLINOFF, 0);
+               Registers.Write (Controller.DSPLINOFF,
+                  (if Config.Has_DSPSURF then 0
+                   else FB.Offset and 16#ffff_f000#));
             end if;
             Registers.Write
               (Register => Controller.DSPTILEOFF,
                Value    => Shift_Left (Word32 (FB.Start_Y), 16) or
                            Word32 (FB.Start_X));
          end if;
-         Registers.Write (Controller.DSPSURF, FB.Offset and 16#ffff_f000#);
+         if Config.Has_DSPSURF then
+            Registers.Write (Controller.DSPSURF, FB.Offset and 16#ffff_f000#);
+         end if;
+
+         -- Now enable the plane.  All geometry registers are in place,
+         -- so the self-arm latches correct values.
+         Registers.Write
+           (Register => Controller.DSPCNTR,
+            Value    => DSPCNTR_ENABLE or PRI or
+                        DSPCNTR_TILED_SURFACE (FB.Tiling));
       end if;
    end Setup_Hires_Plane;
 
@@ -579,11 +617,17 @@ package body HW.GFX.GMA.Pipe_Setup is
    is
       Used_For_Secondary : Boolean;
    begin
-      Registers.Is_Set_Mask
-        (Register => Registers.GMCH_PFIT_CONTROL,
-         Mask     => GMCH_PFIT_CONTROL_SELECT_PIPE_B,
-         Result   => Used_For_Secondary);
-      Pipe := (if Used_For_Secondary then Secondary else Primary);
+      if Config.Gen_I945 then
+         -- Gen3: panel fitter is hardwired to Pipe B (Secondary).
+         -- The PFIT_PIPE field (bits 30:29) does not exist on Gen3.
+         Pipe := Secondary;
+      else
+         Registers.Is_Set_Mask
+           (Register => Registers.GMCH_PFIT_CONTROL,
+            Mask     => GMCH_PFIT_CONTROL_SELECT_PIPE_B,
+            Result   => Used_For_Secondary);
+         Pipe := (if Used_For_Secondary then Secondary else Primary);
+      end if;
    end;
 
    procedure Panel_Fitter_Off (Controller : Controller_Type)
@@ -604,7 +648,10 @@ package body HW.GFX.GMA.Pipe_Setup is
       elsif Config.Has_GMCH_PFIT_CONTROL then
          Gmch_Panel_Fitter_Pipe (Pipe_Using_PF);
          if Pipe_Using_PF = Controller.Pipe then
-            Registers.Unset_Mask (Registers.GMCH_PFIT_CONTROL, PF_CTRL_ENABLE);
+            -- Write 0 to clear all bits (enable, scaling mode, auto-scale,
+            -- interpolation).  Just clearing the enable bit can leave stale
+            -- Gen3 auto-scale bits that confuse the hardware.
+            Registers.Write (Registers.GMCH_PFIT_CONTROL, 16#0000_0000#);
          end if;
       else
          Registers.Unset_Mask (Controller.PF_CTRL, PF_CTRL_ENABLE);
@@ -758,7 +805,7 @@ package body HW.GFX.GMA.Pipe_Setup is
 
       Legacy_VGA_Off;
 
-      for Pipe in Pipe_Index loop
+      for Pipe in Pipe_Index range Pipe_Index'First .. Config.Max_Pipe loop
          Planes_Off (Controllers (Pipe), Cursors (Pipe));
          Transcoder.Off (Pipe);
          Panel_Fitter_Off (Controllers (Pipe));

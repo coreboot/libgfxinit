@@ -82,6 +82,8 @@ private
          DSPSTRIDE         : Registers.Registers_Index;
          DSPSURF           : Registers.Registers_Index;
          DSPTILEOFF        : Registers.Registers_Index;
+         DSPSIZE           : Registers.Registers_Index;
+         DSPPOS            : Registers.Registers_Index;
          SPCNTR            : Registers.Registers_Index;
          -- Skylake registers (partially aliased)
          PLANE_CTL         : Registers.Registers_Index;
@@ -104,6 +106,11 @@ private
 
    type Controller_Array is array (Pipe_Index) of Controller_Type;
 
+   --  On Gen3 (i945), FBC only works with Plane A, but LVDS and the
+   --  panel fitter are hooked to Pipe B. Hence we want Plane A feeding
+   --  Pipe B, which means swapping the plane register assignments:
+   --  Primary (Pipe A) gets Plane B, Secondary (Pipe B) gets Plane A.
+
    Controllers : constant Controller_Array :=
      (Primary => Controller_Type'
         (Pipe              => Primary,
@@ -112,11 +119,27 @@ private
          PF_CTRL           => Registers.PFA_CTL_1,
          PF_WIN_POS        => Registers.PFA_WIN_POS,
          PF_WIN_SZ         => Registers.PFA_WIN_SZ,
-         DSPCNTR           => Registers.DSPACNTR,
-         DSPLINOFF         => Registers.DSPALINOFF,
-         DSPSTRIDE         => Registers.DSPASTRIDE,
-         DSPSURF           => Registers.DSPASURF,
-         DSPTILEOFF        => Registers.DSPATILEOFF,
+         DSPCNTR           =>
+           (if Config.Planes_Pipes_Swapped
+            then Registers.DSPBCNTR else Registers.DSPACNTR),
+         DSPLINOFF         =>
+           (if Config.Planes_Pipes_Swapped
+            then Registers.DSPBLINOFF else Registers.DSPALINOFF),
+         DSPSTRIDE         =>
+           (if Config.Planes_Pipes_Swapped
+            then Registers.DSPBSTRIDE else Registers.DSPASTRIDE),
+         DSPSURF           =>
+           (if Config.Planes_Pipes_Swapped
+            then Registers.DSPBSURF else Registers.DSPASURF),
+         DSPTILEOFF        =>
+           (if Config.Planes_Pipes_Swapped
+            then Registers.DSPBTILEOFF else Registers.DSPATILEOFF),
+         DSPSIZE           =>
+           (if Config.Planes_Pipes_Swapped
+            then Registers.PLANE_SIZE_1_B else Registers.PLANE_SIZE_1_A),
+         DSPPOS            =>
+           (if Config.Planes_Pipes_Swapped
+            then Registers.PLANE_POS_1_B else Registers.PLANE_POS_1_A),
          SPCNTR            => Registers.SPACNTR,
          PLANE_CTL         => Registers.DSPACNTR,
          PLANE_OFFSET      => Registers.DSPATILEOFF,
@@ -157,11 +180,27 @@ private
          PF_CTRL           => Registers.PFB_CTL_1,
          PF_WIN_POS        => Registers.PFB_WIN_POS,
          PF_WIN_SZ         => Registers.PFB_WIN_SZ,
-         DSPCNTR           => Registers.DSPBCNTR,
-         DSPLINOFF         => Registers.DSPBLINOFF,
-         DSPSTRIDE         => Registers.DSPBSTRIDE,
-         DSPSURF           => Registers.DSPBSURF,
-         DSPTILEOFF        => Registers.DSPBTILEOFF,
+         DSPCNTR           =>
+           (if Config.Planes_Pipes_Swapped
+            then Registers.DSPACNTR else Registers.DSPBCNTR),
+         DSPLINOFF         =>
+           (if Config.Planes_Pipes_Swapped
+            then Registers.DSPALINOFF else Registers.DSPBLINOFF),
+         DSPSTRIDE         =>
+           (if Config.Planes_Pipes_Swapped
+            then Registers.DSPASTRIDE else Registers.DSPBSTRIDE),
+         DSPSURF           =>
+           (if Config.Planes_Pipes_Swapped
+            then Registers.DSPASURF else Registers.DSPBSURF),
+         DSPTILEOFF        =>
+           (if Config.Planes_Pipes_Swapped
+            then Registers.DSPATILEOFF else Registers.DSPBTILEOFF),
+         DSPSIZE           =>
+           (if Config.Planes_Pipes_Swapped
+            then Registers.PLANE_SIZE_1_A else Registers.PLANE_SIZE_1_B),
+         DSPPOS            =>
+           (if Config.Planes_Pipes_Swapped
+            then Registers.PLANE_POS_1_A else Registers.PLANE_POS_1_B),
          SPCNTR            => Registers.SPBCNTR,
          PLANE_CTL         => Registers.DSPBCNTR,
          PLANE_OFFSET      => Registers.DSPBTILEOFF,
@@ -207,6 +246,8 @@ private
          DSPSTRIDE         => Registers.DSPCSTRIDE,
          DSPSURF           => Registers.DSPCSURF,
          DSPTILEOFF        => Registers.DSPCTILEOFF,
+         DSPSIZE           => Registers.PLANE_SIZE_1_C,
+         DSPPOS            => Registers.PLANE_POS_1_C,
          SPCNTR            => Registers.SPCCNTR,
          PLANE_CTL         => Registers.DSPCCNTR,
          PLANE_OFFSET      => Registers.DSPCTILEOFF,

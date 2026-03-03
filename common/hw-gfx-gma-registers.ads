@@ -2395,7 +2395,9 @@ is
       Last_Page   : in     GTT_Range;
       Tiling      : in     XY_Tiling;
       Pitch       : in     Natural;
-      Success     :    out Boolean);
+      Success     :    out Boolean)
+   with
+      Pre => Last_Page >= First_Page;
 
    procedure Remove_Fence (First_Page, Last_Page : GTT_Range);
 

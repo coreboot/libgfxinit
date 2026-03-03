@@ -75,20 +75,57 @@ is
 
    FENCE_PAGE_SHIFT                    : constant := 12;
    FENCE_PAGE_MASK                     : constant := 16#ffff_f000#;
-   FENCE_TILE_WALK_YMAJOR              : constant := 1 * 2 ** 1;
    FENCE_VALID                         : constant := 1 * 2 ** 0;
+
+   -- Gen4+ (i965/G45+): 64-bit fence pairs at Fence_Base + i*8
+   FENCE_TILE_WALK_YMAJOR              : constant := 1 * 2 ** 1;
 
    function Fence_Lower_Idx (Fence : Fence_Range) return Registers_Range is
       (Registers_Range (Config.Fence_Base / Register_Width + 2 * Fence));
    function Fence_Upper_Idx (Fence : Fence_Range) return Registers_Range is
       (Fence_Lower_Idx (Fence) + 1);
 
+   -- Gen3 (i915/i945): 32-bit fences, split layout:
+   --   Fences 0-7:  0x2000 + i*4
+   --   Fences 8-15: 0x3000 + (i-8)*4
+   -- FENCE_REG(i) = 0x2000 + (((i) & 8) << 9) + ((i) & 7) * 4
+   GEN3_FENCE_TILING_Y_SHIFT           : constant := 12;
+   GEN3_FENCE_SIZE_SHIFT               : constant := 8;
+   GEN3_FENCE_PITCH_SHIFT              : constant := 4;
+
+   function Gen3_Fence_Idx (Fence : Fence_Range) return Registers_Range is
+      (Registers_Range
+         ((16#2000# + (Fence / 8) * 16#1000# + (Fence mod 8) * 4) /
+          Register_Width));
+
+   -- Compute floor(log2(n)) for n >= 1 (fence size/pitch encoding).
+   function Floor_Log2 (N : Word32) return Natural
+   with
+      Pre => N >= 1
+   is
+      Result : Natural := 0;
+      Val    : Word32 := N;
+   begin
+      for I in 0 .. 31 loop
+         exit when Val <= 1;
+         Val    := Shift_Right (Val, 1);
+         Result := I + 1;
+      end loop;
+      return Result;
+   end Floor_Log2;
+
    procedure Clear_Fences
    is
    begin
-      for Fence in Fence_Range range 0 .. Config.Fence_Count - 1 loop
-         Regs.Write (Fence_Lower_Idx (Fence), 0);
-      end loop;
+      if Config.Has_Gen3_Fences then
+         for Fence in Fence_Range range 0 .. Config.Fence_Count - 1 loop
+            Regs.Write (Gen3_Fence_Idx (Fence), 0);
+         end loop;
+      else
+         for Fence in Fence_Range range 0 .. Config.Fence_Count - 1 loop
+            Regs.Write (Fence_Lower_Idx (Fence), 0);
+         end loop;
+      end if;
    end Clear_Fences;
 
    procedure Add_Fence
@@ -111,42 +148,106 @@ is
       pragma Debug (Debug.Put_Line (" tiles per row."));
 
       Success := False;
-      for Fence in Fence_Range range 0 .. Config.Fence_Count - 1 loop
-         Regs.Read (Reg32, Fence_Lower_Idx (Fence));
-         if (Reg32 and FENCE_VALID) = 0 then
-            Regs.Write
-              (Index => Fence_Lower_Idx (Fence),
-               Value => Shift_Left (Word32 (First_Page), FENCE_PAGE_SHIFT) or
-                        (if Y_Tiles then FENCE_TILE_WALK_YMAJOR else 0) or
-                        FENCE_VALID);
-            Regs.Write
-              (Index => Fence_Upper_Idx (Fence),
-               Value => Shift_Left (Word32 (Last_Page), FENCE_PAGE_SHIFT) or
-                        Word32 (Pitch) * (if Y_Tiles then 1 else 4) - 1);
-            Success := True;
-            exit;
-         end if;
-      end loop;
+
+      if Config.Has_Gen3_Fences then
+         -- Gen3 i945: single 32-bit fence register per fence
+         -- Format: start[31:20] | tiling_y[12] | size_bits[11:8] |
+         --         pitch_log2[7:4] | valid[0]
+         -- stride: Y-tiled /128, X-tiled /512 (i945 has 128-byte Y tiling)
+         -- size_bits: log2(size_in_pages / 256) = log2(size_in_MB)
+         for Fence in Fence_Range range 0 .. Config.Fence_Count - 1 loop
+            Regs.Read (Reg32, Gen3_Fence_Idx (Fence));
+            if (Reg32 and FENCE_VALID) = 0 then
+               declare
+                  Start_Addr : constant Word32 :=
+                     Shift_Left (Word32 (First_Page), FENCE_PAGE_SHIFT);
+                  Size_Pages : constant Word32 :=
+                     Word32 (Last_Page - First_Page + 1);
+                  -- Size in MB (pages / 256, since page = 4KB, 256*4KB = 1MB)
+                  Size_MB    : constant Word32 := Size_Pages / 256;
+                  -- Pitch in tiles (X: 512B tiles, Y: 128B tiles for i945)
+                  Stride     : constant Word32 :=
+                     Word32 (Pitch) / (if Y_Tiles then 128 else 512);
+                  Size_Bits  : constant Word32 :=
+                     (if Size_MB >= 1
+                      then Word32 (Floor_Log2 (Size_MB))
+                      else 0);
+               begin
+                  Regs.Write
+                    (Index => Gen3_Fence_Idx (Fence),
+                     Value => Start_Addr or
+                              (if Y_Tiles
+                               then Shift_Left (1, GEN3_FENCE_TILING_Y_SHIFT)
+                               else 0) or
+                              Shift_Left (Size_Bits, GEN3_FENCE_SIZE_SHIFT) or
+                              Shift_Left
+                                ((if Stride >= 1
+                                  then Word32 (Floor_Log2 (Stride))
+                                  else 0),
+                                 GEN3_FENCE_PITCH_SHIFT) or
+                              FENCE_VALID);
+               end;
+               Success := True;
+               exit;
+            end if;
+         end loop;
+      else
+         -- Gen4+ (i965/G45+): 64-bit fence register pairs
+         for Fence in Fence_Range range 0 .. Config.Fence_Count - 1 loop
+            Regs.Read (Reg32, Fence_Lower_Idx (Fence));
+            if (Reg32 and FENCE_VALID) = 0 then
+               Regs.Write
+                 (Index => Fence_Lower_Idx (Fence),
+                  Value => Shift_Left (Word32 (First_Page), FENCE_PAGE_SHIFT) or
+                           (if Y_Tiles then FENCE_TILE_WALK_YMAJOR else 0) or
+                           FENCE_VALID);
+               Regs.Write
+                 (Index => Fence_Upper_Idx (Fence),
+                  Value => Shift_Left (Word32 (Last_Page), FENCE_PAGE_SHIFT) or
+                           Word32 (Pitch) * (if Y_Tiles then 1 else 4) - 1);
+               Success := True;
+               exit;
+            end if;
+         end loop;
+      end if;
    end Add_Fence;
 
    procedure Remove_Fence (First_Page, Last_Page : GTT_Range)
    is
       Page_Lower : constant Word32 :=
          Shift_Left (Word32 (First_Page), FENCE_PAGE_SHIFT);
-      Page_Upper : constant Word32 :=
-         Shift_Left (Word32 (Last_Page), FENCE_PAGE_SHIFT);
-      Fence_Upper, Fence_Lower : Word32;
+      Reg32 : Word32;
    begin
-      for Fence in Fence_Range range 0 .. Config.Fence_Count - 1 loop
-         Regs.Read (Fence_Lower, Fence_Lower_Idx (Fence));
-         Regs.Read (Fence_Upper, Fence_Upper_Idx (Fence));
-         if (Fence_Lower and FENCE_PAGE_MASK) = Page_Lower and
-            (Fence_Upper and FENCE_PAGE_MASK) = Page_Upper
-         then
-            Regs.Write (Fence_Lower_Idx (Fence), 0);
-            exit;
-         end if;
-      end loop;
+      if Config.Has_Gen3_Fences then
+         -- Gen3: match start address in single 32-bit register
+         for Fence in Fence_Range range 0 .. Config.Fence_Count - 1 loop
+            Regs.Read (Reg32, Gen3_Fence_Idx (Fence));
+            if (Reg32 and FENCE_VALID) /= 0 and
+               (Reg32 and 16#fff0_0000#) = (Page_Lower and 16#fff0_0000#)
+            then
+               Regs.Write (Gen3_Fence_Idx (Fence), 0);
+               exit;
+            end if;
+         end loop;
+      else
+         -- Gen4+: match start in lower, end in upper register
+         declare
+            Page_Upper : constant Word32 :=
+               Shift_Left (Word32 (Last_Page), FENCE_PAGE_SHIFT);
+            Fence_Upper, Fence_Lower : Word32;
+         begin
+            for Fence in Fence_Range range 0 .. Config.Fence_Count - 1 loop
+               Regs.Read (Fence_Lower, Fence_Lower_Idx (Fence));
+               Regs.Read (Fence_Upper, Fence_Upper_Idx (Fence));
+               if (Fence_Lower and FENCE_PAGE_MASK) = Page_Lower and
+                  (Fence_Upper and FENCE_PAGE_MASK) = Page_Upper
+               then
+                  Regs.Write (Fence_Lower_Idx (Fence), 0);
+                  exit;
+               end if;
+            end loop;
+         end;
+      end if;
    end Remove_Fence;
 
    ----------------------------------------------------------------------------
@@ -157,7 +258,13 @@ is
       Valid          : Boolean)
    is
    begin
-      if not Config.Has_64bit_GTT then
+      if Config.Has_I945_Simple_GTT_PTE then
+         -- i945: simple 32-bit PTE, no high address bits
+         GTT_32.Write
+           (Index => GTT_Page,
+            Value => GTT_PTE_32 (Device_Address and 16#ffff_f000#) or
+                     Boolean'Pos (Valid));
+      elsif not Config.Has_64bit_GTT then
          GTT_32.Write
            (Index => GTT_Page,
             Value => GTT_PTE_32 (Device_Address and 16#ffff_f000#) or
@@ -178,7 +285,15 @@ is
       GTT_Page       : in     GTT_Range)
    is
    begin
-      if not Config.Has_64bit_GTT then
+      if Config.Has_I945_Simple_GTT_PTE then
+         declare
+            PTE : GTT_PTE_32;
+         begin
+            GTT_32.Read (PTE, GTT_Page);
+            Valid := (PTE and GTT_PTE_Valid) /= 0;
+            Device_Address := GTT_Address_Type (PTE and 16#ffff_f000#);
+         end;
+      elsif not Config.Has_64bit_GTT then
          declare
             PTE : GTT_PTE_32;
          begin

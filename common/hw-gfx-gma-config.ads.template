@@ -18,6 +18,7 @@ private package HW.GFX.GMA.Config is
 
    CPU_First : constant CPU_Type :=
      (case Gen is
+         when I945      => I945G,
          when G45       => G45,
          when Ironlake  => Ironlake,
          when Haswell   => Haswell,
@@ -26,6 +27,7 @@ private package HW.GFX.GMA.Config is
          when Tigerlake => Tigerlake);
    CPU_Last : constant CPU_Type :=
      (case Gen is
+         when I945      => I945GM,
          when G45       => GM45,
          when Ironlake  => Ivybridge,
          when Haswell   => Broadwell,
@@ -45,6 +47,7 @@ private package HW.GFX.GMA.Config is
 
    PCH_First : constant PCH_Type :=
      (case Gen is
+         when I945      => No_PCH,
          when G45       => No_PCH,
          when Ironlake  => Ibex_Peak,
          when Haswell   => Lynx_Point,
@@ -53,6 +56,7 @@ private package HW.GFX.GMA.Config is
          when Tigerlake => Tiger_Point);
    PCH_Last : constant PCH_Type :=
      (case Gen is
+         when I945      => No_PCH,
          when G45       => No_PCH,
          when Ironlake  => Cougar_Point,
          when Haswell   => Lynx_Point,
@@ -85,8 +89,8 @@ private package HW.GFX.GMA.Config is
    -- the CDClk rate. To ease proofs, we limit CDClk's range.
    CDClk_Min : constant Frequency_Type :=
      (case Gen is
-         when G45 .. Ironlake => Frequency_Type'First * 100 / 90 + 1,
-         when others          => Frequency_Type'First);
+         when I945 .. Ironlake => Frequency_Type'First * 100 / 90 + 1,
+         when others           => Frequency_Type'First);
    subtype CDClk_Range is Frequency_Type range CDClk_Min .. Frequency_Type'Last;
 
    ----------------------------------------------------------------------------
@@ -137,6 +141,7 @@ private package HW.GFX.GMA.Config is
    -- To ease parsing, all multiline expressions of tagged config
    -- values start after a line break.
 
+   Gen_I945          : <genbool> := Gen = I945;
    Gen_G45           : <genbool> := Gen = G45;
    Gen_Ironlake      : <genbool> := Gen = Ironlake;
    Gen_Haswell       : <genbool> := Gen = Haswell;
@@ -144,13 +149,16 @@ private package HW.GFX.GMA.Config is
    Gen_Skylake       : <genbool> := Gen = Skylake;
    Gen_Tigerlake     : <genbool> := Gen = Tigerlake;
 
+   Up_To_G45         : <genbool> := Gen <= G45;
    Up_To_Ironlake    : <genbool> := Gen <= Ironlake;
+   G45_On            : <genbool> := Gen >= G45;
    Ironlake_On       : <genbool> := Gen >= Ironlake;
    Haswell_On        : <genbool> := Gen >= Haswell;
    Broxton_On        : <genbool> := Gen >= Broxton;
    Skylake_On        : <genbool> := Gen >= Skylake;
    Tigerlake_On      : <genbool> := Gen >= Tigerlake;
 
+   GMCH_I945GM       : <i945bool> := Gen_I945 and then CPU = I945GM;
    GMCH_GM45         : <g45bool> := Gen_G45 and then CPU = GM45;
    CPU_Ironlake      : <ilkbool> := Gen_Ironlake and then CPU = Ironlake;
    CPU_Sandybridge   : <ilkbool> := Gen_Ironlake and then CPU = Sandybridge;
@@ -185,7 +193,7 @@ private package HW.GFX.GMA.Config is
 
    Have_DVI_I              : constant Boolean := Analog_I2C_Port /= PCH_DAC;
 
-   Has_Presence_Straps           : <genbool> := not Gen_Broxton;
+   Has_Presence_Straps           : <genbool> := not Gen_Broxton and not Gen_I945;
    Is_ULT                        : <hswskltglbool> :=
      ((Gen_Haswell or Gen_Skylake or Gen_Tigerlake) and then CPU_Var = ULT);
    Is_ULX                        : <hswskltglbool> :=
@@ -194,7 +202,7 @@ private package HW.GFX.GMA.Config is
 
    ---------- CPU pipe: ---------
    Has_Tertiary_Pipe             : <ilkbool> := Ivybridge_On;
-   Disable_Trickle_Feed          : <genbool> := not Gen_Haswell;
+   Disable_Trickle_Feed          : <genbool> := not Gen_Haswell and not Gen_I945;
    Pipe_Enabled_Workaround       : <hswbool> := CPU_Broadwell;
    Has_EDP_Transcoder            : <genbool> := Haswell_On and not Tigerlake_On;
    Use_PDW_For_EDP_Scaling       : <hswbool> := CPU_Haswell;
@@ -205,12 +213,13 @@ private package HW.GFX.GMA.Config is
    Has_Pipeconf_BPC              : <hswbool> := not CPU_Haswell;
    Has_Plane_Control             : <genbool> := Broxton_On;
    Has_DSP_Linoff                : <genbool> := Up_To_Ironlake;
+   Has_DSPSURF                   : <genbool> := G45_On;
    Has_PF_Pipe_Select            : <ilkhswbool> := CPU_Ivybridge or CPU_Haswell;
    Has_Ivybridge_Cursors         : <ilkbool> := Ivybridge_On;
    VGA_Plane_Workaround          : <ilkbool> := CPU_Ivybridge;
    Has_GMCH_DP_Transcoder        : <genbool> := Gen_G45;
-   Has_GMCH_VGACNTRL             : <genbool> := Gen_G45;
-   Has_GMCH_PFIT_CONTROL         : <genbool> := Gen_G45;
+   Has_GMCH_VGACNTRL             : <genbool> := Up_To_G45;
+   Has_GMCH_PFIT_CONTROL         : <genbool> := Up_To_G45;
 
    ----------- Transcoder -------
    Need_Early_Transcoder_Setup   : <genbool> := Tigerlake_On;
@@ -246,8 +255,19 @@ private package HW.GFX.GMA.Config is
    Has_FDI_RX_Power_Down         : <genbool> := Gen_Haswell;
 
    ---------- Clocks: -----------
-   Has_GMCH_RawClk               : <genbool> := Gen_G45;
+   Has_GMCH_RawClk               : <genbool> := Up_To_G45;
    Has_GMCH_Mobile_VCO           : <g45bool> := GMCH_GM45;
+
+   ---------- I945-specific: ----
+   Has_I945_GTT_BAR              : <genbool> := Gen_I945;
+   Has_I945_Simple_GTT_PTE       : <genbool> := Gen_I945;
+   Has_Gen3_Fences               : <genbool> := Gen_I945;
+   -- Pre-i965: LVDS encoder can only source from Pipe B (Secondary)
+   LVDS_Needs_Pipe_B             : <genbool> := Gen_I945;
+   -- Pre-Gen5: DSPCNTR has a pipe select field (bits 25:24)
+   Has_DSPCNTR_Pipe_Select       : <genbool> := Up_To_G45;
+   -- Gen3: Plane A feeds Pipe B, Plane B feeds Pipe A (for FBC + LVDS)
+   Planes_Pipes_Swapped          : <genbool> := Gen_I945;
    Has_Broadwell_CDClk           : <hswbool> := CPU_Broadwell;
    Can_Switch_CDClk              : <hswbool> := Broadwell_On;
    Has_Fractional_RawClk         : <genbool> := Cannon_Point_On;
@@ -283,6 +303,7 @@ private package HW.GFX.GMA.Config is
    Ungate_GMBUS_Unit_Level       : <genbool> := Skylake_On and not Tigerlake_On;
    GMBUS_Alternative_Pins        : <genbool> := Gen_Broxton or Cannon_Point_On;
    Has_PCH_GMBUS                 : <genbool> := Ironlake_On;
+   Has_GMCH_GMBUS                : <genbool> := Up_To_G45;
 
    ----------- Power: -----------
    Has_IPS                       : <hswbool> :=
@@ -344,8 +365,9 @@ private package HW.GFX.GMA.Config is
 
    ----------------------------------------------------------------------------
 
-   Default_CDClk_Freq : <ilkhswvar> CDClk_Range :=
-     (if    Gen_G45                          then 320_000_000  -- unused
+   Default_CDClk_Freq : <i945ilkhswvar> CDClk_Range :=
+     (if    Gen_I945                         then 200_000_000  -- unused, depends on GCFGC
+      elsif Gen_G45                          then 320_000_000  -- unused
       elsif CPU_Ironlake                     then 450_000_000
       elsif CPU_Sandybridge or CPU_Ivybridge then 400_000_000
       elsif Gen_Haswell and then Is_ULX      then 337_500_000
@@ -356,7 +378,8 @@ private package HW.GFX.GMA.Config is
                                              else CDClk_Range'First);
 
    Default_RawClk_Freq : <hswvar> Frequency_Type :=
-     (if    Gen_G45        then 100_000_000  -- unused, depends on FSB
+     (if    Gen_I945       then 100_000_000  -- unused, depends on FSB
+      elsif Gen_G45        then 100_000_000  -- unused, depends on FSB
       elsif Gen_Ironlake   then 125_000_000
       elsif Gen_Haswell    then (if Is_LP then 24_000_000 else 125_000_000)
       elsif Gen_Broxton    then Frequency_Type'First  -- none needed
@@ -372,7 +395,7 @@ private package HW.GFX.GMA.Config is
    type Width_Per_Pipe is array (Pipe_Index) of Width_Type;
 
    Maximum_Scalable_Width : <hswvar> Width_Per_Pipe :=
-     (if Gen_G45 then   -- TODO: Is this true?
+     (if Gen_I945 or Gen_G45 then
         (Primary     => 4096,
          Secondary   => 2048,
          Tertiary    => Pos32'First)
@@ -388,7 +411,7 @@ private package HW.GFX.GMA.Config is
    -- Maximum X position of hardware cursors
    Maximum_Cursor_X : constant :=
      (case Gen is
-         when G45 .. Ironlake       => 4095,
+         when I945 .. Ironlake      => 4095,
          when Haswell .. Tigerlake  => 8191);
 
    Maximum_Cursor_Y : constant := 4095;
@@ -398,7 +421,7 @@ private package HW.GFX.GMA.Config is
    -- FIXME: Unknown for Broxton, Linux' i915 contains a fixme too :-D
    HDMI_Max_Clock_24bpp : constant Frequency_Type :=
      (case Gen is
-         when Generation'First .. G45      => 165_000_000,
+         when Generation'First .. G45      => 165_000_000, -- i945: no HDMI, moot
          when Ironlake                     => 225_000_000,
          when Haswell .. Skylake           => 300_000_000,
 	 when Tigerlake .. Generation'Last => 600_000_000);
@@ -412,8 +435,10 @@ private package HW.GFX.GMA.Config is
 
    GTT_PTE_Size : <hswvar> Natural := (if Has_64bit_GTT then 8 else 4);
 
-   Fence_Base : <ilkvar> Natural :=
-     (if not Sandybridge_On then 16#0000_3000# else 16#0010_0000#);
+   Fence_Base : <i945ilkvar> Natural :=
+     (if    Gen_I945         then 16#0000_2000#
+      elsif not Sandybridge_On then 16#0000_3000#
+      else                          16#0010_0000#);
 
    Fence_Count : <ilkvar> Natural :=
      (if not Ivybridge_On then 16 else 32);
@@ -560,6 +585,8 @@ private package HW.GFX.GMA.Config is
    function Is_GPU (Device_Id : Word16; CPU : CPU_Type; CPU_Var : CPU_Variant)
       return Boolean is
      (case CPU is
+         when I945G        => Device_Id = 16#2772#,
+         when I945GM       => Device_Id = 16#27a2# or Device_Id = 16#27ae#,
          when G45          => (Device_Id and 16#ff02#) = 16#2e02#,
          when GM45         => (Device_Id and 16#fffe#) = 16#2a42#,
          when Ironlake     => (Device_Id and 16#fff3#) = 16#0042#,

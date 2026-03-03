@@ -496,7 +496,9 @@ is
       use type HW.Word64;
 
       function MMIO_GTT_Offset return Natural is
-        (if Config.Has_64bit_GTT
+        (if Config.Has_I945_GTT_BAR
+         then 0  -- i945: GTT is on separate BAR3, not within BAR0
+         elsif Config.Has_64bit_GTT
          then Registers.MMIO_GTT_64_Offset
          else Registers.MMIO_GTT_32_Offset);
       PCI_MMIO_Base, PCI_GTT_Base : Word64;
@@ -507,7 +509,14 @@ is
       is
          Audio_VID_DID : Word32;
       begin
+         if Config.Gen_I945 then
+            -- i945 has no integrated audio DID to verify
+            Success := True;
+            return;
+         end if;
          case Config.Gen is
+            when I945 =>
+               Audio_VID_DID := 0;  -- unreachable due to early return
             when G45 =>
                Registers.Read (Registers.G4X_AUD_VID_DID, Audio_VID_DID);
             when Ironlake =>
@@ -568,14 +577,20 @@ is
       if Success then
          Check_Platform_PCI (Success);
          if Success then
-            Dev.Map (PCI_MMIO_Base, PCI.Res0, Length => MMIO_GTT_Offset);
-            Dev.Map (PCI_GTT_Base, PCI.Res0, Offset => MMIO_GTT_Offset);
+            if Config.Has_I945_GTT_BAR then
+               -- i945: MMIO is on BAR0, GTT is on separate BAR3
+               Dev.Map (PCI_MMIO_Base, PCI.Res0);
+               Dev.Map (PCI_GTT_Base, PCI.Res3);
+            else
+               Dev.Map (PCI_MMIO_Base, PCI.Res0, Length => MMIO_GTT_Offset);
+               Dev.Map (PCI_GTT_Base, PCI.Res0, Offset => MMIO_GTT_Offset);
+            end if;
             if PCI_MMIO_Base /= 0 and PCI_GTT_Base /= 0 then
                Registers.Set_Register_Base (PCI_MMIO_Base, PCI_GTT_Base);
                PCI_Usable := True;
             else
                pragma Debug (Debug.Put_Line
-                 ("ERROR: Couldn't map resoure0."));
+                 ("ERROR: Couldn't map resource0."));
                Success := Config.Default_MMIO_Base_Set;
             end if;
          end if;
@@ -828,11 +843,17 @@ is
       Pre => Is_Initialized
    is
       GGC_Reg : constant PCI.Index :=
-        (if Config.Gen_G45 or Config.CPU_Ironlake then 16#52# else 16#50#);
+        (if Config.Gen_I945 or Config.Gen_G45 or Config.CPU_Ironlake
+         then 16#52# else 16#50#);
       GGC : Word16;
    begin
       Dev.Read16 (GGC, GGC_Reg);
-      if Config.Gen_G45 or Config.CPU_Ironlake then
+      if Config.Gen_I945 then
+         -- i945 GTT is on a separate BAR3; GGC GGMS encoding differs
+         -- from Gen4+.  Match the Linux driver and use the BAR size.
+         Dev.Resource_Size (GTT_Size, PCI.Res3);
+         Stolen_Size := Stolen_Size_Gen4 (GGC);
+      elsif Config.Gen_G45 or Config.CPU_Ironlake then
          GTT_Size    := GTT_Size_Gen4 (GGC);
          Stolen_Size := Stolen_Size_Gen4 (GGC);
       elsif Config.CPU_Sandybridge or Config.CPU_Ivybridge or Config.CPU_Haswell
@@ -847,6 +868,46 @@ is
          Stolen_Size := Stolen_Size_Gen9 (GGC);
       end if;
    end Decode_Stolen;
+
+   procedure GTT_Entry_Count (Count : out Natural)
+   is
+      GTT_Size : Natural;
+
+      procedure Fake_Config_State_Access
+      with
+         Global => (Input => Config.Variable),
+         Annotate => (GNATprove, Intentional, "unused global",
+            "Used to have a common contract across platforms.");
+      procedure Fake_Config_State_Access is null;
+   begin
+      Fake_Config_State_Access;
+
+      if Config.Has_I945_GTT_BAR then
+         -- i945 GTT is on a separate BAR3; its size is the BAR size.
+         Dev.Resource_Size (GTT_Size, PCI.Res3);
+      else
+         -- Gen4+: GTT size is encoded in the GGC register.
+         declare
+            GGC_Reg : constant PCI.Index :=
+              (if Config.Gen_G45 or Config.CPU_Ironlake
+               then 16#52# else 16#50#);
+            GGC : Word16;
+         begin
+            Dev.Read16 (GGC, GGC_Reg);
+            if Config.Gen_G45 or Config.CPU_Ironlake then
+               GTT_Size := GTT_Size_Gen4 (GGC);
+            elsif Config.CPU_Sandybridge or
+                  Config.CPU_Ivybridge or
+                  Config.CPU_Haswell
+            then
+               GTT_Size := GTT_Size_Gen6 (GGC);
+            else
+               GTT_Size := GTT_Size_Gen8 (GGC);
+            end if;
+         end;
+      end if;
+      Count := Natural'Min (GTT_Size / Config.GTT_PTE_Size, GTT_Range'Last + 1);
+   end GTT_Entry_Count;
 
    -- Additional runtime validation that FB fits stolen memory and aperture.
    procedure Validate_FB (FB : Framebuffer_Type; Valid : out Boolean)

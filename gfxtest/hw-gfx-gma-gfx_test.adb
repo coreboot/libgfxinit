@@ -33,11 +33,17 @@ is
       Valid : Boolean;
    end record;
    GTT_Backup : array (GTT_Range) of GTT_Entry;
+   GTT_Backup_Count : Natural;
 
    procedure Backup_GTT
    is
    begin
-      for Idx in GTT_Range loop
+      GMA.GTT_Entry_Count (GTT_Backup_Count);
+      if GTT_Backup_Count = 0 then
+         Debug.Put_Line ("WARNING: GTT size is 0, skipping GTT backup.");
+         return;
+      end if;
+      for Idx in GTT_Range range 0 .. GTT_Backup_Count - 1 loop
          Read_GTT (GTT_Backup (Idx).Addr, GTT_Backup (Idx).Valid, Idx);
       end loop;
    end Backup_GTT;
@@ -45,7 +51,10 @@ is
    procedure Restore_GTT
    is
    begin
-      for Idx in GTT_Range loop
+      if GTT_Backup_Count = 0 then
+         return;
+      end if;
+      for Idx in GTT_Range range 0 .. GTT_Backup_Count - 1 loop
          Write_GTT (Idx, GTT_Backup (Idx).Addr, GTT_Backup (Idx).Valid);
       end loop;
    end Restore_GTT;
