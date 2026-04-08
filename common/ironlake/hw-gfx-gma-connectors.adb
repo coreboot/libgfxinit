@@ -46,9 +46,23 @@ is
       with
          Post => Port_Cfg.Mode = Port_Cfg'Old.Mode
       is
-         FDI_TX_CTL_FDI_TX_ENABLE : constant := 1 * 2 ** 31;
+         FDI_TX_CTL_FDI_TX_ENABLE      : constant := 1 * 2 ** 31;
+         FDI_TX_CTL_PORT_WIDTH_SEL_4   : constant := 3 * 2 ** 19;
          Enabled : Boolean;
       begin
+         if Config.Has_FDI_C and then Port_Cfg.Port = DIGI_D then
+            -- if DIGI_C (FDI_B) is enabled w/ 4 lanes, DIGI_D can't be used:
+            Registers.Is_Set_Mask
+              (Register => Registers.FDI_TX_CTL_B,
+               Mask     => FDI_TX_CTL_FDI_TX_ENABLE or
+                           FDI_TX_CTL_PORT_WIDTH_SEL_4,
+               Result   => Enabled);
+            if Enabled then
+               Success := False;
+               return;
+            end if;
+         end if;
+
          if Config.Has_FDI_C and then Port_Cfg.Port = DIGI_C then
             -- if DIGI_D enabled: (FDI names are off by one)
             Registers.Is_Set_Mask
