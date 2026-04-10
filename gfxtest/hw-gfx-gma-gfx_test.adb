@@ -484,6 +484,11 @@ is
          else
             CI.Size := Cursor_Size'Val
               ((Cursor_Size'Pos (CI.Size) + 1 + Rand (Gen) mod 2) mod 3);
+	    if Cursor_Width (CI.Size) > Pipes (P).Framebuffer.Width or
+               Cursor_Width (CI.Size) > Pipes (P).Framebuffer.Height
+            then
+               CI.Size := Cursor_64x64;
+            end if;
          end if;
          C := Cursors (CI.Color) (CI.Size);
          C.Center_X := Old_C.Center_X;
@@ -585,7 +590,7 @@ is
       Cursor_Infos :=
         (others =>
            (Color    => Pipe_Index'Val (Rand (Gen) mod 3),
-            Size     => Cursor_Size'Val (Rand (Gen) mod 3),
+            Size     => Cursor_64x64,
             X_Velo   => 3 * Cursor_Rand (Gen),
             Y_Velo   => 3 * Cursor_Rand (Gen),
             others   => Cursor_Rand (Gen)));
@@ -618,13 +623,13 @@ is
                   Pipes (Pipe).Framebuffer.Height;
             begin
                New_FB.Start_X := Position_Type'Min
-                 (Width - 320, Rand_Div (Width));
+                 (Width - 64, Rand_Div (Width));
                New_FB.Start_Y := Position_Type'Min
-                 (Height - 320, Rand_Div (Height));
+                 (Height - 64, Rand_Div (Height));
                New_FB.Width := Width_Type'Max
-                 (320, Width - New_FB.Start_X - Rand_Div (Width));
+                 (64, Width - New_FB.Start_X - Rand_Div (Width));
                New_FB.Height := Height_Type'Max
-                 (320, Height - New_FB.Start_Y - Rand_Div (Height));
+                 (64, Height - New_FB.Start_Y - Rand_Div (Height));
 
                Cursor.Center_X := Rotated_Width (New_FB) / 2;
                Cursor.Center_Y := Rotated_Height (New_FB) / 2;
