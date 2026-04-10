@@ -212,6 +212,8 @@ private package HW.GFX.GMA.Config is
    Has_Pipeconf_Misc             : <hswbool> := Broadwell_On;
    Has_Pipeconf_BPC              : <hswbool> := not CPU_Haswell;
    Has_Plane_Control             : <genbool> := Broxton_On;
+   Needs_Even_Source_Width       : <genbool> := Tigerlake_On;
+   Has_Skylake_Scaler_Limits     : <genbool> := Gen_Broxton or Gen_Skylake;
    Has_DSP_Linoff                : <genbool> := Up_To_Ironlake;
    Has_DSPSURF                   : <genbool> := G45_On;
    Has_PF_Pipe_Select            : <ilkhswbool> := CPU_Ivybridge or CPU_Haswell;

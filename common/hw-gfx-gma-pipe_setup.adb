@@ -160,10 +160,20 @@ package body HW.GFX.GMA.Pipe_Setup is
 
    ---------------------------------------------------------------------------
 
-   function Encode (LSW, MSW : Pos32) return Word32 is
-   begin
-      return Shift_Left (Word32 (MSW) - 1, 16) or (Word32 (LSW) - 1);
-   end Encode;
+   function Encode_Size (LSW, MSW : Word32) return Word32
+   is
+     (Shift_Left (MSW - 1, 16) or (LSW - 1));
+
+   function Prepare_Source_Width (Framebuffer : Framebuffer_Type) return Word32
+   is
+     (if Config.Needs_Even_Source_Width then
+         Word32 (Rotated_Width (Framebuffer)) and not 1
+      else
+         Word32 (Rotated_Width (Framebuffer)));
+
+   function Prepare_Source_Height (Framebuffer : Framebuffer_Type) return Word32
+   is
+     (Word32 (Rotated_Height (Framebuffer)));
 
    ----------------------------------------------------------------------------
 
@@ -218,6 +228,9 @@ package body HW.GFX.GMA.Pipe_Setup is
    with
       Pre => FB.Height + FB.Start_Y <= FB.V_Stride
    is
+      Width : constant Word32 := Prepare_Source_Width (FB);
+      Height : constant Word32 := Prepare_Source_Height (FB);
+
       -- FIXME: setup correct format, based on framebuffer RGB format
       Format : constant Word32 := 6 * 2 ** 26;
       PRI : Word32 := Format;
@@ -227,8 +240,6 @@ package body HW.GFX.GMA.Pipe_Setup is
       if Config.Has_Plane_Control then
          declare
             Stride, Offset : Word32;
-            Width : constant Width_Type := Rotated_Width (FB);
-            Height : constant Width_Type := Rotated_Height (FB);
 
             function PLANE_CTL_ARB_SLOTS (N : Word32) return Word32 is
               (if Config.Need_Pipe_Arb_Slots then Shift_Left (N, 28) else 0);
@@ -264,7 +275,7 @@ package body HW.GFX.GMA.Pipe_Setup is
             Registers.Write (Controller.PLANE_AUX_DIST, 0);
             Registers.Write (Controller.PLANE_CTL, Plane_Ctl);
             Registers.Write (Controller.PLANE_OFFSET, Offset);
-            Registers.Write (Controller.PLANE_SIZE, Encode (Width, Height));
+            Registers.Write (Controller.PLANE_SIZE, Encode_Size (Width, Height));
             Registers.Write (Controller.PLANE_STRIDE, Stride);
             Registers.Write (Controller.PLANE_POS, 16#0000_0000#);
             Registers.Write (Controller.PLANE_SURF, FB.Offset and 16#ffff_f000#);
@@ -294,9 +305,7 @@ package body HW.GFX.GMA.Pipe_Setup is
          -- Gen3 (i945): program DSPSIZE and DSPPOS before the surface
          -- address write that arms the double-buffered plane registers.
          if Config.Gen_I945 then
-            Registers.Write
-              (Controller.DSPSIZE,
-               Encode (Rotated_Width (FB), Rotated_Height (FB)));
+            Registers.Write (Controller.DSPSIZE, Encode_Size (Width, Height));
             Registers.Write (Controller.DSPPOS, 16#0000_0000#);
          end if;
 
@@ -412,6 +421,9 @@ package body HW.GFX.GMA.Pipe_Setup is
       -- using DSC, or using PSR2.
       -- i915 always disables underrun recovery for gen 13+.
       UNDERRUN_RECOVERY_DISABLE : constant := 1 * 2 ** 30;
+
+      Width : constant Word32 := Prepare_Source_Width (Framebuffer);
+      Height : constant Word32 := Prepare_Source_Height (Framebuffer);
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
@@ -462,8 +474,7 @@ package body HW.GFX.GMA.Pipe_Setup is
 
       Registers.Write
         (Register => Controller.PIPESRC,
-         Value    => Encode
-           (Rotated_Height (Framebuffer), Rotated_Width (Framebuffer)));
+         Value    => Encode_Size (Height, Width));
 
       if Config.Has_Pipeconf_Misc then
          Registers.Write
@@ -555,6 +566,58 @@ package body HW.GFX.GMA.Pipe_Setup is
       end case;
    end Scale_Keep_Aspect;
 
+   type Pipe_Scaler_Limit_Config is record
+      Control     : Word32;
+      Horizontal  : Pos32;
+      Vertical    : Pos32;
+   end record;
+
+   function Skylake_Scaler_Limits
+     (Controller  : Controller_Type;
+      Width       : Width_Type;
+      Height      : Height_Type)
+      return Pipe_Scaler_Limit_Config
+   with
+      Post => Skylake_Scaler_Limits'Result.Horizontal >= Width
+               and Skylake_Scaler_Limits'Result.Vertical >= Height
+   is
+      use type Registers.Registers_Invalid_Index;
+
+      -- Enable 7x5 extended mode where possible:
+      Scaler_Mode : constant Word32 :=
+        (if Controller.PS_CTRL_2 /= Registers.Invalid_Register then
+            PS_CTRL_SCALER_MODE_7X5_EXTENDED else 0);
+
+      -- We can scale up to 2.99x horizontally:
+      Horizontal_Limit : constant Pos32 := (Width * 299) / 100;
+      -- The third scaler is limited to 1.99x
+      -- vertical scaling for source widths > 2048:
+      Vertical_Limit : constant Pos32 :=
+        (Height *
+           (if Controller.PS_CTRL_2 = Registers.Invalid_Register and
+               Width > 2048
+            then
+               199
+            else
+               299)) / 100;
+   begin
+      return (Scaler_Mode, Horizontal_Limit, Vertical_Limit);
+   end Skylake_Scaler_Limits;
+
+   function Tigerlake_Scaler_Limits
+     (Width       : Width_Type;
+      Height      : Height_Type)
+      return Pipe_Scaler_Limit_Config
+   with
+      Post => Tigerlake_Scaler_Limits'Result.Horizontal >= Width
+               and Tigerlake_Scaler_Limits'Result.Vertical >= Height
+   is
+      Scaling : constant := 32_000; -- PRM says: Scaling * 2**15 >= 1.0
+                                    -- so virtually unlimited
+   begin
+      return (Control => 0, Horizontal => Width * Scaling, Vertical => Height * Scaling);
+   end Tigerlake_Scaler_Limits;
+
    procedure Setup_Skylake_Pipe_Scaler
      (Controller  : in     Controller_Type;
       Mode        : in     HW.GFX.Mode_Type;
@@ -564,28 +627,13 @@ package body HW.GFX.GMA.Pipe_Setup is
          Rotated_Width (Framebuffer) <= Mode.H_Visible and
          Rotated_Height (Framebuffer) <= Mode.V_Visible
    is
-      use type Registers.Registers_Invalid_Index;
-
-      -- Enable 7x5 extended mode where possible:
-      Scaler_Mode : constant Word32 :=
-        (if Controller.PS_CTRL_2 /= Registers.Invalid_Register then
-            PS_CTRL_SCALER_MODE_7X5_EXTENDED else 0);
-
       Width_In    : constant Width_Type   := Rotated_Width (Framebuffer);
       Height_In   : constant Height_Type  := Rotated_Height (Framebuffer);
-
-      -- We can scale up to 2.99x horizontally:
-      Horizontal_Limit : constant Pos32 := (Width_In * 299) / 100;
-      -- The third scaler is limited to 1.99x
-      -- vertical scaling for source widths > 2048:
-      Vertical_Limit : constant Pos32 :=
-        (Height_In *
-           (if Controller.PS_CTRL_2 = Registers.Invalid_Register and
-               Width_In > 2048
-            then
-               199
-            else
-               299)) / 100;
+      Limits      : constant Pipe_Scaler_Limit_Config :=
+        (if Config.Has_Skylake_Scaler_Limits then
+            Skylake_Scaler_Limits (Controller, Width_In, Height_In)
+         else
+            Tigerlake_Scaler_Limits (Width_In, Height_In));
 
       Width : Width_Type;
       Height : Height_Type;
@@ -595,13 +643,13 @@ package body HW.GFX.GMA.Pipe_Setup is
       Scale_Keep_Aspect
         (Width       => Width,
          Height      => Height,
-         Max_Width   => Pos32'Min (Horizontal_Limit, Mode.H_Visible),
-         Max_Height  => Pos32'Min (Vertical_Limit, Mode.V_Visible),
+         Max_Width   => Pos32'Min (Limits.Horizontal, Mode.H_Visible),
+         Max_Height  => Pos32'Min (Limits.Vertical, Mode.V_Visible),
          Framebuffer => Framebuffer);
 
       Registers.Write
         (Register => Controller.PS_CTRL_1,
-         Value    => PS_CTRL_ENABLE_SCALER or Scaler_Mode);
+         Value    => PS_CTRL_ENABLE_SCALER or Limits.Control);
       Registers.Write
         (Register => Controller.PS_WIN_POS_1,
          Value    =>
