@@ -423,12 +423,6 @@ package body HW.GFX.GMA.Pipe_Setup is
 
    ----------------------------------------------------------------------------
 
-   function Scale (Val, Max, Num, Denom : Width_Type)
-      return Width_Type is ((Val * Num) / Denom)
-   with
-      Pre => Denom <= Num and Val * Num < Max * Denom,
-      Post => Scale'Result < Max;
-
    procedure Scale_Keep_Aspect
      (Width       :    out Width_Type;
       Height      :    out Height_Type;
@@ -447,10 +441,14 @@ package body HW.GFX.GMA.Pipe_Setup is
    begin
       case Scaling_Type (Src_Width, Src_Height, Max_Width, Max_Height) is
          when Letterbox =>
+            Height := (Src_Height * Max_Width) / Src_Width;
+            pragma Assert (Height <= Max_Height);
             Width  := Max_Width;
-            Height := Scale (Src_Height, Max_Height, Max_Width, Src_Width);
          when Pillarbox =>
-            Width  := Scale (Src_Width, Max_Width, Max_Height, Src_Height);
+            Width  := (Src_Width * Max_Height) / Src_Height;
+            pragma Assert (Max_Height * Src_Width < Max_Width * Src_Height);
+            pragma Assert ((Max_Height * Src_Width) / Src_Height < Max_Width);
+            pragma Assert (Width <= Max_Width);
             Height := Max_Height;
          when Uniform =>
             Width  := Max_Width;
