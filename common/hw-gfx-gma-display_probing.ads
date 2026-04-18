@@ -17,7 +17,8 @@ with HW.GFX.EDID;
 package HW.GFX.GMA.Display_Probing
 is
 
-   type Port_List_Range is range 0 .. 20;
+   type Port_List_Range is range
+      1 .. Active_Port_Type'Pos (Active_Port_Type'Last);
    type Port_List is array (Port_List_Range) of Port_Type;
    All_Ports : constant Port_List :=
      (DP1, DP2, DP3, DP_TC1, DP_TC2, DP_TC3, DP_TC4,
