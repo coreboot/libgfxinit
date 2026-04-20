@@ -324,11 +324,13 @@ private
    subtype Digital_Port is GPU_Port range DIGI_A .. DIGI_E;
    subtype GMCH_DP_Port is GPU_Port range DIGI_B .. DIGI_D;
    subtype GMCH_HDMI_Port is GPU_Port range DIGI_B .. DIGI_C;
+   subtype DDI_Port is GPU_Port range DIGI_A .. DDI_TC6;
    subtype Combo_Port is GPU_Port range DIGI_A .. DIGI_C;
    subtype USBC_Port is GPU_Port range DDI_TC1 .. DDI_TC6;
    subtype TGL_Digital_Port is GPU_Port range DIGI_A .. DDI_TC6
    with
       Static_Predicate => (TGL_Digital_Port /= DIGI_D and TGL_Digital_Port /= DIGI_E);
+   subtype XELPD_Digital_Port is GPU_Port range DIGI_A .. DDI_TC4;
 
    function Is_Digital_Port (Port : GPU_Port) return Boolean is
       (Port in Digital_Port or Port in TGL_Digital_Port);

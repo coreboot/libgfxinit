@@ -50,18 +50,32 @@ package body HW.GFX.GMA.Transcoder is
       DIGI_D => 4 * 2 ** 29,
       DIGI_E => 5 * 2 ** 29);
 
-   function TGL_TRANS_CLK_SEL_PORT (Port : TGL_Digital_Port) return Word32 is
-   (case Port is
-      when DIGI_A  => 1 * 2 ** 28,
-      when DIGI_B  => 2 * 2 ** 28,
-      when DIGI_C  => 3 * 2 ** 28,
-      when DDI_TC1 => 4 * 2 ** 28,
-      when DDI_TC2 => 5 * 2 ** 28,
-      when DDI_TC3 => 6 * 2 ** 28,
-      when DDI_TC4 => 7 * 2 ** 28,
-      when DDI_TC5 => 8 * 2 ** 28,
-      when DDI_TC6 => 9 * 2 ** 28,
-      when others  => 0);
+   function TGL_TRANS_CLK_SEL_PORT (Port : TGL_Digital_Port) return Word32
+   is
+     (case Port is
+         when DIGI_A  => 1 * 2 ** 28,
+         when DIGI_B  => 2 * 2 ** 28,
+         when DIGI_C  => 3 * 2 ** 28,
+         when DDI_TC1 => 4 * 2 ** 28,
+         when DDI_TC2 => 5 * 2 ** 28,
+         when DDI_TC3 => 6 * 2 ** 28,
+         when DDI_TC4 => 7 * 2 ** 28,
+         when DDI_TC5 => 8 * 2 ** 28,
+         when DDI_TC6 => 9 * 2 ** 28,
+         when others  => 0);
+
+   function XELPD_TRANS_CLK_SEL_PORT (Port : XELPD_Digital_Port) return Word32
+   is
+     (case Port is
+         when DIGI_A  => 1 * 2 ** 28,
+         when DIGI_B  => 2 * 2 ** 28,
+         when DIGI_C  => 3 * 2 ** 28,
+         when DIGI_D  => 4 * 2 ** 28,
+         when DIGI_E  => 5 * 2 ** 28,
+         when DDI_TC1 => 6 * 2 ** 28,
+         when DDI_TC2 => 7 * 2 ** 28,
+         when DDI_TC3 => 8 * 2 ** 28,
+         when DDI_TC4 => 9 * 2 ** 28);
 
    TRANS_CONF_ENABLE          : constant := 1 * 2 ** 31;
    TRANS_CONF_ENABLED_STATUS  : constant := 1 * 2 ** 30;
@@ -100,20 +114,20 @@ package body HW.GFX.GMA.Transcoder is
       DIGI_D => 3 * 2 ** 28,
       DIGI_E => 4 * 2 ** 28);
 
-   function TGL_DDI_FUNC_CTL_DDI_SELECT (Port : TGL_Digital_Port)
-      return Word32
+   function TGL_DDI_FUNC_CTL_DDI_SELECT (Port : DDI_Port) return Word32
    is
      (case Port is
-      when DIGI_A  => 1 * 2 ** 27,
-      when DIGI_B  => 2 * 2 ** 27,
-      when DIGI_C  => 3 * 2 ** 27,
-      when DDI_TC1 => 4 * 2 ** 27,
-      when DDI_TC2 => 5 * 2 ** 27,
-      when DDI_TC3 => 6 * 2 ** 27,
-      when DDI_TC4 => 7 * 2 ** 27,
-      when DDI_TC5 => 8 * 2 ** 27,
-      when DDI_TC6 => 9 * 2 ** 27,
-      when others  => 0);
+         when DIGI_A  => 1 * 2 ** 27,
+         when DIGI_B  => 2 * 2 ** 27,
+         when DIGI_C  => 3 * 2 ** 27,
+         when DIGI_D  => 8 * 2 ** 27,  -- n/a on TGL, repositioned since ADL-P
+         when DIGI_E  => 9 * 2 ** 27,  -- n/a on TGL, repositioned since ADL-P
+         when DDI_TC1 => 4 * 2 ** 27,
+         when DDI_TC2 => 5 * 2 ** 27,
+         when DDI_TC3 => 6 * 2 ** 27,
+         when DDI_TC4 => 7 * 2 ** 27,
+         when DDI_TC5 => 8 * 2 ** 27,
+         when DDI_TC6 => 9 * 2 ** 27);
 
    type DDI_Mode_Array is array (Display_Type) of Word32;
    DDI_FUNC_CTL_MODE_SELECT : constant DDI_Mode_Array :=
@@ -267,13 +281,23 @@ package body HW.GFX.GMA.Transcoder is
                Transcoders (Get_Idx (Pipe, Port_Cfg.Port));
    begin
       if Config.Need_Early_Transcoder_Setup and then
-         Trans.CLK_SEL /= Registers.Invalid_Register and then
-         Port_Cfg.Port in TGL_Digital_Port
+         Trans.CLK_SEL /= Registers.Invalid_Register
       then
-         Registers.Unset_And_Set_Mask
-           (Register   => Trans.CLK_SEL,
-            Mask_Unset => TRANS_CLK_SEL_MASK,
-            Mask_Set   => TGL_TRANS_CLK_SEL_PORT (Port_Cfg.Port));
+         if Config.Continuous_Port_Select then
+            if Port_Cfg.Port in XELPD_Digital_Port then
+               Registers.Unset_And_Set_Mask
+                 (Register   => Trans.CLK_SEL,
+                  Mask_Unset => TRANS_CLK_SEL_MASK,
+                  Mask_Set   => XELPD_TRANS_CLK_SEL_PORT (Port_Cfg.Port));
+            end if;
+         else
+            if Port_Cfg.Port in TGL_Digital_Port then
+               Registers.Unset_And_Set_Mask
+                 (Register   => Trans.CLK_SEL,
+                  Mask_Unset => TRANS_CLK_SEL_MASK,
+                  Mask_Set   => TGL_TRANS_CLK_SEL_PORT (Port_Cfg.Port));
+            end if;
+         end if;
       end if;
    end Enable_Pipe_Clock;
 
@@ -296,7 +320,7 @@ package body HW.GFX.GMA.Transcoder is
             else
                DDI_FUNC_CTL_EDP_SELECT (Pipe)));
       DDI_Select : constant Word32 :=
-        (if Config.Has_TGL_DDI_Select and Port_Cfg.Port in TGL_Digital_Port then
+        (if Config.Has_TGL_DDI_Select and then Port_Cfg.Port in DDI_Port then
             TGL_DDI_FUNC_CTL_DDI_SELECT (Port_Cfg.Port)
          else
             (if Port_Cfg.Port in Digital_Port

@@ -244,6 +244,7 @@ private package HW.GFX.GMA.Config is
 
    ----------- Transcoder -------
    Need_Early_Transcoder_Setup   : <genbool> := Tigerlake_On;
+   Continuous_Port_Select        : <genbool> := AlderlakeP_On;
    Need_Pipe_Arb_Slots           : <genbool> := AlderlakeP_On;
 
    ----------- Planes -----------
