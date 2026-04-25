@@ -332,9 +332,6 @@ private
       Static_Predicate => (TGL_Digital_Port /= DIGI_D and TGL_Digital_Port /= DIGI_E);
    subtype XELPD_Digital_Port is GPU_Port range DIGI_A .. DDI_TC4;
 
-   function Is_Digital_Port (Port : GPU_Port) return Boolean is
-      (Port in Digital_Port or Port in TGL_Digital_Port);
-
    type PCH_Port is
      (PCH_DAC, PCH_LVDS,
       PCH_HDMI_A, PCH_HDMI_B, PCH_HDMI_C, PCH_HDMI_D,

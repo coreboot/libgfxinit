@@ -330,7 +330,7 @@ package body HW.GFX.GMA.Transcoder is
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
       if Config.Has_Pipe_DDI_Func then
-         if Is_Digital_Port (Port_Cfg.Port) then
+         if Port_Cfg.Port in DDI_Port then
             Registers.Write
               (Register => Trans.DDI_FUNC_CTL,
                Value    => DDI_Select or
@@ -362,7 +362,7 @@ package body HW.GFX.GMA.Transcoder is
          Configure (Pipe, Port_Cfg, Scale);
       end if;
 
-      if Config.Has_Pipe_DDI_Func and Is_Digital_Port (Port_Cfg.Port) then
+      if Config.Has_Pipe_DDI_Func and then Port_Cfg.Port in DDI_Port then
          Registers.Set_Mask
            (Register => Trans.DDI_FUNC_CTL,
             Mask     => DDI_FUNC_CTL_ENABLE);
