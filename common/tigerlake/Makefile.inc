@@ -23,5 +23,7 @@ gfxinit-y += tgl/hw-gfx-gma-power_domains.adb
 gfxinit-y += tgl/hw-gfx-gma-power_domains.ads
 gfxinit-y += tgl/hw-gfx-gma-connectors-tc-ownership.adb
 else ifneq ($(filter AlderlakeP,$(CONFIG_GFX_GMA_GENERATION)),)
+gfxinit-y += xelpd/hw-gfx-gma-power_domains.adb
+gfxinit-y += xelpd/hw-gfx-gma-power_domains.ads
 gfxinit-y += xelpd/hw-gfx-gma-connectors-tc-ownership.adb
 endif
