@@ -13,6 +13,8 @@
 --
 
 with HW.GFX.GMA.Config_Helpers;
+with HW.GFX.GMA.Power_Domains;
+with HW.GFX.GMA.Power_Domains_Common;
 
 private package HW.GFX.GMA.Power_And_Clocks is
 
@@ -36,10 +38,18 @@ private package HW.GFX.GMA.Power_And_Clocks is
       Post => Config_Helpers.Stable_FB (Configs'Old, Configs);
    procedure Enable_CDClk;
 
-   procedure Power_Set_To (Configs : Pipe_Configs);
-   procedure Power_Up (Port : Active_Port_Type; Success : out Boolean);
-   procedure Power_Up (Old_Configs, New_Configs : Pipe_Configs);
-   procedure Power_Down (Old_Configs, Tmp_Configs, New_Configs : Pipe_Configs);
+   procedure Power_Set_To (Configs : Pipe_Configs)
+   renames
+      Power_Domains_Common.Power_Set_To;
+   procedure Power_Up (Port : Active_Port_Type; Success : out Boolean)
+   renames
+      Power_Domains.Power_Up;
+   procedure Power_Up (Old_Configs, New_Configs : Pipe_Configs)
+   renames
+      Power_Domains_Common.Power_Up;
+   procedure Power_Down (Old_Configs, Tmp_Configs, New_Configs : Pipe_Configs)
+   renames
+      Power_Domains_Common.Power_Down;
 
    procedure Get_RefClk (RefClk : out RefClk_Range);
 
