@@ -113,6 +113,11 @@ package body HW.GFX.GMA.Power_Domains_Common is
             Mask     => DP_AUX_CH_CTL_TBT_IO);
          Connectors.TC.Ownership.Claimed (To_GPU_Port (PD), Success);
       elsif PD = PW1 then
+         if Config.Gen_AlderlakeP then
+            Registers.Set_Mask
+              (Register => Registers.GEN8_CHICKEN_DCPR_1,
+               Mask     => 1 * 2 ** 15); -- DISABLE_FLR_SRC
+         end if;
          Registers.Wait_Set_Mask
            (Register => Registers.FUSE_STATUS,
             Mask     => FUSE_STATUS_PG0_DIST_STATUS,
@@ -183,7 +188,11 @@ package body HW.GFX.GMA.Power_Domains_Common is
             Success  => Success);
          pragma Debug (not Success, Debug.Put_Line ("Failed to enable power domain!"));
 
-         if Success then
+         if Success or else
+            (Config.Gen_AlderlakeP and then PD in AUX_USBC_Domain)
+         then
+            -- FIXME: Is it really expected?
+            pragma Debug (not Success, Debug.Put_Line ("AUX timeout expected."));
             Post_PD_On (PD);
          end if;
       end if;

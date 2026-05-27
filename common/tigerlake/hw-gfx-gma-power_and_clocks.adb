@@ -36,12 +36,20 @@ package body HW.GFX.GMA.Power_And_Clocks is
    DBUF_CTL_DBUF_POWER_REQUEST                    : constant := 1 * 2 ** 31;
    DBUF_CTL_TRACKER_STATE_SERVICE_MASK            : constant := 16#f8_0000#;
    DBUF_CTL_TRACKER_STATE_SERVICE_SHIFT           : constant := 19;
+   DBUF_CTL_MIN_TRACKER_STATE_SERVICE_SHIFT       : constant := 16;
+   DBUF_CTL_MIN_TRACKER_STATE_SERVICE_MASK        : constant := 16#7_0000#;
    DBUF_CTL_DBUF_POWER_STATE                      : constant := 1 * 2 ** 30;
 
-   type DBUF_Slices is (S1, S2);
+   type DBUF_Slices is (S1, S2, S3, S4);
+   subtype Enable_DBUF_Slices is DBUF_Slices -- TODO: Maybe decide at runtime?
+      range S1 .. (if Config.Gen_Tigerlake then S1 else S4);
+   subtype Disable_DBUF_Slices is DBUF_Slices
+      range S1 .. (if Config.Gen_Tigerlake then S2 else S4);
    DBUF_CTL : constant array (DBUF_Slices) of Registers.Registers_Index :=
      (Registers.DBUF_CTL_S0,
-      Registers.DBUF_CTL_S1);
+      Registers.DBUF_CTL_S1,
+      Registers.DBUF_CTL_S2,
+      Registers.DBUF_CTL_S3);
 
    ----------------------------------------------------------------------------
 
@@ -72,6 +80,15 @@ package body HW.GFX.GMA.Power_And_Clocks is
 
    ----------------------------------------------------------------------------
 
+   MBUS_JOIN                                      : constant := 1 * 2 ** 31;
+   MBUS_HASHING_MODE_MASK                         : constant := 1 * 2 ** 30;
+   MBUS_HASHING_MODE_2x2                          : constant := 0 * 2 ** 30;
+   MBUS_HASHING_MODE_1x4                          : constant := 1 * 2 ** 30;
+   MBUS_JOIN_PIPE_SELECT_MASK                     : constant := 16#1c00_0000#;
+   MBUS_JOIN_PIPE_SELECT_NONE                     : constant := 16#1c00_0000#;
+
+   ----------------------------------------------------------------------------
+
    DCPR_MASK_MAXLATENCY_MEMUP_CLR                 : constant := 1 * 2 ** 27;
    DCPR_MASK_LPMODE                               : constant := 1 * 2 ** 26;
    DCPR_SEND_RESP_IMM                             : constant := 1 * 2 ** 25;
@@ -92,7 +109,9 @@ package body HW.GFX.GMA.Power_And_Clocks is
    CDCLK_PLL_ENABLE_PLL_LOCK                      : constant := 1 * 2 ** 30;
    CDCLK_CD2X_DIV_SEL_MASK                        : constant := 3 * 2 ** 22;
    CDCLK_CD2X_DIV_SEL_1                           : constant := 0 * 2 ** 22;
+   CDCLK_CD2X_DIV_SEL_1_5                         : constant := 1 * 2 ** 22;
    CDCLK_CD2X_DIV_SEL_2                           : constant := 2 * 2 ** 22;
+   CDCLK_CD2X_DIV_SEL_4                           : constant := 3 * 2 ** 22;
    CDCLK_CD2X_PIPE_NONE                           : constant := 7 * 2 ** 19;
    CDCLK_CTL_CD_FREQ_DECIMAL_MASK                 : constant := 16#7ff#;
 
@@ -152,21 +171,42 @@ package body HW.GFX.GMA.Power_And_Clocks is
    begin
       Get_RefClk (RefClk_Freq);
       Normalized :=
-        (case RefClk_Freq is
-         when 19_200_000 | 38_400_000 =>
-            (if    CDClk <= 172_800_000 then 172_800_000
-             elsif CDClk <= 192_000_000 then 192_000_000
-             elsif CDClk <= 307_200_000 then 307_200_000
-             elsif CDClk <= 326_400_000 then 326_400_000
-             elsif CDClk <= 556_800_000 then 556_800_000
-                                        else 652_800_000),
-         when others =>
-            (if    CDClk <= 180_000_000 then 180_000_000
-             elsif CDClk <= 192_000_000 then 192_000_000
-             elsif CDClk <= 312_000_000 then 312_000_000
-             elsif CDClk <= 324_000_000 then 324_000_000
-             elsif CDClk <= 552_000_000 then 552_000_000
-                                        else 648_000_000));
+        (if Config.Gen_Tigerlake then
+           (case RefClk_Freq is
+               when 19_200_000 | 38_400_000 =>
+                  (if    CDClk <= 172_800_000 then 172_800_000
+                   elsif CDClk <= 192_000_000 then 192_000_000
+                   elsif CDClk <= 307_200_000 then 307_200_000
+                   elsif CDClk <= 326_400_000 then 326_400_000
+                   elsif CDClk <= 556_800_000 then 556_800_000
+                                              else 652_800_000),
+               when others => -- 24_000_000
+                  (if    CDClk <= 180_000_000 then 180_000_000
+                   elsif CDClk <= 192_000_000 then 192_000_000
+                   elsif CDClk <= 312_000_000 then 312_000_000
+                   elsif CDClk <= 324_000_000 then 324_000_000
+                   elsif CDClk <= 552_000_000 then 552_000_000
+                                              else 648_000_000))
+         else
+           (case RefClk_Freq is
+               when 19_200_000 =>
+                 (if    CDClk <= 172_800_000 then 172_800_000
+                  elsif CDClk <= 192_000_000 then 192_000_000
+                  elsif CDClk <= 307_200_000 then 307_200_000
+                  elsif CDClk <= 556_800_000 then 556_800_000
+                                             else 652_800_000),
+               when 24_000_000 =>
+                 (if    CDClk <= 176_000_000 then 176_000_000
+                  elsif CDClk <= 192_000_000 then 192_000_000
+                  elsif CDClk <= 312_000_000 then 312_000_000
+                  elsif CDClk <= 552_000_000 then 552_000_000
+                                             else 648_000_000),
+               when others => -- 38_400_000
+                 (if    CDClk <= 179_200_000 then 179_200_000
+                  elsif CDClk <= 192_000_000 then 192_000_000
+                  elsif CDClk <= 307_200_000 then 307_200_000
+                  elsif CDClk <= 556_800_000 then 556_800_000
+                                             else 652_800_000)));
    end Normalize_CDClk;
 
    procedure Get_Cur_CDClk (CDClk : out CDClk_Range)
@@ -183,29 +223,30 @@ package body HW.GFX.GMA.Power_And_Clocks is
    procedure Set_CDClk (CDClk_In : CDClk_Range)
    is
       subtype PLL_Ratio_Range is Word32 range 0 .. 68;
-      function Ratio_For_19_2_MHz (CDClk : CDClk_Range) return PLL_Ratio_Range is
-      begin
-         case CDClk is
-            when 172_800_000 => return 18;
-            when 192_000_000 => return 20;
-            when 307_200_000 => return 32;
-            when 326_400_000 | 652_800_000 => return 68;
-            when 556_800_000 => return 58;
-            when others => return 0;
-         end case;
-      end Ratio_For_19_2_MHz;
+      function Ratio_For_19_2_MHz (CDClk : CDClk_Range) return PLL_Ratio_Range
+      is
+        (case CDClk is
+            when 172_800_000 =>
+              (if Config.Gen_Tigerlake
+                           then 18
+                           else 27),-- ADL_P: only used with 19.2MHz
+            when 179_200_000 => 28, -- ADL_P: only used with 38.4MHz
+            when 192_000_000 => 20,
+            when 307_200_000 => 32,
+            when 326_400_000 | 652_800_000 => 68,
+            when 556_800_000 => 58,
+            when others => 0);
 
-      function Ratio_For_24_MHz (CDClk : CDClk_Range) return PLL_Ratio_Range is
-      begin
-         case CDClk is
-            when 180_800_000 => return 15;
-            when 192_000_000 => return 16;
-            when 312_000_000 => return 26;
-            when 324_000_000 | 648_000_000 => return 54;
-            when 552_000_000 => return 46;
-            when others => return 0;
-         end case;
-      end Ratio_For_24_MHz;
+      function Ratio_For_24_MHz (CDClk : CDClk_Range) return PLL_Ratio_Range
+      is
+        (case CDClk is
+            when 176_000_000 => 22, -- only ADL_P
+            when 180_000_000 => 15, -- only TGL
+            when 192_000_000 => 16,
+            when 312_000_000 => 26,
+            when 324_000_000 | 648_000_000 => 54,
+            when 552_000_000 => 46,
+            when others => 0);
 
       function CDCLK_CTL_CD_FREQ_DECIMAL (Freq : CDClk_Range) return Word32
       with
@@ -279,7 +320,9 @@ package body HW.GFX.GMA.Power_And_Clocks is
       CD2X :=
          (case (Div_Round_Closest (VCO, CDClk / 1_000)) is
           when 2 => CDCLK_CD2X_DIV_SEL_1,
+          when 3 => CDCLK_CD2X_DIV_SEL_1_5,
           when 4 => CDCLK_CD2X_DIV_SEL_2,
+          when 8 => CDCLK_CD2X_DIV_SEL_4,
           when others => CDCLK_CD2X_DIV_SEL_1);
 
       Registers.Write
@@ -374,15 +417,17 @@ package body HW.GFX.GMA.Power_And_Clocks is
               (Register => Registers.BW_BUDDY2_PAGE_MASK,
                Mask     => Buddy_Info (I).BW_BUDDY_MASK);
 
-            -- Wa_22010178259:tgl,rkl
-            Registers.Unset_And_Set_Mask
-              (Register   => Registers.BW_BUDDY1_CTL,
-               Mask_Unset => BW_BUDDY_TLB_REQ_TIMER_MASK,
-               Mask_Set   => 8 * 2 ** 16);
-            Registers.Unset_And_Set_Mask
-              (Register   => Registers.BW_BUDDY2_CTL,
-               Mask_Unset => BW_BUDDY_TLB_REQ_TIMER_MASK,
-               Mask_Set   => 8 * 2 ** 16);
+            if Config.Gen_Tigerlake then
+               -- Wa_22010178259:tgl,rkl
+               Registers.Unset_And_Set_Mask
+                 (Register   => Registers.BW_BUDDY1_CTL,
+                  Mask_Unset => BW_BUDDY_TLB_REQ_TIMER_MASK,
+                  Mask_Set   => 8 * 2 ** 16);
+               Registers.Unset_And_Set_Mask
+                 (Register   => Registers.BW_BUDDY2_CTL,
+                  Mask_Unset => BW_BUDDY_TLB_REQ_TIMER_MASK,
+                  Mask_Set   => 8 * 2 ** 16);
+            end if;
 
             return;
          end if;
@@ -420,22 +465,49 @@ package body HW.GFX.GMA.Power_And_Clocks is
       Get_RawClk (RawClk);
       Config.Raw_Clock := RawClk;
 
-      -- TGL: Set DBUF Tracker State Service to 8
-      Registers.Unset_And_Set_Mask
-        (Register    => DBUF_CTL (S1),
-         Mask_Unset  => DBUF_CTL_TRACKER_STATE_SERVICE_MASK,
-         Mask_Set    => 8 * 2 ** DBUF_CTL_TRACKER_STATE_SERVICE_SHIFT);
-
-      -- Enable first DBUF slice (TODO: Is this ok to use for all pipes?)
-      Registers.Set_Mask (DBUF_CTL (S1), DBUF_CTL_DBUF_POWER_REQUEST);
-      Registers.Wait_Set_Mask (DBUF_CTL (S1), DBUF_CTL_DBUF_POWER_STATE);
-
-      for I in MBUS_ABOX_CTL'Range loop
+      -- Settings for joined MBUS. MBUS joining is usually used when buffers
+      -- from both DBUF slice pairs 1/2 and 3/4 are used for a single pipe.
+      -- TODO: Investigate if this is needed for our PLANE_BUF_CFG allocation.
+      if Config.Has_Mbus_Joining then
          Registers.Unset_And_Set_Mask
-           (Register    => MBUS_ABOX_CTL (I),
-            Mask_Unset  => MBUS_ABOX_MASK,
-            Mask_Set    => MBUS_ABOX_CREDITS);
+           (Register   => Registers.MBUS_CTL,
+            Mask_Unset => MBUS_HASHING_MODE_MASK or
+                          MBUS_JOIN or
+                          MBUS_JOIN_PIPE_SELECT_MASK,
+            Mask_Set   => MBUS_HASHING_MODE_1x4 or
+                          MBUS_JOIN or
+                          MBUS_JOIN_PIPE_SELECT_NONE);
+      end if;
+
+      -- TGL: Set DBUF Tracker State Service to 8
+      if Config.Gen_Tigerlake then
+         Registers.Unset_And_Set_Mask
+           (Register    => DBUF_CTL (S1),
+            Mask_Unset  => DBUF_CTL_TRACKER_STATE_SERVICE_MASK,
+            Mask_Set    => 8 * 2 ** DBUF_CTL_TRACKER_STATE_SERVICE_SHIFT);
+      end if;
+
+      if Config.Gen_AlderlakeP then
+         Registers.Unset_And_Set_Mask
+           (Register    => DBUF_CTL (S1),
+            Mask_Unset  => DBUF_CTL_MIN_TRACKER_STATE_SERVICE_MASK,
+            Mask_Set    => 3 * 2 ** DBUF_CTL_MIN_TRACKER_STATE_SERVICE_SHIFT);
+      end if;
+
+      -- Enable required DBUF slices
+      for S in Enable_DBUF_Slices loop
+         Registers.Set_Mask (DBUF_CTL (S), DBUF_CTL_DBUF_POWER_REQUEST);
+         Registers.Wait_Set_Mask (DBUF_CTL (S), DBUF_CTL_DBUF_POWER_STATE);
       end loop;
+
+      if Config.Has_Mbus_Abox_Credits then
+         for I in MBUS_ABOX_CTL'Range loop
+            Registers.Unset_And_Set_Mask
+              (Register    => MBUS_ABOX_CTL (I),
+               Mask_Unset  => MBUS_ABOX_MASK,
+               Mask_Set    => MBUS_ABOX_CREDITS);
+         end loop;
+      end if;
 
       Configure_Bandwidth_Buddy;
 
@@ -444,6 +516,28 @@ package body HW.GFX.GMA.Power_And_Clocks is
         (Register => Registers.GEN11_CHICKEN_DCPR_2,
          Mask     => DCPR_MASK_MAXLATENCY_MEMUP_CLR or DCPR_MASK_LPMODE or
                      DCPR_SEND_RESP_IMM or DCPR_CLEAR_MEMSTAT_DIS);
+
+      if Config.Gen_AlderlakeP then
+         declare
+            DPCE_GATING_DIS      : constant := 1 * 2 ** 17;
+            DDI_CLOCK_REG_ACCESS : constant := 1 * 2 **  7;
+         begin
+            -- Display WA #14011503030 xelpd
+            Registers.Write
+              (Register => Registers.DISPLAY_ERR_FATAL_MASK,
+               Value    => 16#ffff_ffff#);
+
+            -- Wa_22011091694:adlp
+            Registers.Set_Mask
+              (Register => Registers.GEN9_CLKGATE_DIS_5,
+               Mask     => DPCE_GATING_DIS);
+
+            -- Bspec/49189 Initialize Sequence
+            Registers.Unset_Mask
+              (Register => Registers.GEN8_CHICKEN_DCPR_1,
+               Mask     => DDI_CLOCK_REG_ACCESS);
+         end;
+      end if;
    end Initialize;
 
    procedure Limit_Dotclocks
@@ -484,11 +578,9 @@ package body HW.GFX.GMA.Power_And_Clocks is
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
-      for S in reverse DBUF_CTL'Range loop
-         Registers.Unset_Mask
-            (DBUF_CTL (S), DBUF_CTL_DBUF_POWER_REQUEST);
-         Registers.Wait_Unset_Mask
-            (DBUF_CTL (S), DBUF_CTL_DBUF_POWER_STATE);
+      for S in reverse Disable_DBUF_Slices loop
+         Registers.Unset_Mask (DBUF_CTL (S), DBUF_CTL_DBUF_POWER_REQUEST);
+         Registers.Wait_Unset_Mask (DBUF_CTL (S), DBUF_CTL_DBUF_POWER_STATE);
       end loop;
 
       -- Disable CDClk PLL. FIXME: Not implemented yet.

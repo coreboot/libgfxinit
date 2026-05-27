@@ -248,8 +248,10 @@ private package HW.GFX.GMA.Config is
    Need_Pipe_Arb_Slots           : <genbool> := AlderlakeP_On;
 
    ----------- Planes -----------
+   Has_Mbus_Abox_Credits         : <genbool> := Gen_Tigerlake;
    Has_Mbus_Dbox_Credits         : <genbool> := Tigerlake_On;
    Has_New_Mbus_Dbox_Credits     : <genbool> := AlderlakeP_On;
+   Has_Mbus_Joining              : <genbool> := AlderlakeP_On;
    Has_Wide_Watermarks           : <genbool> := Tigerlake_On;
    Has_Plane_Color_Control       : <genbool> := Tigerlake_On;
 
