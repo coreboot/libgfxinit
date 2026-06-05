@@ -80,7 +80,8 @@ package body HW.GFX.GMA.PLLs.Combo_Phy is
          when 2 => 2#0001#,
          when 3 => 2#0010#,
          when 5 => 2#0100#,
-         when 7 => 2#1000#);
+         when 7 => 2#1000#,
+         when others => 1);
 
    subtype QDiv_Range is Positive range 1 .. 255;
 
