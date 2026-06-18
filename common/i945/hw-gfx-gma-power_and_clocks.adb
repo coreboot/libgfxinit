@@ -31,7 +31,7 @@ package body HW.GFX.GMA.Power_And_Clocks is
    HRAWCLK_333       : constant Frequency_Type := 333_333_333;  -- FSB 1333
    HRAWCLK_400       : constant Frequency_Type := 400_000_000;  -- FSB 1600 (desktop)
 
-   -- i945 CDClk values (from Linux kernel intel_cdclk.c):
+   -- i945/Pineview CDClk values (from Linux kernel intel_cdclk.c):
    --
    -- i945G (desktop): fixed 400 MHz CDClk
    --
@@ -39,6 +39,14 @@ package body HW.GFX.GMA.Power_And_Clocks is
    --   GC_LOW_FREQUENCY_ENABLE (bit 7) => 133 MHz
    --   GC_DISPLAY_CLOCK_190_200_MHZ (0 << 4) => 200 MHz (default)
    --   GC_DISPLAY_CLOCK_333_320_MHZ (4 << 4) => 320 MHz
+   --
+   -- Pineview: read from GCFGC PCI register (0xF0)
+   --   GC_DISPLAY_CLOCK_267_MHZ_PNV (0 << 4) => 267 MHz
+   --   GC_DISPLAY_CLOCK_333_MHZ_PNV (1 << 4) => 333 MHz
+   --   GC_DISPLAY_CLOCK_444_MHZ_PNV (2 << 4) => 444 MHz
+   --   GC_DISPLAY_CLOCK_200_MHZ_PNV (5 << 4) => 200 MHz
+   --   GC_DISPLAY_CLOCK_133_MHZ_PNV (6 << 4) => 133 MHz
+   --   GC_DISPLAY_CLOCK_167_MHZ_PNV (7 << 4) => 167 MHz
 
    procedure Get_CDClk (CDClk : out Config.CDClk_Range)
    is
@@ -47,10 +55,26 @@ package body HW.GFX.GMA.Power_And_Clocks is
       GC_LOW_FREQUENCY_ENABLE      : constant Word16 := 1 * 2 ** 7;
       GC_DISPLAY_CLOCK_MASK        : constant Word16 := 7 * 2 ** 4;
       GC_DISPLAY_CLOCK_320_MHZ     : constant Word16 := 4 * 2 ** 4;
+      GC_DISPLAY_CLOCK_267_MHZ_PNV : constant Word16 := 0 * 2 ** 4;
+      GC_DISPLAY_CLOCK_333_MHZ_PNV : constant Word16 := 1 * 2 ** 4;
+      GC_DISPLAY_CLOCK_444_MHZ_PNV : constant Word16 := 2 * 2 ** 4;
+      GC_DISPLAY_CLOCK_200_MHZ_PNV : constant Word16 := 5 * 2 ** 4;
+      GC_DISPLAY_CLOCK_133_MHZ_PNV : constant Word16 := 6 * 2 ** 4;
+      GC_DISPLAY_CLOCK_167_MHZ_PNV : constant Word16 := 7 * 2 ** 4;
 
       GCFGC : Word16;
    begin
-      if Config.GMCH_I945GM then
+      if Config.CPU_Any_Pineview then
+         PCI_Read16 (GCFGC, 16#f0#);
+         CDClk :=
+           (case GCFGC and GC_DISPLAY_CLOCK_MASK is
+               when GC_DISPLAY_CLOCK_267_MHZ_PNV => 266_666_667,
+               when GC_DISPLAY_CLOCK_333_MHZ_PNV => 333_333_333,
+               when GC_DISPLAY_CLOCK_444_MHZ_PNV => 444_444_444,
+               when GC_DISPLAY_CLOCK_200_MHZ_PNV => 200_000_000,
+               when GC_DISPLAY_CLOCK_167_MHZ_PNV => 166_666_667,
+               when others                       => 133_333_333);
+      elsif Config.GMCH_I945GM then
          PCI_Read16 (GCFGC, 16#f0#);
          if (GCFGC and GC_LOW_FREQUENCY_ENABLE) /= 0 then
             CDClk := 133_333_333;
@@ -66,7 +90,7 @@ package body HW.GFX.GMA.Power_And_Clocks is
    end Get_CDClk;
 
    -- hrawclk = FSB / 4. The CLKCFG FSB encoding differs between
-   -- mobile (i945GM) and desktop (i945G), see CLKCFG_FSB_MASK comment above.
+   -- mobile/Pineview and desktop (i945G), see CLKCFG_FSB_MASK comment above.
    procedure Get_Raw_Clock (Raw_Clock : out Frequency_Type)
    is
       CLK_CFG : Word32;
@@ -75,7 +99,7 @@ package body HW.GFX.GMA.Power_And_Clocks is
       Registers.Read
         (Register => Registers.GMCH_CLKCFG,
          Value => CLK_CFG);
-      if Config.GMCH_I945GM then
+      if Config.GMCH_Gen3_Mobile or Config.CPU_Any_Pineview then
          Raw_Clock := (case Freq_Sel (CLK_CFG and CLKCFG_FSB_MASK) is
             when 0      => HRAWCLK_100,  -- FSB 400
             when 1      => HRAWCLK_133,  -- FSB 533

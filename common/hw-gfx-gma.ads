@@ -41,6 +41,8 @@ is
      (I945G,
       I945GM,
       GM965,
+      Pineview,
+      Pineview_M,
       G45,
       GM45,
       Ironlake,

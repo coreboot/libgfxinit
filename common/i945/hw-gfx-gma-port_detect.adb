@@ -31,8 +31,8 @@ is
       -- i945: VGA (ADPA) is always present
       Config.Valid_Port (Analog) := True;
 
-      -- LVDS is only present on mobile (i945GM)
-      Config.Valid_Port (LVDS)   := Config.GMCH_I945GM;
+      -- LVDS is only present on mobile Gen3 parts (i945GM/Pineview-M)
+      Config.Valid_Port (LVDS)   := Config.GMCH_Gen3_Mobile;
 
       -- Enable CRT hotplug detection
       Registers.Write

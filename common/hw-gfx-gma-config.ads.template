@@ -29,7 +29,7 @@ private package HW.GFX.GMA.Config is
          when Tigerlake => Tigerlake);
    CPU_Last : constant CPU_Type :=
      (case Gen is
-         when I945      => I945GM,
+         when I945      => Pineview_M,
          when G45       => GM45,
          when Ironlake  => Ivybridge,
          when Haswell   => Broadwell,
@@ -164,6 +164,10 @@ private package HW.GFX.GMA.Config is
 
    GMCH_I945GM       : <i945bool> := Gen_I945 and then CPU = I945GM;
    GMCH_GM965        : <g45bool> := Gen_G45 and then CPU = GM965;
+   CPU_Pineview      : <i945bool> := Gen_I945 and then CPU = Pineview;
+   CPU_Pineview_M    : <i945bool> := Gen_I945 and then CPU = Pineview_M;
+   CPU_Any_Pineview  : <i945bool> := CPU_Pineview or CPU_Pineview_M;
+   GMCH_Gen3_Mobile  : <i945bool> := GMCH_I945GM or CPU_Pineview_M;
    GMCH_GM45         : <g45bool> := Gen_G45 and then CPU = GM45;
    CPU_Ironlake      : <ilkbool> := Gen_Ironlake and then CPU = Ironlake;
    CPU_Sandybridge   : <ilkbool> := Gen_Ironlake and then CPU = Sandybridge;
@@ -275,9 +279,9 @@ private package HW.GFX.GMA.Config is
    Has_GMCH_RawClk               : <genbool> := Up_To_G45;
    Has_GMCH_Mobile_VCO           : <g45bool> := GMCH_GM45 or GMCH_GM965;
 
-   ---------- I945-specific: ----
+   ---------- Gen3/i945-specific: ----
    Has_I945_GTT_BAR              : <genbool> := Gen_I945;
-   Has_I945_Simple_GTT_PTE       : <genbool> := Gen_I945;
+   Has_I945_Simple_GTT_PTE       : <i945bool> := Gen_I945 and then not CPU_Any_Pineview;
    Has_Gen3_Fences               : <genbool> := Gen_I945;
    -- Pre-i965: LVDS encoder can only source from Pipe B (Secondary)
    LVDS_Needs_Pipe_B             : <genbool> := Gen_I945;
@@ -628,6 +632,8 @@ private package HW.GFX.GMA.Config is
          when I945G        => Device_Id = 16#2772#,
          when GM965        => (Device_Id and 16#ffef#) = 16#2a02#,
          when I945GM       => Device_Id = 16#27a2# or Device_Id = 16#27ae#,
+         when Pineview     => Device_Id = 16#a001#,
+         when Pineview_M   => Device_Id = 16#a011#,
          when G45          => (Device_Id and 16#ff02#) = 16#2e02#,
          when GM45         => (Device_Id and 16#fffe#) = 16#2a42#,
          when Ironlake     => (Device_Id and 16#fff3#) = 16#0042#,

@@ -130,6 +130,75 @@ is
       P2_Threshold => 200_000_000,
       VCO_Lower    => 1_400_000_000, VCO_Upper => 2_800_000_000);
 
+   -- Pineview has a different Gen3 DPLL encoding. Its N divider is encoded
+   -- as a one-hot value in the frequency-parameter (FP) register, M1 is
+   -- reserved as 0, M = M2 + 2, and P1 starts at bit 15.
+
+   subtype PNV_N_Range     is Int64 range          3 ..          6;
+   subtype PNV_M_Range     is Int64 range          2 ..        256;
+   subtype PNV_M2_Range    is Int64 range          0 ..        254;
+   subtype PNV_P_Range     is Int64 range          5 ..        112;
+   subtype PNV_P1_Range    is Int64 range          1 ..          8;
+   subtype PNV_P2_Range    is Int64 range          5 ..         14;
+   subtype PNV_VCO_Range   is Int64 range 1700000000 .. 3500000000;
+
+   type PNV_Clock_Type is
+      record
+         N               : PNV_N_Range;
+         M2              : PNV_M2_Range;
+         P1              : PNV_P1_Range;
+         P2              : PNV_P2_Range;
+         M               : PNV_M_Range;
+         P               : PNV_P_Range;
+         VCO             : PNV_VCO_Range;
+         Reference_Clock : Clock_Range;
+         Dotclock        : Clock_Range;
+      end record;
+
+   Invalid_PNV_Clock : constant PNV_Clock_Type := PNV_Clock_Type'
+      (N               => PNV_N_Range'Last,
+       M2              => PNV_M2_Range'Last,
+       P1              => PNV_P1_Range'Last,
+       P2              => PNV_P2_Range'Last,
+       Reference_Clock => Clock_Range'Last,
+       M               => PNV_M_Range'Last,
+       P               => PNV_P_Range'Last,
+       VCO             => PNV_VCO_Range'Last,
+       Dotclock        => Clock_Range'Last);
+
+   type PNV_Limits_Type is
+      record
+         M_Lower      : PNV_M_Range;
+         M_Upper      : PNV_M_Range;
+         M2_Lower     : PNV_M2_Range;
+         M2_Upper     : PNV_M2_Range;
+         P_Lower      : PNV_P_Range;
+         P_Upper      : PNV_P_Range;
+         P1_Lower     : PNV_P1_Range;
+         P1_Upper     : PNV_P1_Range;
+         P2_Fast      : PNV_P2_Range;
+         P2_Slow      : PNV_P2_Range;
+         P2_Threshold : Clock_Range;
+      end record;
+
+   -- Pineview SDVO/DAC limits (from Linux pnv_limits_sdvo)
+   Pineview_SDVO_DAC_Limits : constant PNV_Limits_Type := PNV_Limits_Type'
+     (M_Lower      =>   2,           M_Upper   => 256,
+      M2_Lower     =>   0,           M2_Upper  => 254,
+      P_Lower      =>   5,           P_Upper   =>  80,
+      P1_Lower     =>   1,           P1_Upper  =>   8,
+      P2_Fast      =>   5,           P2_Slow   =>  10,
+      P2_Threshold => 200_000_000);
+
+   -- Pineview LVDS limits (from Linux pnv_limits_lvds)
+   Pineview_LVDS_Limits : constant PNV_Limits_Type := PNV_Limits_Type'
+     (M_Lower      =>   2,           M_Upper   => 256,
+      M2_Lower     =>   0,           M2_Upper  => 254,
+      P_Lower      =>   7,           P_Upper   => 112,
+      P1_Lower     =>   1,           P1_Upper  =>   8,
+      P2_Fast      =>  14,           P2_Slow   =>  14,
+      P2_Threshold => 112_000_000);
+
    ----------------------------------------------------------------------------
 
    type Regs is array (DPLLs) of Registers.Registers_Index;
@@ -139,7 +208,8 @@ is
    DPLL_VGA_MODE_DIS       : constant := 1 * 2 ** 28;
    DPLL_P2_10_OR_14        : constant := 0 * 2 ** 24;
    DPLL_P2_5_OR_7          : constant := 1 * 2 ** 24;
-   DPLL_P1_DIVIDER_SHIFT   : constant := 16;
+   DPLL_P1_DIVIDER_SHIFT          : constant := 16;
+   DPLL_P1_DIVIDER_SHIFT_PINEVIEW : constant := 15;
    DPLL_SDVOCLK            : constant := 2 * 2 ** 13;
 
    -- i945 does not use DPLL_PULSE_PHASE (bits 12:9, Gen4+ only)
@@ -348,6 +418,133 @@ is
 
    end Calculate_Clock_Parameters;
 
+   procedure Verify_Pineview_Parameters
+      (N               : in     PNV_N_Range;
+       M2              : in     PNV_M2_Range;
+       P1              : in     PNV_P1_Range;
+       P2              : in     PNV_P2_Range;
+       Reference_Clock : in     Clock_Range;
+       Current_Limits  : in     PNV_Limits_Type;
+       Result          :    out PNV_Clock_Type;
+       Valid           :    out Boolean)
+   with
+      Global => null,
+      Pre => True,
+      Post => True
+   is
+      M        : Int64;
+      P        : Int64;
+      VCO      : Int64;
+      Dotclock : Int64;
+   begin
+      pragma Debug (Debug_Clocks, Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
+
+      M        := M2 + 2;
+      P        := P1 * P2;
+      VCO      := (Int64 (Reference_Clock) * M) / N;
+      Dotclock := VCO / P;
+
+      Valid :=
+         Current_Limits.P1_Lower  <= P1  and P1  <= Current_Limits.P1_Upper  and
+         (Current_Limits.P2_Fast   = P2   or P2   = Current_Limits.P2_Slow)  and
+         Current_Limits.P_Lower   <= P   and P   <= Current_Limits.P_Upper   and
+         Current_Limits.M2_Lower  <= M2  and M2  <= Current_Limits.M2_Upper  and
+         Current_Limits.M_Lower   <= M   and M   <= Current_Limits.M_Upper   and
+         PNV_VCO_Range'First      <= VCO and VCO <= PNV_VCO_Range'Last       and
+         Int64 (Clock_Range'First) <= Dotclock                               and
+         Dotclock <= Int64 (Clock_Range'Last);
+
+      if Valid
+      then
+         Result := PNV_Clock_Type'
+            (N               => N,
+             M2              => M2,
+             P1              => P1,
+             P2              => P2,
+             Reference_Clock => Reference_Clock,
+             M               => M,
+             P               => P,
+             VCO             => VCO,
+             Dotclock        => Clock_Range (Dotclock));
+      else
+         Result := Invalid_PNV_Clock;
+      end if;
+   end Verify_Pineview_Parameters;
+
+   procedure Calculate_Pineview_Clock_Parameters
+     (Display         : in     Display_Type;
+      Target_Dotclock : in     Clock_Range;
+      Reference_Clock : in     Clock_Range;
+      Best_Clock      :    out PNV_Clock_Type;
+      Valid           :    out Boolean)
+   with
+     Global => null,
+     Pre => True,
+     Post => True
+   is
+      Limits : constant PNV_Limits_Type :=
+      (case Display is
+          when LVDS   => Pineview_LVDS_Limits,
+          when others => Pineview_SDVO_DAC_Limits);
+
+      P2               : PNV_P2_Range;
+      Best_Delta       : Int64 := Int64'Last;
+      Current_Delta    : Int64;
+      Current_Clock    : PNV_Clock_Type;
+      Registers_Valid  : Boolean;
+   begin
+      pragma Debug (Debug_Clocks, Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
+
+      Valid      := False;
+      Best_Clock := Invalid_PNV_Clock;
+
+      if Target_Dotclock <= Limits.P2_Threshold then
+         P2 := Limits.P2_Slow;
+      else
+         P2 := Limits.P2_Fast;
+      end if;
+
+      -- Use the newer libgfxinit search order (N, then M2, then P1) and
+      -- descending M2/P1 loops. Linux's Pineview code iterates M2 outermost
+      -- and ascending; this only affects ties between parameter sets with
+      -- the same delta.
+      for N in PNV_N_Range loop
+         for M2 in reverse PNV_M2_Range range Limits.M2_Lower .. Limits.M2_Upper
+         loop
+            pragma Loop_Invariant (True);
+            for P1 in reverse PNV_P1_Range range Limits.P1_Lower .. Limits.P1_Upper
+            loop
+               Verify_Pineview_Parameters
+                 (N               => N,
+                  M2              => M2,
+                  P1              => P1,
+                  P2              => P2,
+                  Reference_Clock => Reference_Clock,
+                  Current_Limits  => Limits,
+                  Result          => Current_Clock,
+                  Valid           => Registers_Valid);
+
+               if Registers_Valid
+               then
+                  if Current_Clock.Dotclock > Target_Dotclock
+                  then
+                     Current_Delta := Current_Clock.Dotclock - Target_Dotclock;
+                  else
+                     Current_Delta := Target_Dotclock - Current_Clock.Dotclock;
+                  end if;
+
+                  if Current_Delta < Best_Delta
+                  then
+                     Best_Delta := Current_Delta;
+                     Best_Clock := Current_Clock;
+                     Valid      := True;
+                  end if;
+               end if;
+            end loop;
+         end loop;
+      end loop;
+   end Calculate_Pineview_Clock_Parameters;
+
    procedure Program_DPLL
      (PLL      : DPLLs;
       Display  : Display_Type;
@@ -389,27 +586,87 @@ is
                      Shift_Left (Encoded_P1, DPLL_P1_DIVIDER_SHIFT));
    end Program_DPLL;
 
+   procedure Program_Pineview_DPLL
+     (PLL      : DPLLs;
+      Display  : Display_Type;
+      Clk      : PNV_Clock_Type)
+   with
+      Global => (In_Out => Registers.Register_State),
+      Pre => True,
+      Post => True
+   is
+      FP, Encoded_P1, Encoded_P2 : Word32;
+   begin
+      pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
+
+      -- Pineview frequency-parameter (FP) register: N is one-hot,
+      -- M1 is reserved, M2 is raw.
+      FP :=
+         Shift_Left (Shift_Left (Word32'(1), Natural (Clk.N)), FP_N_SHIFT) or
+         Shift_Left (Word32 (Clk.M2), FP_M2_SHIFT);
+
+      Registers.Write (FP0 (PLL), FP);
+      Registers.Write (FP1 (PLL), FP);
+
+      Encoded_P1 := Shift_Left (1, Natural (Clk.P1) - 1);
+
+      if Clk.P2 = 5 or Clk.P2 = 7
+      then
+         Encoded_P2 := DPLL_P2_5_OR_7;
+      else
+         Encoded_P2 := DPLL_P2_10_OR_14;
+      end if;
+
+      Registers.Write
+        (Register => DPLL (PLL),
+         Value    => DPLL_Mode (Display)                            or
+                     DPLL_VGA_MODE_DIS                              or
+                     Encoded_P2                                     or
+                     Shift_Left (Encoded_P1, DPLL_P1_DIVIDER_SHIFT_PINEVIEW));
+   end Program_Pineview_DPLL;
+
    procedure On
      (PLL      : in     T;
       Port_Cfg : in     Port_Config;
       Success  :    out Boolean)
    is
       Target_Clock : constant Frequency_Type := Port_Cfg.Mode.Dotclock;
-      Clk : Clock_Type;
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
       Success := PLL in DPLLs;
-      Clk := Invalid_Clock;
 
       if Success then
          if Target_Clock <= 400_000_000 then
-            Calculate_Clock_Parameters
-              (Display           => Port_Cfg.Display,
-               Target_Dotclock   => Target_Clock,
-               Reference_Clock   => 96_000_000,
-               Best_Clock        => Clk,
-               Valid             => Success);
+            if Config.CPU_Any_Pineview then
+               declare
+                  Clk : PNV_Clock_Type;
+               begin
+                  Calculate_Pineview_Clock_Parameters
+                    (Display           => Port_Cfg.Display,
+                     Target_Dotclock   => Target_Clock,
+                     Reference_Clock   => 96_000_000,
+                     Best_Clock        => Clk,
+                     Valid             => Success);
+                  if Success then
+                     Program_Pineview_DPLL (PLL, Port_Cfg.Display, Clk);
+                  end if;
+               end;
+            else
+               declare
+                  Clk : Clock_Type;
+               begin
+                  Calculate_Clock_Parameters
+                    (Display           => Port_Cfg.Display,
+                     Target_Dotclock   => Target_Clock,
+                     Reference_Clock   => 96_000_000,
+                     Best_Clock        => Clk,
+                     Valid             => Success);
+                  if Success then
+                     Program_DPLL (PLL, Port_Cfg.Display, Clk);
+                  end if;
+               end;
+            end if;
          else
             Success := False;
             pragma Debug (Debug.Put ("WARNING: Targeted clock too high: "));
@@ -422,8 +679,6 @@ is
       end if;
 
       if Success then
-         Program_DPLL (PLL, Port_Cfg.Display, Clk);
-
          Registers.Set_Mask (DPLL (PLL), DPLL_VCO_ENABLE);
          Registers.Posting_Read (DPLL (PLL));
          Time.U_Delay (150);
