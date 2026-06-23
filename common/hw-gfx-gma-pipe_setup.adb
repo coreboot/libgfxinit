@@ -621,15 +621,15 @@ package body HW.GFX.GMA.Pipe_Setup is
 
    procedure Setup_Skylake_Pipe_Scaler
      (Controller  : in     Controller_Type;
-      Mode        : in     HW.GFX.Mode_Type;
-      Framebuffer : in     HW.GFX.Framebuffer_Type)
+      Pipe_Cfg    : in     Pipe_Config;
+      Mode        : in     HW.GFX.Mode_Type)
    with
       Pre =>
-         Rotated_Width (Framebuffer) <= Mode.H_Visible and
-         Rotated_Height (Framebuffer) <= Mode.V_Visible
+         Rotated_Width (Pipe_Cfg.Framebuffer) <= Mode.H_Visible and
+         Rotated_Height (Pipe_Cfg.Framebuffer) <= Mode.V_Visible
    is
-      Width_In    : constant Width_Type   := Rotated_Width (Framebuffer);
-      Height_In   : constant Height_Type  := Rotated_Height (Framebuffer);
+      Width_In    : constant Width_Type   := Rotated_Width (Pipe_Cfg.Framebuffer);
+      Height_In   : constant Height_Type  := Rotated_Height (Pipe_Cfg.Framebuffer);
       Limits      : constant Pipe_Scaler_Limit_Config :=
         (if Config.Has_Skylake_Scaler_Limits then
             Skylake_Scaler_Limits (Controller, Width_In, Height_In)
@@ -646,7 +646,7 @@ package body HW.GFX.GMA.Pipe_Setup is
          Height      => Height,
          Max_Width   => Pos32'Min (Limits.Horizontal, Mode.H_Visible),
          Max_Height  => Pos32'Min (Limits.Vertical, Mode.V_Visible),
-         Framebuffer => Framebuffer);
+         Framebuffer => Pipe_Cfg.Framebuffer);
 
       Registers.Write
         (Register => Controller.PS_CTRL_1,
@@ -663,12 +663,12 @@ package body HW.GFX.GMA.Pipe_Setup is
 
    procedure Setup_Ironlake_Panel_Fitter
      (Controller  : in     Controller_Type;
-      Mode        : in     HW.GFX.Mode_Type;
-      Framebuffer : in     HW.GFX.Framebuffer_Type)
+      Pipe_Cfg    : in     Pipe_Config;
+      Mode        : in     HW.GFX.Mode_Type)
    with
       Pre =>
-         Rotated_Width (Framebuffer) <= Mode.H_Visible and
-         Rotated_Height (Framebuffer) <= Mode.V_Visible
+         Rotated_Width (Pipe_Cfg.Framebuffer) <= Mode.H_Visible and
+         Rotated_Height (Pipe_Cfg.Framebuffer) <= Mode.V_Visible
    is
       -- Force 1:1 mapping of panel fitter:pipe
       PF_Ctrl_Pipe_Sel : constant Word32 :=
@@ -690,7 +690,7 @@ package body HW.GFX.GMA.Pipe_Setup is
          Height      => Height,
          Max_Width   => Mode.H_Visible,
          Max_Height  => Mode.V_Visible,
-         Framebuffer => Framebuffer);
+         Framebuffer => Pipe_Cfg.Framebuffer);
 
       -- Do not scale to odd width (at least Haswell has trouble with this).
       if Width < Mode.H_Visible and Width mod 2 = 1 then
@@ -807,21 +807,21 @@ package body HW.GFX.GMA.Pipe_Setup is
 
    procedure Setup_Scaling
      (Controller  : in     Controller_Type;
-      Mode        : in     HW.GFX.Mode_Type;
-      Framebuffer : in     HW.GFX.Framebuffer_Type)
+      Pipe_Cfg    : in     Pipe_Config;
+      Mode        : in     HW.GFX.Mode_Type)
    with
       Pre =>
-         Rotated_Width (Framebuffer) <= Mode.H_Visible and
-         Rotated_Height (Framebuffer) <= Mode.V_Visible
+         Rotated_Width (Pipe_Cfg.Framebuffer) <= Mode.H_Visible and
+         Rotated_Height (Pipe_Cfg.Framebuffer) <= Mode.V_Visible
    is
    begin
-      if Requires_Scaling (Framebuffer, Mode) then
+      if Requires_Scaling (Pipe_Cfg.Framebuffer, Mode) then
          if Config.Has_Plane_Control then
-            Setup_Skylake_Pipe_Scaler (Controller, Mode, Framebuffer);
+            Setup_Skylake_Pipe_Scaler (Controller, Pipe_Cfg, Mode);
          elsif Config.Has_GMCH_PFIT_CONTROL then
-            Setup_Gmch_Panel_Fitter (Controller, Mode, Framebuffer);
+            Setup_Gmch_Panel_Fitter (Controller, Mode, Pipe_Cfg.Framebuffer);
          else
-            Setup_Ironlake_Panel_Fitter (Controller, Mode, Framebuffer);
+            Setup_Ironlake_Panel_Fitter (Controller, Pipe_Cfg, Mode);
          end if;
       else
          Panel_Fitter_Off (Controller);
@@ -864,41 +864,40 @@ package body HW.GFX.GMA.Pipe_Setup is
 
    procedure Setup_FB
      (Pipe        : Pipe_Index;
-      Mode        : Mode_Type;
-      Framebuffer : Framebuffer_Type)
+      Pipe_Cfg    : Pipe_Config;
+      Mode        : Mode_Type)
    is
       -- Enable dithering if framebuffer BPC differs from port BPC,
       -- as smooth gradients look really bad without.
-      Dither : constant Boolean := Framebuffer.BPC /= Mode.BPC;
+      Dither : constant Boolean := Pipe_Cfg.Framebuffer.BPC /= Mode.BPC;
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
       -- Disable the cursor first.
-      Update_Cursor (Pipe, Framebuffer, Default_Cursor);
+      Update_Cursor (Pipe, Pipe_Cfg.Framebuffer, Default_Cursor);
 
-      Setup_Display (Controllers (Pipe), Framebuffer, Mode.BPC, Dither);
-      Setup_Scaling (Controllers (Pipe), Mode, Framebuffer);
+      Setup_Display (Controllers (Pipe), Pipe_Cfg.Framebuffer, Mode.BPC, Dither);
+      Setup_Scaling (Controllers (Pipe), Pipe_Cfg, Mode);
    end Setup_FB;
 
    procedure On
      (Pipe        : Pipe_Index;
-      Port_Cfg    : Port_Config;
-      Framebuffer : Framebuffer_Type;
-      Cursor      : Cursor_Type)
+      Pipe_Cfg    : Pipe_Config;
+      Port_Cfg    : Port_Config)
    is
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
       Transcoder.Setup (Pipe, Port_Cfg);
 
-      Setup_FB (Pipe, Port_Cfg.Mode, Framebuffer);
-      Update_Cursor (Pipe, Framebuffer, Cursor);
+      Setup_FB (Pipe, Pipe_Cfg, Port_Cfg.Mode);
+      Update_Cursor (Pipe, Pipe_Cfg.Framebuffer, Pipe_Cfg.Cursor);
 
       Transcoder.On
         (Pipe     => Pipe,
          Port_Cfg => Port_Cfg,
-         Dither   => Framebuffer.BPC /= Port_Cfg.Mode.BPC,
-         Scale    => Requires_Scaling (Framebuffer, Port_Cfg.Mode));
+         Dither   => Pipe_Cfg.Framebuffer.BPC /= Port_Cfg.Mode.BPC,
+         Scale    => Requires_Scaling (Pipe_Cfg.Framebuffer, Port_Cfg.Mode));
    end On;
 
    ----------------------------------------------------------------------------

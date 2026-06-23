@@ -22,11 +22,10 @@ is
 
    procedure On
      (Pipe        : Pipe_Index;
-      Port_Cfg    : Port_Config;
-      Framebuffer : Framebuffer_Type;
-      Cursor      : Cursor_Type)
+      Pipe_Cfg    : Pipe_Config;
+      Port_Cfg    : Port_Config)
    with
-      Pre => Config_Helpers.Valid_FB (Framebuffer, Port_Cfg.Mode);
+      Pre => Config_Helpers.Valid_FB (Pipe_Cfg.Framebuffer, Port_Cfg.Mode);
 
    procedure Off (Pipe : Pipe_Index);
 
@@ -34,12 +33,16 @@ is
 
    procedure All_Off;
 
+   -- TODO: Passing `Pipe_Cfg` and `Mode` seems redundant. However,
+   --       the `Pipe_Cfg.Mode` is what the user requested and we
+   --       may have altered that in `Mode`. This should be refac-
+   --       tored to always have a single, synchronized `Mode`.
    procedure Setup_FB
      (Pipe        : Pipe_Index;
-      Mode        : Mode_Type;
-      Framebuffer : Framebuffer_Type)
+      Pipe_Cfg    : Pipe_Config;
+      Mode        : Mode_Type)
    with
-      Pre => Config_Helpers.Valid_FB (Framebuffer, Mode);
+      Pre => Config_Helpers.Valid_FB (Pipe_Cfg.Framebuffer, Mode);
 
    procedure Update_Cursor
      (Pipe     : Pipe_Index;

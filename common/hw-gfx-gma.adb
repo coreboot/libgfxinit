@@ -196,9 +196,8 @@ is
                if Success then
                   Display_Controller.On
                     (Pipe        => Pipe,
-                     Port_Cfg    => Port_Cfg,
-                     Framebuffer => Pipe_Cfg.Framebuffer,
-                     Cursor      => Pipe_Cfg.Cursor);
+                     Pipe_Cfg    => Pipe_Cfg,
+                     Port_Cfg    => Port_Cfg);
 
                   Connectors.Post_On
                     (Pipe     => Pipe,
@@ -391,7 +390,7 @@ is
                   Cur_Config.Framebuffer /= New_Config.Framebuffer
             then
                Display_Controller.Setup_FB
-                 (Pipe, New_Config.Mode, New_Config.Framebuffer);
+                 (Pipe, New_Config, New_Config.Mode);
                Display_Controller.Update_Cursor
                  (Pipe, New_Config.Framebuffer, New_Config.Cursor);
                Cur_Config := New_Config;
