@@ -567,6 +567,59 @@ package body HW.GFX.GMA.Pipe_Setup is
       end case;
    end Scale_Keep_Aspect;
 
+   procedure Scale
+     (Width       :    out Width_Type;
+      Height      :    out Height_Type;
+      Scaling     : in     GMA.Scaling;
+      Max_Width   : in     Width_Type;
+      Max_Height  : in     Height_Type;
+      Framebuffer : in     Framebuffer_Type)
+   with
+      Pre =>
+         Rotated_Width (Framebuffer) <= Max_Width and
+         Rotated_Height (Framebuffer) <= Max_Height,
+      Post =>
+         Width <= Max_Width and Height <= Max_Height
+   is
+   begin
+      case Scaling is
+         when None =>
+            Width  := Rotated_Width (Framebuffer);
+            Height := Rotated_Height (Framebuffer);
+         when Fit =>
+            Scale_Keep_Aspect (Width, Height, Max_Width, Max_Height, Framebuffer);
+         when Stretch =>
+            Width  := Max_Width;
+            Height := Max_Height;
+      end case;
+   end Scale;
+
+   procedure Align_Framebuffer
+     (Pos_X    :    out Position_Type;
+      Pos_Y    :    out Position_Type;
+      Align    : in     Alignment;
+      Width    : in     Width_Type;
+      Height   : in     Height_Type;
+      Mode     : in     Mode_Type)
+   with
+      Pre => Width <= Mode.H_Visible and Height <= Mode.V_Visible
+   is
+      Gap_X : constant Position_Type := Mode.H_Visible - Width;
+      Gap_Y : constant Position_Type := Mode.V_Visible - Height;
+   begin
+      case Align is
+         when Top_Left     => Pos_X := 0;          Pos_Y := 0;
+         when Top          => Pos_X := Gap_X / 2;  Pos_Y := 0;
+         when Top_Right    => Pos_X := Gap_X;      Pos_Y := 0;
+         when Left         => Pos_X := 0;          Pos_Y := Gap_Y / 2;
+         when Center       => Pos_X := Gap_X / 2;  Pos_Y := Gap_Y / 2;
+         when Right        => Pos_X := Gap_X;      Pos_Y := Gap_Y / 2;
+         when Bottom_Left  => Pos_X := 0;          Pos_Y := Gap_Y;
+         when Bottom       => Pos_X := Gap_X / 2;  Pos_Y := Gap_Y;
+         when Bottom_Right => Pos_X := Gap_X;      Pos_Y := Gap_Y;
+      end case;
+   end Align_Framebuffer;
+
    type Pipe_Scaler_Limit_Config is record
       Control     : Word32;
       Horizontal  : Pos32;
@@ -638,24 +691,32 @@ package body HW.GFX.GMA.Pipe_Setup is
 
       Width : Width_Type;
       Height : Height_Type;
+      Pos_X, Pos_Y : Position_Type;
    begin
       -- Writes to WIN_SZ arm the PS registers.
 
-      Scale_Keep_Aspect
+      Scale
         (Width       => Width,
          Height      => Height,
+         Scaling     => Pipe_Cfg.Scaling,
          Max_Width   => Pos32'Min (Limits.Horizontal, Mode.H_Visible),
          Max_Height  => Pos32'Min (Limits.Vertical, Mode.V_Visible),
          Framebuffer => Pipe_Cfg.Framebuffer);
+
+      Align_Framebuffer
+        (Pos_X  => Pos_X,
+         Pos_Y  => Pos_Y,
+         Align  => Pipe_Cfg.Alignment,
+         Width  => Width,
+         Height => Height,
+         Mode   => Mode);
 
       Registers.Write
         (Register => Controller.PS_CTRL_1,
          Value    => PS_CTRL_ENABLE_SCALER or Limits.Control);
       Registers.Write
         (Register => Controller.PS_WIN_POS_1,
-         Value    =>
-            Shift_Left (Word32 (Mode.H_Visible - Width) / 2, 16) or
-            Word32 (Mode.V_Visible - Height) / 2);
+         Value    => Shift_Left (Word32 (Pos_X), 16) or Word32 (Pos_Y));
       Registers.Write
         (Register => Controller.PS_WIN_SZ_1,
          Value    => Shift_Left (Word32 (Width), 16) or Word32 (Height));
@@ -681,13 +742,14 @@ package body HW.GFX.GMA.Pipe_Setup is
 
       Width : Width_Type;
       Height : Height_Type;
-      X, Y : Int32;
+      Pos_X, Pos_Y : Position_Type;
    begin
       -- Writes to WIN_SZ arm the PF registers.
 
-      Scale_Keep_Aspect
+      Scale
         (Width       => Width,
          Height      => Height,
+         Scaling     => Pipe_Cfg.Scaling,
          Max_Width   => Mode.H_Visible,
          Max_Height  => Mode.V_Visible,
          Framebuffer => Pipe_Cfg.Framebuffer);
@@ -701,13 +763,18 @@ package body HW.GFX.GMA.Pipe_Setup is
          Height := Height + 1;
       end if;
 
-      X := (Mode.H_Visible - Width) / 2;
-      Y := (Mode.V_Visible - Height) / 2;
+      Align_Framebuffer
+        (Pos_X  => Pos_X,
+         Pos_Y  => Pos_Y,
+         Align  => Pipe_Cfg.Alignment,
+         Width  => Width,
+         Height => Height,
+         Mode   => Mode);
 
       -- Hardware is picky about minimal horizontal gaps.
       if Mode.H_Visible - Width <= 3 then
          Width := Mode.H_Visible;
-         X := 0;
+         Pos_X := 0;
       end if;
 
       Registers.Write
@@ -715,7 +782,7 @@ package body HW.GFX.GMA.Pipe_Setup is
          Value    => PF_CTRL_ENABLE or PF_Ctrl_Pipe_Sel or PF_CTRL_FILTER_MED);
       Registers.Write
         (Register => Controller.PF_WIN_POS,
-         Value    => Shift_Left (Word32 (X), 16) or Word32 (Y));
+         Value    => Shift_Left (Word32 (Pos_X), 16) or Word32 (Pos_Y));
       Registers.Write
         (Register => Controller.PF_WIN_SZ,
          Value    => Shift_Left (Word32 (Width), 16) or Word32 (Height));

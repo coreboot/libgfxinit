@@ -25,7 +25,7 @@ package HW.GFX is
    -- Allow same range for width and height (for rotated framebuffers)
    subtype Width_Type      is Pos32 range 1 .. 8192;
    subtype Height_Type     is Pos32 range 1 .. 8192;
-   subtype Position_Type   is Int32 range 0 .. 4095;
+   subtype Position_Type   is Int32 range 0 .. 8191;
 
    Auto_BPC : constant := 5;
    subtype BPC_Type    is Int64 range Auto_BPC .. 16;
