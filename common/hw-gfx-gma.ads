@@ -96,6 +96,15 @@ is
    subtype Physical_HDMI_Ports is Port_Type range HDMI1 .. HDMI_TC4;
    subtype Physical_USBC_Ports is Port_Type range USBC1 .. USBC4;
 
+   type Alignment is
+     (Top_Left, Top, Top_Right,
+      Left, Center, Right,
+      Bottom_Left, Bottom, Bottom_Right);
+   type Scaling is
+     (None,       -- Copy framebuffer contents 1:1
+      Fit,        -- Scale up to fit the available space, maintaining aspect ratio
+      Stretch);   -- Scale up to fill the entire space, ignoring aspect ratio
+
    type Cursor_Mode is (No_Cursor, ARGB_Cursor);
    type Cursor_Size is (Cursor_64x64, Cursor_128x128, Cursor_256x256);
    Cursor_Width : constant array (Cursor_Size) of Width_Type := (64, 128, 256);
@@ -119,6 +128,8 @@ is
    type Pipe_Config is record
       Port        : Port_Type;
       Framebuffer : Framebuffer_Type;
+      Alignment   : GMA.Alignment;
+      Scaling     : GMA.Scaling;
       Cursor      : Cursor_Type;
       Mode        : Mode_Type;
    end record;

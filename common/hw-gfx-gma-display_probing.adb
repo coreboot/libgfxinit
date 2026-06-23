@@ -189,6 +189,8 @@ is
       Configs := (Pipe_Index =>
                     (Port        => Disabled,
                      Mode        => Invalid_Mode,
+                     Alignment   => Center,
+                     Scaling     => Fit,
                      Cursor      => Default_Cursor,
                      Framebuffer => Default_FB));
 

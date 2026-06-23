@@ -565,6 +565,8 @@ is
         (others => Pipe_Config'
            (Port        => Disabled,
             Framebuffer => HW.GFX.Default_FB,
+            Alignment   => Alignment'First,
+            Scaling     => Scaling'First,
             Cursor      => Default_Cursor,
             Mode        => HW.GFX.Invalid_Mode));
       Config.Variable := Config.Initial_Settings;
@@ -683,11 +685,15 @@ is
         (Primary =>
            (Port        => Analog,
             Framebuffer => HW.GFX.Default_FB,
+            Alignment   => Center,
+            Scaling     => Fit,
             Cursor      => Default_Cursor,
             Mode        => HW.GFX.Invalid_Mode),
          others =>
            (Port        => Disabled,
             Framebuffer => HW.GFX.Default_FB,
+            Alignment   => Alignment'First,
+            Scaling     => Scaling'First,
             Cursor      => Default_Cursor,
             Mode        => HW.GFX.Invalid_Mode));
    begin
