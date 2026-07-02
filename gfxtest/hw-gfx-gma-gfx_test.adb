@@ -484,12 +484,15 @@ is
          else
             CI.Size := Cursor_Size'Val
               ((Cursor_Size'Pos (CI.Size) + 1 + Rand (Gen) mod 2) mod 3);
-            if Cursor_Width (CI.Size) > Pipes (P).Framebuffer.Width or
-               Cursor_Width (CI.Size) > Pipes (P).Framebuffer.Height
-            then
-               CI.Size := Cursor_64x64;
-            end if;
          end if;
+
+         -- always ensure the cursor fits
+         if Cursor_Width (CI.Size) > Pipes (P).Framebuffer.Width or
+            Cursor_Width (CI.Size) > Pipes (P).Framebuffer.Height
+         then
+            CI.Size := Cursor_64x64;
+         end if;
+
          C := Cursors (CI.Color) (CI.Size);
          C.Center_X := Old_C.Center_X;
          C.Center_Y := Old_C.Center_Y;
@@ -631,9 +634,9 @@ is
                New_FB.Height := Height_Type'Max
                  (64, Height - New_FB.Start_Y - Rand_Div (Height));
 
+               Cursor.Mode := No_Cursor;
                Cursor.Center_X := Rotated_Width (New_FB) / 2;
                Cursor.Center_Y := Rotated_Height (New_FB) / 2;
-               GMA.Update_Cursor (Pipe, Cursor);
             end;
          end loop;
          GMA.Dump_Configs (New_Pipes);
