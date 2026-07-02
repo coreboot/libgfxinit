@@ -202,16 +202,32 @@ package body HW.GFX.DP_Training is
             Debug.Put_Int8 (Int8 (Lane));
             Debug.Put_Line (":");
 
-            Debug.Put_Line ("    CR_Done        : " &
-              (if Status.Lanes (Lane).CR_Done         then "1" else "0"));
-            Debug.Put_Line ("    Channel_EQ_Done: " &
-              (if Status.Lanes (Lane).Channel_EQ_Done then "1" else "0"));
-            Debug.Put_Line ("    Symbol_Locked  : " &
-              (if Status.Lanes (Lane).Symbol_Locked   then "1" else "0"));
+            Debug.Put ("    CR_Done        : ");
+            if Status.Lanes (Lane).CR_Done then
+               Debug.Put_Line ("1");
+            else
+               Debug.Put_Line ("0");
+            end if;
+            Debug.Put ("    Channel_EQ_Done: ");
+            if Status.Lanes (Lane).Channel_EQ_Done then
+               Debug.Put_Line ("1");
+            else
+               Debug.Put_Line ("0");
+            end if;
+            Debug.Put ("    Symbol_Locked  : ");
+            if Status.Lanes (Lane).Symbol_Locked then
+               Debug.Put_Line ("1");
+            else
+               Debug.Put_Line ("0");
+            end if;
          end loop;
 
-         Debug.Put_Line ("  Interlane_Align_Done: " &
-           (if Status.Interlane_Align_Done then "1" else "0"));
+         Debug.Put ("  Interlane_Align_Done: ");
+         if Status.Interlane_Align_Done then
+            Debug.Put_Line ("1");
+         else
+            Debug.Put_Line ("0");
+         end if;
 
          for Lane in DP_Info.Lane_Index range 0
             .. DP_Info.Lane_Index (Lane_Count_As_Integer (Link.Lane_Count) - 1)

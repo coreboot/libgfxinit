@@ -1070,9 +1070,11 @@ is
          else
             Debug.Put ("   ");
          end if;
-         Debug.Put_Line (Pipe_Names (Pipe) & " =>");
-         Debug.Put_Line
-           ("     (Port => " & Port_Names (Configs (Pipe).Port) & ",");
+         Debug.Put (Pipe_Names (Pipe));
+         Debug.Put_Line (" =>");
+         Debug.Put ("     (Port => ");
+         Debug.Put (Port_Names (Configs (Pipe).Port));
+         Debug.Put_Line (",");
          Debug.Put_Line ("      Framebuffer =>");
          Debug.Put ("        (Width     => ");
          Debug.Put_Int32 (Configs (Pipe).Framebuffer.Width);
@@ -1093,9 +1095,11 @@ is
          Debug.Put_Int32 (Configs (Pipe).Framebuffer.V_Stride);
          Debug.Put_Line (",");
          Debug.Put ("         Tiling    => ");
-         Debug.Put_Line (Tilings (Configs (Pipe).Framebuffer.Tiling) & ",");
+         Debug.Put (Tilings (Configs (Pipe).Framebuffer.Tiling));
+         Debug.Put_Line (",");
          Debug.Put ("         Rotation  => ");
-         Debug.Put_Line (Rotations (Configs (Pipe).Framebuffer.Rotation) & ",");
+         Debug.Put (Rotations (Configs (Pipe).Framebuffer.Rotation));
+         Debug.Put_Line (",");
          Debug.Put ("         Offset => ");
          Debug.Put_Word32 (Configs (Pipe).Framebuffer.Offset);
          Debug.Put_Line (",");
@@ -1130,14 +1134,18 @@ is
          Debug.Put ("         V_Total            => ");
          Debug.Put_Int32 (Configs (Pipe).Mode.V_Total);
          Debug.Put_Line (",");
-         Debug.Put_Line ("         H_Sync_Active_High => " &
-           (if Configs (Pipe).Mode.H_Sync_Active_High
-            then "True,"
-            else "False,"));
-         Debug.Put_Line ("         V_Sync_Active_High => " &
-           (if Configs (Pipe).Mode.V_Sync_Active_High
-            then "True,"
-            else "False,"));
+         Debug.Put ("         H_Sync_Active_High => ");
+         if Configs (Pipe).Mode.H_Sync_Active_High then
+            Debug.Put_Line ("True,");
+         else
+            Debug.Put_Line ( "False,");
+         end if;
+         Debug.Put ("         V_Sync_Active_High => ");
+         if Configs (Pipe).Mode.V_Sync_Active_High then
+            Debug.Put_Line ("True,");
+         else
+            Debug.Put_Line ("False,");
+         end if;
          Debug.Put ("         BPC                => ");
          Debug.Put_Int64 (Configs (Pipe).Mode.BPC);
          if Pipe /= Pipe_Index'Last then
