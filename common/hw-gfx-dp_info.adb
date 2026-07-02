@@ -268,7 +268,7 @@ package body HW.GFX.DP_Info is
          N     : in out Calc_N_Type;
          N_Max : in     N_Rounded_Type)
       with
-         Depends => ((M, N) => (M, N, N_max)),
+         Depends => ((M, N) => (M, N, N_Max)),
          Pre => (N > 0 and M in 0 .. Calc_M_Type'Last / 2),
          Post => (M <= M_N_Max and N <= M_N_Max)
       is
@@ -294,7 +294,7 @@ package body HW.GFX.DP_Info is
 
          -- The automatic provers need a little nudge here.
          pragma Assert
-            (if M <= Calc_M_Type'Last/2 and
+            (if M <= Calc_M_Type'Last / 2 and
                 N <= Orig_N * 2 and
                 Orig_N > 0 and
                 M > 0

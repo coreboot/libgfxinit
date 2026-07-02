@@ -166,7 +166,7 @@ is
      (LVDS     => MODE_DPLL_LVDS,
       VGA      => MODE_DPLL_DAC,
       HDMI     => MODE_DPLL_SDVO,  -- SDVO outputs use HDMI display type
-      Others   => MODE_DPLL_SDVO);
+      others   => MODE_DPLL_SDVO);
 
    FP0 : constant Regs := Regs'(Registers.GMCH_FPA0, Registers.GMCH_FPB0);
    FP1 : constant Regs := Regs'(Registers.GMCH_FPA1, Registers.GMCH_FPB1);

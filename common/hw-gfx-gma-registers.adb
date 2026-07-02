@@ -504,7 +504,7 @@ is
       Success    :    out Boolean) is
    begin
       Wait (Register, Mask, 0, TOut_MS, Verbose, Success);
-   end;
+   end Wait_Unset_Mask;
 
    procedure Wait_Unset_Mask
      (Register : Registers_Index;

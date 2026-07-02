@@ -446,7 +446,7 @@ private package HW.GFX.GMA.Config is
          when Generation'First .. G45      => 165_000_000, -- i945: no HDMI, moot
          when Ironlake                     => 225_000_000,
          when Haswell .. Skylake           => 300_000_000,
-	 when Tigerlake .. Generation'Last => 600_000_000);
+         when Tigerlake .. Generation'Last => 600_000_000);
 
    ----------------------------------------------------------------------------
 
@@ -578,7 +578,7 @@ private package HW.GFX.GMA.Config is
       Device_Id = 16#9a68# or
       Device_Id = 16#9a70#);
 
-   function Is_Alder_Lake_P (Device_ID : Word16) return Boolean is
+   function Is_Alder_Lake_P (Device_Id : Word16) return Boolean is
      (Device_Id = 16#46a0# or
       Device_Id = 16#46a1# or
       Device_Id = 16#46a2# or
@@ -597,11 +597,11 @@ private package HW.GFX.GMA.Config is
       Device_Id = 16#46c1# or
       Device_Id = 16#46c2# or
       Device_Id = 16#46c3#);
-   function Is_Alder_Lake_N (Device_ID : Word16) return Boolean is
+   function Is_Alder_Lake_N (Device_Id : Word16) return Boolean is
      (Device_Id = 16#46d0# or
       Device_Id = 16#46d1# or
       Device_Id = 16#46d2#);
-   function Is_Raptor_Lake_P (Device_ID : Word16) return Boolean is
+   function Is_Raptor_Lake_P (Device_Id : Word16) return Boolean is
      (Device_Id = 16#a720# or
       Device_Id = 16#a721# or
       Device_Id = 16#a7a0# or
@@ -663,7 +663,7 @@ private package HW.GFX.GMA.Config is
                                 when Normal =>
                                    False,
                                 when ULT | ULX =>
-                                   Is_Alder_Lake (Device_ID)));
+                                   Is_Alder_Lake (Device_Id)));
 
    function Compatible_GPU (Device_Id : Word16) return Boolean is
      (Is_GPU (Device_Id, CPU, CPU_Var));

@@ -119,17 +119,17 @@ package body HW.GFX.GMA.I2C is
    begin
       return
         (if Config.Has_Type_C_Ports then
-	   (case Port is
-	       when PCH_HDMI_A   => GMBUS0_PIN_PAIR_SELECT_TGL_1,
-	       when PCH_HDMI_B   => GMBUS0_PIN_PAIR_SELECT_TGL_2,
-	       when PCH_HDMI_C   => GMBUS0_PIN_PAIR_SELECT_TGL_3,
-	       when PCH_TC1      => GMBUS0_PIN_PAIR_SELECT_TGL_TC1,
-	       when PCH_TC2      => GMBUS0_PIN_PAIR_SELECT_TGL_TC2,
-	       when PCH_TC3      => GMBUS0_PIN_PAIR_SELECT_TGL_TC3,
-	       when PCH_TC4      => GMBUS0_PIN_PAIR_SELECT_TGL_TC4,
-	       when PCH_TC5      => GMBUS0_PIN_PAIR_SELECT_TGL_TC5,
-	       when PCH_TC6      => GMBUS0_PIN_PAIR_SELECT_TGL_TC6,
-	       when others       => GMBUS0_PIN_PAIR_SELECT_NONE)
+           (case Port is
+               when PCH_HDMI_A   => GMBUS0_PIN_PAIR_SELECT_TGL_1,
+               when PCH_HDMI_B   => GMBUS0_PIN_PAIR_SELECT_TGL_2,
+               when PCH_HDMI_C   => GMBUS0_PIN_PAIR_SELECT_TGL_3,
+               when PCH_TC1      => GMBUS0_PIN_PAIR_SELECT_TGL_TC1,
+               when PCH_TC2      => GMBUS0_PIN_PAIR_SELECT_TGL_TC2,
+               when PCH_TC3      => GMBUS0_PIN_PAIR_SELECT_TGL_TC3,
+               when PCH_TC4      => GMBUS0_PIN_PAIR_SELECT_TGL_TC4,
+               when PCH_TC5      => GMBUS0_PIN_PAIR_SELECT_TGL_TC5,
+               when PCH_TC6      => GMBUS0_PIN_PAIR_SELECT_TGL_TC6,
+               when others       => GMBUS0_PIN_PAIR_SELECT_NONE)
         elsif Config.GMBUS_Alternative_Pins then
            (case Port is
                when PCH_HDMI_B   => GMBUS0_PIN_PAIR_SELECT_BXT_B,
@@ -256,11 +256,11 @@ package body HW.GFX.GMA.I2C is
                         GMBUS1_DIRECTION_READ);
 
          while Success and then Transfered < Length loop
-	    -- Some GMBUS state machines never set HW_RDY nor NAK.
-	    --
-	    -- Keep delay at a minimum, but big enough that
-	    -- regular EDID transfers can be finished within
-	    -- the timeout.
+            -- Some GMBUS state machines never set HW_RDY nor NAK.
+            --
+            -- Keep delay at a minimum, but big enough that
+            -- regular EDID transfers can be finished within
+            -- the timeout.
             Registers.Wait_Set_Mask
               (Register => GMBUS_Regs (2),
                Mask     => GMBUS2_HARDWARE_READY,

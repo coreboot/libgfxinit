@@ -51,17 +51,17 @@ package body HW.GFX.GMA.PLLs.Combo_Phy is
 
    procedure Encode_DCO (DCO_Integer, DCO_Fraction : out Word32; DCO : DCO_Range)
    is
-      Refclk_Freq : Power_And_Clocks.Refclk_Range;
+      RefClk_Freq : Power_And_Clocks.RefClk_Range;
       Enc_DCO : Int64;
    begin
-      Power_And_Clocks.Get_Refclk (Refclk_Freq);
+      Power_And_Clocks.Get_RefClk (RefClk_Freq);
 
       -- DPLL will auto-divide by 2 if refclk is 38.4 MHz
-      if Refclk_Freq = 38_400_000 then
-         Refclk_Freq := 19_200_000;
+      if RefClk_Freq = 38_400_000 then
+         RefClk_Freq := 19_200_000;
       end if;
 
-      Enc_DCO := (DCO / 1_000) * (2 ** 15) / (Refclk_Freq / 1_000);
+      Enc_DCO := (DCO / 1_000) * (2 ** 15) / (RefClk_Freq / 1_000);
       DCO_Integer := Word32 (Enc_DCO / (2 ** 15));
       DCO_Fraction := Word32 (Enc_DCO) and 16#7fff#;
    end Encode_DCO;
@@ -162,10 +162,10 @@ package body HW.GFX.GMA.PLLs.Combo_Phy is
      (Bandwidth : in     DP_Bandwidth;
       Params    :    out PLL_Params)
    is
-      Refclk : Frequency_Type;
+      RefClk : Frequency_Type;
    begin
-      Power_And_Clocks.Get_Refclk (Refclk);
-      if Refclk = 24_000_000 then
+      Power_And_Clocks.Get_RefClk (RefClk);
+      if RefClk = 24_000_000 then
          Params := PLL_Params_24MHz (Bandwidth);
       else
          Params := PLL_Params_19_2MHz (Bandwidth);
@@ -276,7 +276,7 @@ package body HW.GFX.GMA.PLLs.Combo_Phy is
       Success  :    out Boolean)
    is
       Params : PLL_Params;
-      Refclk : Frequency_Type;
+      RefClk : Frequency_Type;
    begin
       if Port_Cfg.Display = DP then
          Calc_DP_PLL_Dividers (Port_Cfg.DP.Bandwidth, Params);
@@ -303,8 +303,8 @@ package body HW.GFX.GMA.PLLs.Combo_Phy is
       -- Display WA #22010492432: ehl, tgl, adl-p
       -- Program half of the nominal DCO divider fraction value
       -- for 38.4 MHz refclk
-      Power_And_Clocks.Get_Refclk (Refclk);
-      if Refclk = 38_400_000 then
+      Power_And_Clocks.Get_RefClk (RefClk);
+      if RefClk = 38_400_000 then
          Params.DCO_Fraction := Shift_Right (Params.DCO_Fraction, 1);
       end if;
 
@@ -335,7 +335,7 @@ package body HW.GFX.GMA.PLLs.Combo_Phy is
         (Register => PLL_Regs (PLL).DPLL_CFGCR1,
          Value => Shift_Left (Word32 (Params.QDiv), 10) or
                   Shift_Left (Word32 (QDiv_Mode (Params.QDiv)), 9) or
-                  Shift_left (Word32 (Params.KDiv), 6) or
+                  Shift_Left (Word32 (Params.KDiv), 6) or
                   Shift_Left (Word32 (Params.PDiv), 2));
       Registers.Posting_Read(PLL_Regs (PLL).DPLL_CFGCR1);
 

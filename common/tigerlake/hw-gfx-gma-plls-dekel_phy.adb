@@ -143,10 +143,10 @@ package body HW.GFX.GMA.PLLs.Dekel_Phy is
    procedure Calc_Dividers
       (Clock                   : in     Frequency_Type;
        Display                 : in     Display_Type;
-       DKL_Refclkin_Ctl        :    out Word32;
-       DKL_Clktop2_Coreclkctl1 :    out Word32;
-       DKL_Clktop2_HSClkCtl    :    out Word32;
-       DCO_Khz                 :    out DCO_Range_KHz;
+       DKL_RefClkin_Ctl        :    out Word32;
+       DKL_ClkTop2_CoreClkCtl1 :    out Word32;
+       DKL_ClkTop2_HSClkCtl    :    out Word32;
+       DCO_KHz                 :    out DCO_Range_KHz;
        Success                 :    out Boolean)
    is
       DCO_Min_Freq, DCO_Max_Freq : Int64;
@@ -176,9 +176,9 @@ package body HW.GFX.GMA.PLLs.Dekel_Phy is
          DCO_Max_Freq := DCO_Range_KHz'Last;
       end if;
 
-      DKL_Refclkin_Ctl := 0;
-      DKL_clktop2_coreclkctl1 := 0;
-      DKL_CLKTOP2_hsclkctl := 0;
+      DKL_RefClkin_Ctl := 0;
+      DKL_ClkTop2_CoreClkCtl1 := 0;
+      DKL_ClkTop2_HSClkCtl := 0;
 
       DCO_KHz := DCO_Min_Freq;
       Success := False;
@@ -205,10 +205,10 @@ package body HW.GFX.GMA.PLLs.Dekel_Phy is
                             when 5 => DKL_CLKTOP2_HSCLKCTL_HSDIV_RATIO_5,
                             when 7 => DKL_CLKTOP2_HSCLKCTL_HSDIV_RATIO_7,
                             when others => DKL_CLKTOP2_HSCLKCTL_HSDIV_RATIO_2);
-                  DKL_Refclkin_Ctl := DKL_REFCLKIN_CTL_OD_2_MUX (1);
-                  DKL_clktop2_coreclkctl1 :=
+                  DKL_RefClkin_Ctl := DKL_REFCLKIN_CTL_OD_2_MUX (1);
+                  DKL_ClkTop2_CoreClkCtl1 :=
                                 DKL_CLKTOP2_CORECLKCTL1_A_DIVRATIO (A_DivRatio);
-                  DKL_CLKTOP2_hsclkctl :=
+                  DKL_ClkTop2_HSClkCtl :=
                      DKL_CLKTOP2_HSCLKCTL_TLINEDRV_CLKSEL (TLineDrv) or
                      DKL_CLKTOP2_HSCLKCTL_CORE_INPUTSEL (Inputsel) or
                      Hsdiv or
@@ -227,10 +227,10 @@ package body HW.GFX.GMA.PLLs.Dekel_Phy is
       Port_Cfg : in     Port_Config;
       Success  :    out Boolean)
    is
-      DKL_Refclkin_Ctl : Word32;
-      DKL_Clktop2_Coreclkctl1 : Word32;
-      DKL_Clktop2_HSClkCtl : Word32;
-      DCO_Khz : DCO_Range_KHz;
+      DKL_RefClkin_Ctl : Word32;
+      DKL_ClkTop2_CoreClkCtl1 : Word32;
+      DKL_ClkTop2_HSClkCtl : Word32;
+      DCO_KHz : DCO_Range_KHz;
       Clock : Frequency_Type;
    begin
       if Port_Cfg.Display = HDMI then
@@ -242,10 +242,10 @@ package body HW.GFX.GMA.PLLs.Dekel_Phy is
       Calc_Dividers
         (Clock                   => Clock,
          Display                 => Port_Cfg.Display,
-         DKL_Refclkin_Ctl        => DKL_Refclkin_Ctl,
-         DKL_Clktop2_Coreclkctl1 => DKL_Clktop2_Coreclkctl1,
-         DKL_Clktop2_HSClkCtl    => DKL_Clktop2_HSClkCtl,
-         DCO_Khz                 => DCO_Khz,
+         DKL_RefClkin_Ctl        => DKL_RefClkin_Ctl,
+         DKL_ClkTop2_CoreClkCtl1 => DKL_ClkTop2_CoreClkCtl1,
+         DKL_ClkTop2_HSClkCtl    => DKL_ClkTop2_HSClkCtl,
+         DCO_KHz                 => DCO_KHz,
          Success                 => Success);
 
       if not Success then
@@ -263,24 +263,24 @@ package body HW.GFX.GMA.PLLs.Dekel_Phy is
 
       declare
          Tmp : Int64;
-         Refclk : Power_And_Clocks.Refclk_Range;
-         Refclk_Khz : Power_And_Clocks.Refclk_Range_KHz;
+         RefClk : Power_And_Clocks.RefClk_Range;
+         RefClk_Khz : Power_And_Clocks.RefClk_Range_KHz;
          FeedFwGain : Word32;
          M1Div : constant := 2;
          M2Div_Int, M2Div_Rem: Int64;
          M2Div_Frac : Word32;
          TDC_Target : Word32;
          Prop_Coeff, Int_Coeff : Word32;
-         IRef_Ndiv, Iref_Itrim : Word32;
+         Iref_Ndiv, Iref_Itrim : Word32;
       begin
-         Power_And_Clocks.Get_Refclk (Refclk);
-         Refclk_Khz := Power_And_Clocks.Refclk_Range_KHz (Refclk / 1_000);
-         M2Div_Int := Int64(DCO_Khz / (Refclk_Khz * M1Div));
-         M2Div_Rem := Int64(DCO_Khz rem (Refclk_Khz * M1Div));
+         Power_And_Clocks.Get_RefClk (RefClk);
+         RefClk_Khz := Power_And_Clocks.RefClk_Range_KHz (RefClk / 1_000);
+         M2Div_Int := Int64(DCO_KHz / (RefClk_Khz * M1Div));
+         M2Div_Rem := Int64(DCO_KHz rem (RefClk_Khz * M1Div));
          Tmp := M2Div_Rem * 2 ** 22;
-         M2Div_Frac := Word32 (Tmp / Int64(Refclk_Khz * M1Div));
+         M2Div_Frac := Word32 (Tmp / Int64(RefClk_Khz * M1Div));
 
-         case Refclk is
+         case RefClk is
             when 24_000_000 =>
                Iref_Ndiv := 1;
                Iref_Itrim := 25;
@@ -294,15 +294,15 @@ package body HW.GFX.GMA.PLLs.Dekel_Phy is
 
          -- Real number math converted to fixed point
          -- see note in i915 about these calculations
-         TDC_Target := Word32 (2 * 1_000 * 100_000 * 10 / (132 * Refclk_Khz) + 5) / 10;
+         TDC_Target := Word32 (2 * 1_000 * 100_000 * 10 / (132 * RefClk_Khz) + 5) / 10;
 
          if M2Div_Rem > 0 then
-            FeedFwGain := (M1Div * 1_000_000 * 100) / (Word32 (DCO_Khz) * 3 / 10);
+            FeedFwGain := (M1Div * 1_000_000 * 100) / (Word32 (DCO_KHz) * 3 / 10);
          else
             FeedFwGain := 0;
          end if;
 
-         if DCO_Khz >= 9_000_000 then
+         if DCO_KHz >= 9_000_000 then
             Prop_Coeff := 5;
             Int_Coeff := 10;
          else
@@ -316,19 +316,19 @@ package body HW.GFX.GMA.PLLs.Dekel_Phy is
          Registers.Unset_And_Set_Mask
            (Register   => PLL_Regs (PLL).DKL_REFCLKIN_CTL,
             Mask_Unset => DKL_REFCLKIN_CTL_OD_2_MUX_MASK,
-            Mask_Set   => DKL_Refclkin_Ctl);
+            Mask_Set   => DKL_RefClkin_Ctl);
 
          Registers.Unset_And_Set_Mask
            (Register   => PLL_Regs (PLL).DKL_CLKTOP2_CORECLKCTL1,
             Mask_Unset => DKL_CLKTOP2_CORECLKCTL1_A_DIVRATIO_MASK,
-            Mask_Set   => DKL_Clktop2_Coreclkctl1);
+            Mask_Set   => DKL_ClkTop2_CoreClkCtl1);
 
          Registers.Unset_And_Set_Mask
            (Register   => PLL_Regs (PLL).DKL_CLKTOP2_HSCLKCTL,
             Mask_Unset => DKL_CLKTOP2_HSCLKCTL_MASK,
-            Mask_Set   => DKL_CLKTOP2_hsclkctl);
+            Mask_Set   => DKL_ClkTop2_HSClkCtl);
 
-         Registers.Unset_And_Set_mask
+         Registers.Unset_And_Set_Mask
            (Register   => PLL_Regs (PLL).DKL_PLL_DIV0,
             Mask_Unset => DKL_PLL_DIV0_MASK,
             Mask_Set   => Shift_Left (Int_Coeff, 16) or

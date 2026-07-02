@@ -152,9 +152,9 @@ package body HW.GFX.GMA.Connectors is
             Mask     => DDI_BUF_CTL_IDLE_STATUS);
       end if;
 
-     Registers.Set_Mask
-       (Register => Registers.DPCLKA_CFGCR0,
-        Mask     => DDI_CLK_OFF (Port));
+      Registers.Set_Mask
+        (Register => Registers.DPCLKA_CFGCR0,
+         Mask     => DDI_CLK_OFF (Port));
    end Off;
 
    procedure Off (Port_Info : Training_Port_Info) is

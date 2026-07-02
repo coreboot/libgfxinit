@@ -42,7 +42,7 @@ package body HW.GFX.GMA.Connectors.TC is
       DDI_TC5 => Registers.DKL_DP_MODE_5,
       DDI_TC6 => Registers.DKL_DP_MODE_6);
 
-   function DP_PIN_ASSIGNMENT_SHIFT (P : USBC_Port) return natural is
+   function DP_PIN_ASSIGNMENT_SHIFT (P : USBC_Port) return Natural is
      (case P is
       when DDI_TC1 => 0,
       when DDI_TC2 => 4,
@@ -104,7 +104,7 @@ package body HW.GFX.GMA.Connectors.TC is
          Registers.PORT_TX_DFLEXDPCSSS_FIA3,
          Registers.PORT_TX_DFLEXPA1_FIA3));
 
-   function Fia_Index (Port : USBC_Port) return natural
+   function Fia_Index (Port : USBC_Port) return Natural
    is (case Port is
        when DDI_TC1 | DDI_TC3 | DDI_TC5 => 0,
        when DDI_TC2 | DDI_TC4 | DDI_TC6 => 1);
@@ -129,7 +129,7 @@ package body HW.GFX.GMA.Connectors.TC is
       (Shift_Left (1, Fia_Index (Port) * 8 + 5));
    function DP_LANE_ASSIGNMENT_MASK (Port : USBC_Port) return Word32 is
       (Shift_Left (16#f#, Fia_Index (Port) * 8));
-   function DP_LANE_ASSIGNMENT_SHIFT (Port : USBC_Port) return natural is
+   function DP_LANE_ASSIGNMENT_SHIFT (Port : USBC_Port) return Natural is
       (Fia_Index (Port) * 8);
 
    DDI_BUF_CTL_BUFFER_ENABLE        : constant :=      1 * 2 ** 31;
@@ -159,7 +159,7 @@ package body HW.GFX.GMA.Connectors.TC is
       Deemphasis_Control : Word32;
    end record;
 
-   type Buffer_Trans_Range is new natural range 0 .. 9;
+   type Buffer_Trans_Range is new Natural range 0 .. 9;
    type Buffer_Trans_Array is array (Buffer_Trans_Range) of Buffer_Trans;
    TGL_Buffer_Trans_DP_HBR2 : constant Buffer_Trans_Array :=
      ((16#7#, 16#0#, 16#00#),
@@ -261,7 +261,7 @@ package body HW.GFX.GMA.Connectors.TC is
       Registers.Write (HIP_INDEX_REG (P), HIP_INDEX_VAL (P, Word32 (N)));
    end Set_HIP_For_Port;
 
-   subtype Pin_Assignment_Type is natural range 0 .. 6;
+   subtype Pin_Assignment_Type is Natural range 0 .. 6;
    procedure Get_Pin_Assignment
      (P          : in    USBC_Port;
       Assignment : out   Pin_Assignment_Type)
@@ -273,7 +273,7 @@ package body HW.GFX.GMA.Connectors.TC is
       A := Shift_Right (Tmp, DP_PIN_ASSIGNMENT_SHIFT (P));
       A := A and DP_PIN_ASSIGNMENT_MASK;
 
-      if natural (A) in Pin_Assignment_Type then
+      if Natural (A) in Pin_Assignment_Type then
          Assignment := Pin_Assignment_Type (A);
       else
          Assignment := Pin_Assignment_Type'First;
@@ -411,8 +411,8 @@ package body HW.GFX.GMA.Connectors.TC is
    is
       procedure Get_Lane_Assignment_Count (Lanes : out DP_Lane_Count)
       is
-          Lane_Mask : Word32;
-          Tmp : Word32;
+         Lane_Mask : Word32;
+         Tmp : Word32;
       begin
          Registers.Read (Fia_Regs (Port).PORT_TX_DFLEXDPSP, Tmp);
          Lane_Mask := Shift_Right (Tmp and DP_LANE_ASSIGNMENT_MASK (Port),

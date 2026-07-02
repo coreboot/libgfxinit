@@ -269,11 +269,11 @@ package body HW.GFX.GMA.Transcoder is
       if Config.Need_Early_Transcoder_Setup and then
          Trans.CLK_SEL /= Registers.Invalid_Register and then
          Port_Cfg.Port in TGL_Digital_Port
-         then
-            Registers.Unset_And_Set_Mask
-              (Register   => Trans.CLK_SEL,
-               Mask_Unset => TRANS_CLK_SEL_MASK,
-               Mask_Set   => TGL_TRANS_CLK_SEL_PORT (Port_Cfg.Port));
+      then
+         Registers.Unset_And_Set_Mask
+           (Register   => Trans.CLK_SEL,
+            Mask_Unset => TRANS_CLK_SEL_MASK,
+            Mask_Set   => TGL_TRANS_CLK_SEL_PORT (Port_Cfg.Port));
       end if;
    end Enable_Pipe_Clock;
 

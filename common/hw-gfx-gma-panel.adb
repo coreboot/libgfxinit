@@ -443,9 +443,9 @@ is
 
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
-     Registers.Unset_Mask
-       (Register => PP (Panel).CONTROL,
-        Mask     => PCH_PP_CONTROL_BACKLIGHT_ENABLE);
+      Registers.Unset_Mask
+        (Register => PP (Panel).CONTROL,
+         Mask     => PCH_PP_CONTROL_BACKLIGHT_ENABLE);
 
       if Config.Has_New_Backlight_Control then
          Registers.Unset_Mask

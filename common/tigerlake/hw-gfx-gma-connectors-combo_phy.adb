@@ -303,15 +303,16 @@ package body HW.GFX.GMA.Connectors.Combo_Phy is
       function PORT_TX_DW2_RCOMP_SCALAR (R : Rcomp_Scalar) return Word32 is
          (Word32 (R));
 
-      procedure Set_Tx_Training (Port : Combo_Port; Training : Training_Values) is
+      procedure Set_Tx_Training (Port : Combo_Port; Training : Training_Values)
+      is
          DW5 : Word32;
       begin
-        Registers.Read (Port_Regs (Port).PORT_TX_DW5_LN0, DW5);
-        Registers.Write
-          (Register => Port_Regs (Port).PORT_TX_DW5_GRP,
-           Value    => (if Training = Training_Enable
-                        then DW5 or PORT_TX_DW5_TX_TRAINING_EN
-                        else DW5 and not PORT_TX_DW5_TX_TRAINING_EN));
+         Registers.Read (Port_Regs (Port).PORT_TX_DW5_LN0, DW5);
+         Registers.Write
+           (Register => Port_Regs (Port).PORT_TX_DW5_GRP,
+            Value    => (if Training = Training_Enable
+                         then DW5 or PORT_TX_DW5_TX_TRAINING_EN
+                         else DW5 and not PORT_TX_DW5_TX_TRAINING_EN));
       end Set_Tx_Training;
 
       Tmp : Word32;
@@ -444,7 +445,7 @@ package body HW.GFX.GMA.Connectors.Combo_Phy is
                if Link.Bandwidth > DP_Bandwidth_2_7 then
                   if Config.Is_LP then
                      return TGL_Buffer_Trans_DP_HBR2_U_Y;
-                 else
+                  else
                      return TGL_Buffer_Trans_DP_HBR2;
                   end if;
                else

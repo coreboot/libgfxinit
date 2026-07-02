@@ -484,7 +484,7 @@ is
          else
             CI.Size := Cursor_Size'Val
               ((Cursor_Size'Pos (CI.Size) + 1 + Rand (Gen) mod 2) mod 3);
-	    if Cursor_Width (CI.Size) > Pipes (P).Framebuffer.Width or
+            if Cursor_Width (CI.Size) > Pipes (P).Framebuffer.Width or
                Cursor_Width (CI.Size) > Pipes (P).Framebuffer.Height
             then
                CI.Size := Cursor_64x64;
@@ -527,14 +527,14 @@ is
                C.Center_X := C.Center_X + CI.X_Velo / 100;
                C.Center_Y := C.Center_Y + CI.Y_Velo / 100;
                if C.Center_X not in 0 .. Width - 1 then
-                 C.Center_X := Int32'Max (0, Int32'Min (Width, C.Center_X));
-                 CI.X_Velo := -CI.X_Velo;
-                 Update := True;
+                  C.Center_X := Int32'Max (0, Int32'Min (Width, C.Center_X));
+                  CI.X_Velo := -CI.X_Velo;
+                  Update := True;
                end if;
                if C.Center_Y not in 0 .. Height - 1 then
-                 C.Center_Y := Int32'Max (0, Int32'Min (Height, C.Center_Y));
-                 CI.Y_Velo := -CI.Y_Velo;
-                 Update := True;
+                  C.Center_Y := Int32'Max (0, Int32'Min (Height, C.Center_Y));
+                  CI.Y_Velo := -CI.Y_Velo;
+                  Update := True;
                end if;
                if Update then
                   Select_New_Cursor (Pipe, C, CI);

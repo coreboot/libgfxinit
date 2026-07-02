@@ -16,9 +16,9 @@ with HW.GFX.GMA.Config_Helpers;
 
 private package HW.GFX.GMA.Power_And_Clocks is
 
-   subtype Refclk_Range is Frequency_Type range 19_200_000 .. 38_400_000;
-   subtype Refclk_Range_KHz is Pos64
-      range (Refclk_Range'First / 1000) .. (Refclk_Range'Last / 1000);
+   subtype RefClk_Range is Frequency_Type range 19_200_000 .. 38_400_000;
+   subtype RefClk_Range_KHz is Pos64
+      range (RefClk_Range'First / 1000) .. (RefClk_Range'Last / 1000);
 
    procedure Pre_All_Off;
    procedure Post_All_Off;
@@ -41,6 +41,6 @@ private package HW.GFX.GMA.Power_And_Clocks is
    procedure Power_Up (Old_Configs, New_Configs : Pipe_Configs);
    procedure Power_Down (Old_Configs, Tmp_Configs, New_Configs : Pipe_Configs);
 
-   procedure Get_Refclk (Refclk : out Refclk_Range);
+   procedure Get_RefClk (RefClk : out RefClk_Range);
 
 end HW.GFX.GMA.Power_And_Clocks;

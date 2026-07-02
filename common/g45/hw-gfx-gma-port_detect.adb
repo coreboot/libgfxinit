@@ -49,7 +49,7 @@ is
       DIGI_C => Registers.GMCH_DP_C,
       DIGI_D => Registers.GMCH_DP_D);
 
-   HOTPLUG_INT_STATUS : constant array (Active_Port_Type) of word32 :=
+   HOTPLUG_INT_STATUS : constant array (Active_Port_Type) of Word32 :=
      (DP1    => 3 * 2 ** 17,
       DP2    => 3 * 2 ** 19,
       DP3    => 3 * 2 ** 21,
@@ -109,7 +109,7 @@ is
       Detected := (Ctl32 and HOTPLUG_INT_STATUS (Port)) /= 0;
 
       if Detected then
-         registers.Set_Mask
+         Registers.Set_Mask
            (Register => Registers.PORT_HOTPLUG_STAT,
             Mask     => HOTPLUG_INT_STATUS (Port));
       end if;

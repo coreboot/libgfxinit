@@ -118,7 +118,7 @@ is
       P2_Fast      =>   7,           P2_Slow   =>   7,
       P2_Threshold => Clock_Range'First,
       VCO_Lower    => 1_750_000_000, VCO_Upper => 3_500_000_000);
-    SDVO_Limits : constant Limits_Type := Limits_Type'
+   SDVO_Limits : constant Limits_Type := Limits_Type'
      (N_Lower      =>   3,           N_Upper   =>   6,
       M_Lower      =>  104,          M_Upper   => 138,
       M1_Lower     =>  16,           M1_Upper  =>  25,
@@ -129,7 +129,7 @@ is
       P2_Fast      =>   5,          P2_Slow   =>  10,
       P2_Threshold =>   270_000_000,
       VCO_Lower    => 1_750_000_000, VCO_Upper => 3_500_000_000);
-    HDMI_Analog_Limits : constant Limits_Type := Limits_Type'
+   HDMI_Analog_Limits : constant Limits_Type := Limits_Type'
      (N_Lower      =>   3,           N_Upper   =>   6,
       M_Lower      =>  104,          M_Upper   => 138,
       M1_Lower     =>  18,           M1_Upper  =>  25,
@@ -203,7 +203,7 @@ is
       DP       => MODE_DPLL_DP,
       HDMI     => MODE_DPLL_HDMI,
       VGA      => MODE_DPLL_DAC,
-      Others   => MODE_DPLL_HDMI); --TODO Add SDVO
+      others   => MODE_DPLL_HDMI); --TODO Add SDVO
 
    FP0 : constant Regs := Regs'(Registers.GMCH_FPA0, Registers.GMCH_FPB0);
    FP1 : constant Regs := Regs'(Registers.GMCH_FPA1, Registers.GMCH_FPB1);

@@ -159,7 +159,7 @@ package body HW.GFX.GMA.Combo_Phy is
          Registers.Read (Phy_Regs (Phy).PORT_COMP_DW3, DW3);
 
          Tmp := Shift_Right (DW3 and VOLTAGE_MASK, 24);
-         case (Tmp) is
+         case Tmp is
             when 0 => Voltage := VOLT_0_85;
             when 1 => Voltage := VOLT_0_95;
             when 2 => Voltage := VOLT_1_05;
@@ -167,23 +167,23 @@ package body HW.GFX.GMA.Combo_Phy is
          end case;
 
          Tmp := Shift_Right (DW3 and PROCESS_MASK, 26);
-         case (Tmp) is
+         case Tmp is
             when 0 => Process := DOT0;
             when 1 => Process := DOT1;
             when others => Process := DOT0;
          end case;
 
          if Process = DOT0 then
-            case (Voltage) is
+            case Voltage is
                when VOLT_0_85 => References := DOT0_VOLT_0_85;
                when VOLT_0_95 => References := DOT0_VOLT_0_95;
-               when VOLT_1_05 =>  References := DOT0_VOLT_1_05;
+               when VOLT_1_05 => References := DOT0_VOLT_1_05;
             end case;
          else
-            case (Voltage) is
+            case Voltage is
                -- [DOT1, VOLT_0_85] is actually an invalid combination
-	       when VOLT_0_95 | VOLT_0_85 => References := DOT1_VOLT_0_95;
-               when VOLT_1_05 =>  References := DOT1_VOLT_1_05;
+               when VOLT_0_95 | VOLT_0_85 => References := DOT1_VOLT_0_95;
+               when VOLT_1_05             => References := DOT1_VOLT_1_05;
             end case;
          end if;
       end Read_DW3;
@@ -211,8 +211,8 @@ package body HW.GFX.GMA.Combo_Phy is
       Was_Enabled : Boolean;
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
-       -- Initialize all combo PHYs with Combo PHY DDI Buffer Combo PHY Init Sequence
-      for Phy in Combo_Phy'range loop
+      -- Initialize all combo PHYs with Combo PHY DDI Buffer Combo PHY Init Sequence
+      for Phy in Combo_Phy'Range loop
          Registers.Is_Set_Mask (
             Phy_Regs (Phy).PORT_COMP_DW0,
             PORT_COMP_DW0_COMP_INIT,
@@ -243,7 +243,7 @@ package body HW.GFX.GMA.Combo_Phy is
 
    procedure All_Off is
    begin
-      for Phy in Combo_Phy'range loop
+      for Phy in Combo_Phy'Range loop
          Registers.Set_Mask (Phy_Regs (Phy).PHY_MISC,
                              PHY_MISC_DE_TO_IO_COMP_PWR_DOWN);
 

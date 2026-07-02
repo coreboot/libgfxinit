@@ -173,12 +173,12 @@ package body HW.GFX.DP_Aux_Ch is
    ----------------------------------------------------------------------------
 
    procedure I2C_Out_Packet
-     (Port              : in     T;
-      Command           : in     DP_Defs.Aux_Message_Command;
-      Address           : in     DP_Defs.Aux_Message_Address;
-      Length            : in     DP_Defs.Aux_Payload_Length;
-      Data              : in     DP_Defs.Aux_Payload;
-      Success           :    out Boolean)
+     (Port     : in     T;
+      Command  : in     DP_Defs.Aux_Message_Command;
+      Address  : in     DP_Defs.Aux_Message_Address;
+      Length   : in     DP_Defs.Aux_Payload_Length;
+      Data     : in     DP_Defs.Aux_Payload;
+      Success  :    out Boolean)
    is
       Request : DP_Defs.Aux_Request;
 
@@ -265,10 +265,10 @@ package body HW.GFX.DP_Aux_Ch is
    end I2C_In_Packet;
 
    procedure I2C_Empty_Packet
-     (Port              : in     T;
-      Command           : in     DP_Defs.Aux_Message_Command;
-      Address           : in     DP_Defs.Aux_Message_Address;
-      Success           :    out Boolean)
+     (Port     : in     T;
+      Command  : in     DP_Defs.Aux_Message_Command;
+      Address  : in     DP_Defs.Aux_Message_Address;
+      Success  :    out Boolean)
    is
       Ignored_Response        : DP_Defs.Aux_Response;
       Ignored_Response_Length : DP_Defs.Aux_Response_Length;
@@ -306,12 +306,12 @@ package body HW.GFX.DP_Aux_Ch is
 
       if Success then
          I2C_Out_Packet
-           (Port              => Port,
-            Command           => DP_AUX_I2C_WRITE or DP_AUX_I2C_MOT,
-            Address           => DP_Defs.Aux_Message_Address (Address),
-            Length            => Length,
-            Data              => Data,
-            Success           => Success);
+           (Port     => Port,
+            Command  => DP_AUX_I2C_WRITE or DP_AUX_I2C_MOT,
+            Address  => DP_Defs.Aux_Message_Address (Address),
+            Length   => Length,
+            Data     => Data,
+            Success  => Success);
 
          pragma Warnings
            (GNATprove, Off, "unused assignment to ""Ignored_Success""",

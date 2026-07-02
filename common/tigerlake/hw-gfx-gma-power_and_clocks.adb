@@ -362,7 +362,7 @@ package body HW.GFX.GMA.Power_And_Clocks is
             when Port_Domain'Range => Any_Port_Is (To_GPU_Port (PD)));
    end Need_PD;
 
-   procedure Get_RefClk (Refclk : out Refclk_Range)
+   procedure Get_RefClk (RefClk : out RefClk_Range)
    is
       DSSM : Word32;
       DSSM_REFERENCE_FREQUENCY_MASK    : constant := 16#e000_0000#;
@@ -371,13 +371,13 @@ package body HW.GFX.GMA.Power_And_Clocks is
       DSSM_REFERENCE_FREQUENCY_38_4MHZ : constant := 16#4000_0000#;
    begin
       Registers.Read (Registers.DSSM, DSSM);
-      Refclk :=
+      RefClk :=
         (case DSSM and DSSM_REFERENCE_FREQUENCY_MASK is
          when DSSM_REFERENCE_FREQUENCY_24MHZ   => 24_000_000,
          when DSSM_REFERENCE_FREQUENCY_19_2MHZ => 19_200_000,
          when DSSM_REFERENCE_FREQUENCY_38_4MHZ => 38_400_000,
          when others                           => 24_000_000);
-   end Get_Refclk;
+   end Get_RefClk;
 
    procedure Get_RawClk (Rawclk : out Frequency_Type)
    is
@@ -397,11 +397,11 @@ package body HW.GFX.GMA.Power_And_Clocks is
 
    procedure Get_Max_CDClk (CDClk : out CDClk_Range)
    is
-      Refclk_Freq : Refclk_Range;
+      RefClk_Freq : RefClk_Range;
    begin
-      Get_Refclk (Refclk_Freq);
+      Get_RefClk (RefClk_Freq);
       CDClk :=
-        (case Refclk_Freq is
+        (case RefClk_Freq is
          when 24_000_000 => 648_000_000,
          when others     => 652_800_000);
    end Get_Max_CDClk;
@@ -412,11 +412,11 @@ package body HW.GFX.GMA.Power_And_Clocks is
    with
       Post => Normalized >= 172_800_000
    is
-      Refclk_Freq : Refclk_Range;
+      RefClk_Freq : RefClk_Range;
    begin
-      Get_Refclk (Refclk_Freq);
+      Get_RefClk (RefClk_Freq);
       Normalized :=
-        (case Refclk_Freq is
+        (case RefClk_Freq is
          when 19_200_000 | 38_400_000 =>
             (if    CDClk <= 172_800_000 then 172_800_000
              elsif CDClk <= 192_000_000 then 192_000_000
@@ -459,7 +459,7 @@ package body HW.GFX.GMA.Power_And_Clocks is
          end case;
       end Ratio_For_19_2_MHz;
 
-      function Ratio_For_24_MHz (CDCLk : CDClk_Range) return PLL_Ratio_Range is
+      function Ratio_For_24_MHz (CDClk : CDClk_Range) return PLL_Ratio_Range is
       begin
          case CDClk is
             when 180_800_000 => return 15;
@@ -484,14 +484,14 @@ package body HW.GFX.GMA.Power_And_Clocks is
       CD2X : Word32;
       PLL_Ratio : PLL_Ratio_Range;
       CDClk : CDClk_Range;
-      Refclk_Freq : Refclk_Range;
+      RefClk_Freq : RefClk_Range;
       VCO : Pos64;
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
       Normalize_CDClk (CDClk_Range'Min (CDClk_In, Config.Max_CDClk), CDClk);
-      Get_Refclk (Refclk_Freq);
-      PLL_Ratio := (case Refclk_Freq is
+      Get_RefClk (RefClk_Freq);
+      PLL_Ratio := (case RefClk_Freq is
          when 19_200_000 => Ratio_For_19_2_MHz (CDClk),
          when 38_400_000 => Ratio_For_19_2_MHz (CDClk) / 2,
          when 24_000_000 => Ratio_For_24_MHz (CDClk),
@@ -499,12 +499,12 @@ package body HW.GFX.GMA.Power_And_Clocks is
 
       if PLL_Ratio = 0 then
          pragma Debug (Debug.Put_Line
-                       ("ERROR: Invalid Refclk frequency, bad hardware?"));
+                       ("ERROR: Invalid RefClk frequency, bad hardware?"));
          return;
       end if;
 
       PCode.Mailbox_Request
-        (Mbox       => TGL_PCODE_CDCLK_CONTROL,
+        (MBox       => TGL_PCODE_CDCLK_CONTROL,
          Command    => TGL_CDCLK_PREPARE_FOR_CHANGE,
          Reply_Mask => TGL_CDCLK_READY_FOR_CHANGE,
          Wait_Ready => True,
@@ -539,7 +539,7 @@ package body HW.GFX.GMA.Power_And_Clocks is
          return;
       end if;
 
-      VCO := (Refclk_Freq / 1_000) * Pos64 (PLL_Ratio);
+      VCO := (RefClk_Freq / 1_000) * Pos64 (PLL_Ratio);
       CD2X :=
          (case (Div_Round_Closest (VCO, CDClk / 1_000)) is
           when 2 => CDCLK_CD2X_DIV_SEL_1,
@@ -616,7 +616,7 @@ package body HW.GFX.GMA.Power_And_Clocks is
          return;
       end if;
 
-      case (Result and 16#f#) is
+      case Result and 16#f# is
          when 0 => Module_Type := DDR4;
          when 1 => Module_Type := DDR5;
          when 2 => Module_Type := LPDDR5;
@@ -818,11 +818,11 @@ package body HW.GFX.GMA.Power_And_Clocks is
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
       for PD in reverse Dynamic_Domain loop
-        if (Need_PD (PD, Old_Configs) or Need_PD (PD, Tmp_Configs)) and
-           not Need_PD (PD, New_Configs)
-        then
-           PD_Off (PD);
-        end if;
+         if (Need_PD (PD, Old_Configs) or Need_PD (PD, Tmp_Configs)) and
+            not Need_PD (PD, New_Configs)
+         then
+            PD_Off (PD);
+         end if;
       end loop;
    end Power_Down;
 

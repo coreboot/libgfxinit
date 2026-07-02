@@ -841,7 +841,7 @@ package body HW.GFX.GMA.Pipe_Setup is
             Result   => Used_For_Secondary);
          Pipe := (if Used_For_Secondary then Secondary else Primary);
       end if;
-   end;
+   end Gmch_Panel_Fitter_Pipe;
 
    procedure Panel_Fitter_Off (Controller : Controller_Type)
    is
