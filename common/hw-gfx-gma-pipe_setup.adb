@@ -160,20 +160,22 @@ package body HW.GFX.GMA.Pipe_Setup is
 
    ---------------------------------------------------------------------------
 
-   function Encode_Size (LSW, MSW : Word32) return Word32
-   is
-     (Shift_Left (MSW - 1, 16) or (LSW - 1));
+   subtype Source_Size is Width_Type;
 
-   function Prepare_Source_Width (Framebuffer : Framebuffer_Type) return Word32
+   function Encode_Size (LSW, MSW : Source_Size) return Word32
    is
-     (if Config.Needs_Even_Source_Width then
-         Word32 (Rotated_Width (Framebuffer)) and not 1
+     (Shift_Left (Word32 (MSW) - 1, 16) or (Word32 (LSW) - 1));
+
+   function Source_Width (FB : Framebuffer_Type) return Source_Size
+   is
+     (if Config.Needs_Even_Source_Width and then Rotated_Width (FB) > 2 then
+         Rotated_Width (FB) - Rotated_Width (FB) mod 2
       else
-         Word32 (Rotated_Width (Framebuffer)));
+         Rotated_Width (FB));
 
-   function Prepare_Source_Height (Framebuffer : Framebuffer_Type) return Word32
+   function Source_Height (FB : Framebuffer_Type) return Source_Size
    is
-     (Word32 (Rotated_Height (Framebuffer)));
+     (Rotated_Height (FB));
 
    ----------------------------------------------------------------------------
 
@@ -228,8 +230,8 @@ package body HW.GFX.GMA.Pipe_Setup is
    with
       Pre => FB.Height + FB.Start_Y <= FB.V_Stride
    is
-      Width : constant Word32 := Prepare_Source_Width (FB);
-      Height : constant Word32 := Prepare_Source_Height (FB);
+      Width : constant Source_Size := Source_Width (FB);
+      Height : constant Source_Size := Source_Height (FB);
 
       -- FIXME: setup correct format, based on framebuffer RGB format
       Format : constant Word32 := 6 * 2 ** 26;
@@ -423,8 +425,8 @@ package body HW.GFX.GMA.Pipe_Setup is
       -- i915 always disables underrun recovery for gen 13+.
       UNDERRUN_RECOVERY_DISABLE : constant := 1 * 2 ** 30;
 
-      Width : constant Word32 := Prepare_Source_Width (Framebuffer);
-      Height : constant Word32 := Prepare_Source_Height (Framebuffer);
+      Width : constant Source_Size := Source_Width (Framebuffer);
+      Height : constant Source_Size := Source_Height (Framebuffer);
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
@@ -517,7 +519,7 @@ package body HW.GFX.GMA.Pipe_Setup is
    begin
       -- off-screen cursor needs special care
       if X <= -Width or Y <= -Width or
-         X >= Rotated_Width (FB) or Y >= Rotated_Height (FB) or
+         X >= Source_Width (FB) or Y >= Source_Height (FB) or
          X > Config.Maximum_Cursor_X or Y > Config.Maximum_Cursor_Y
       then
          X := -Width;
@@ -544,13 +546,13 @@ package body HW.GFX.GMA.Pipe_Setup is
       Framebuffer : in     Framebuffer_Type)
    with
       Pre =>
-         Rotated_Width (Framebuffer) <= Max_Width and
-         Rotated_Height (Framebuffer) <= Max_Height,
+         Source_Width (Framebuffer) <= Max_Width and
+         Source_Height (Framebuffer) <= Max_Height,
       Post =>
          Width <= Max_Width and Height <= Max_Height
    is
-      Src_Width : constant Width_Type := Rotated_Width (Framebuffer);
-      Src_Height : constant Height_Type := Rotated_Height (Framebuffer);
+      Src_Width : constant Width_Type := Source_Width (Framebuffer);
+      Src_Height : constant Height_Type := Source_Height (Framebuffer);
    begin
       case Scaling_Type (Src_Width, Src_Height, Max_Width, Max_Height) is
          when Letterbox =>
@@ -578,16 +580,16 @@ package body HW.GFX.GMA.Pipe_Setup is
       Framebuffer : in     Framebuffer_Type)
    with
       Pre =>
-         Rotated_Width (Framebuffer) <= Max_Width and
-         Rotated_Height (Framebuffer) <= Max_Height,
+         Source_Width (Framebuffer) <= Max_Width and
+         Source_Height (Framebuffer) <= Max_Height,
       Post =>
          Width <= Max_Width and Height <= Max_Height
    is
    begin
       case Scaling is
          when None =>
-            Width  := Rotated_Width (Framebuffer);
-            Height := Rotated_Height (Framebuffer);
+            Width  := Source_Width (Framebuffer);
+            Height := Source_Height (Framebuffer);
          when Fit =>
             Scale_Keep_Aspect (Width, Height, Max_Width, Max_Height, Framebuffer);
          when Stretch =>
@@ -683,8 +685,8 @@ package body HW.GFX.GMA.Pipe_Setup is
          Rotated_Width (Pipe_Cfg.Framebuffer) <= Mode.H_Visible and
          Rotated_Height (Pipe_Cfg.Framebuffer) <= Mode.V_Visible
    is
-      Width_In    : constant Width_Type   := Rotated_Width (Pipe_Cfg.Framebuffer);
-      Height_In   : constant Height_Type  := Rotated_Height (Pipe_Cfg.Framebuffer);
+      Width_In    : constant Width_Type   := Source_Width (Pipe_Cfg.Framebuffer);
+      Height_In   : constant Height_Type  := Source_Height (Pipe_Cfg.Framebuffer);
       Limits      : constant Pipe_Scaler_Limit_Config :=
         (if Config.Has_Skylake_Scaler_Limits then
             Skylake_Scaler_Limits (Controller, Width_In, Height_In)
