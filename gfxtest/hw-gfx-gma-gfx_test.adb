@@ -593,9 +593,7 @@ is
       Cursor_Infos :=
         (others =>
            (Color    => Pipe_Index'Val (Rand (Gen) mod 3),
-            Size     => Cursor_64x64,
-            X_Velo   => 3 * Cursor_Rand (Gen),
-            Y_Velo   => 3 * Cursor_Rand (Gen),
+            Size     => Cursor_Size'Val (Rand (Gen) mod 3),
             others   => Cursor_Rand (Gen)));
 
       Script_Cursors (Pipes, Hotplug_List, Deadline, Primary_Delay_MS);
@@ -620,6 +618,7 @@ is
                New_FB : Framebuffer_Type renames
                   New_Pipes (Pipe).Framebuffer;
                Cursor : Cursor_Type renames New_Pipes (Pipe).Cursor;
+               CI : Cursor_Info renames Cursor_Infos (Pipe);
                Width : constant Width_Type :=
                   Pipes (Pipe).Framebuffer.Width;
                Height : constant Height_Type :=
@@ -637,6 +636,8 @@ is
                Cursor.Mode := No_Cursor;
                Cursor.Center_X := Rotated_Width (New_FB) / 2;
                Cursor.Center_Y := Rotated_Height (New_FB) / 2;
+               CI.X_Velo := 6 * Cursor_Rand (Gen) / (Width / New_FB.Width);
+               CI.Y_Velo := 6 * Cursor_Rand (Gen) / (Height / New_FB.Height);
             end;
          end loop;
          GMA.Dump_Configs (New_Pipes);
