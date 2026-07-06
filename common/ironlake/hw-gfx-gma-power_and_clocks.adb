@@ -32,7 +32,11 @@ package body HW.GFX.GMA.Power_And_Clocks is
    PCH_DREF_CONTROL_120MHZ_SSC_MODULATION_EN    : constant := 1 * 2 **  1;
    PCH_DREF_CONTROL_120MHZ_SSC4_MODULATION_EN   : constant := 1 * 2 **  0;
 
+   -- Same as Port_Detect.Initialize (DP_CTL_A, bit 2).
+   DP_PORT_DETECTED : constant := 1 * 2 ** 2;
+
    procedure Initialize is
+      eDP_Detected : Boolean;
    begin
       -- ILK: enable non-spread spectrum clock, enable spread spectrum clock
       Registers.Write
@@ -42,7 +46,12 @@ package body HW.GFX.GMA.Power_And_Clocks is
                      PCH_DREF_CONTROL_120MHZ_SSC_MODULATION_EN);
       Registers.Posting_Read (Registers.PCH_DREF_CONTROL);
       Time.U_Delay (1);
-      if Config.Valid_Port (eDP) then
+
+      Registers.Is_Set_Mask
+        (Register => Registers.DP_CTL_A,
+         Mask     => DP_PORT_DETECTED,
+         Result   => eDP_Detected);
+      if eDP_Detected then
          -- always use spread spectrum clock for CPU output
          Registers.Set_Mask
            (Register => Registers.PCH_DREF_CONTROL,
