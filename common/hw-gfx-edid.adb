@@ -157,6 +157,11 @@ package body HW.GFX.EDID is
                  (Raw_EDID (INPUT) and INPUT_DIGITAL_DEPTH_MASK,
                   INPUT_DIGITAL_DEPTH_SHIFT))));
 
+      -- Clamp to 8-bit for compatibility and to conserve bandwidth
+      if Mode.BPC > 8 then
+         Mode.BPC := 8;
+      end if;
+
       -- Calculate absolute values from EDID relative values.
       Mode.H_Sync_Begin := Mode.H_Visible    + Mode.H_Sync_Begin;
       Mode.H_Sync_End   := Mode.H_Sync_Begin + Mode.H_Sync_End;
