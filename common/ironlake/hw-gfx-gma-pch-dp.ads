@@ -15,9 +15,14 @@
 package HW.GFX.GMA.PCH.DP
 is
 
-   procedure On
+   procedure Pre_Training
      (Port_Cfg : in     Port_Config;
-      FDI_Port : in     FDI_Port_Type;
+      FDI_Port : in     FDI_Port_Type)
+   with
+      Pre => Port_Cfg.PCH_Port in PCH_DP_Port;
+
+   procedure Train
+     (Port_Cfg : in     Port_Config;
       Success  :    out Boolean)
    with
       Pre => Port_Cfg.PCH_Port in PCH_DP_Port;

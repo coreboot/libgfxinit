@@ -132,7 +132,9 @@ is
                elsif Port_Cfg.PCH_Port in PCH.HDMI.IRL_PCH_HDMI_Port then
                   PCH.HDMI.On (Port_Cfg, FDI_Port);
                elsif Port_Cfg.PCH_Port in PCH_DP_Port then
-                  PCH.DP.On (Port_Cfg, FDI_Port, Success);
+                  PCH.DP.Pre_Training (Port_Cfg, FDI_Port);
+                  Panel.On (Port_Cfg.Panel, Wait => True);
+                  PCH.DP.Train (Port_Cfg, Success);
                end if;
             end if;
          end;

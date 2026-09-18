@@ -179,9 +179,30 @@ package body HW.GFX.GMA.PCH.DP is
 
    ----------------------------------------------------------------------------
 
-   procedure On
+   procedure Pre_Training
      (Port_Cfg : in     Port_Config;
-      FDI_Port : in     FDI_Port_Type;
+      FDI_Port : in     FDI_Port_Type)
+   is
+      DP_CTL_Transcoder_Select : constant Word32 :=
+        (if Config.Has_Trans_DP_Ctl
+         then 0 else PCH_TRANSCODER_SELECT (FDI_Port));
+      DP_CTL_Enhanced_Framing : constant Word32 :=
+        (if Config.Has_Trans_DP_Ctl
+         then 0 else DP_CTL_ENHANCED_FRAMING_ENABLE);
+   begin
+      pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
+
+      Registers.Write
+        (Register => DP_CTL (Port_Cfg.PCH_Port),
+         Value    => DP_CTL_DISPLAY_PORT_ENABLE or
+                     DP_CTL_Transcoder_Select or
+                     DP_CTL_PORT_WIDTH (Port_Cfg.DP.Lane_Count) or
+                     DP_CTL_Enhanced_Framing or
+                     DP_CTL_LINK_TRAIN (DP_Info.TP_1));
+   end Pre_Training;
+
+   procedure Train
+     (Port_Cfg : in     Port_Config;
       Success  :    out Boolean)
    is
       function To_DP (Port : PCH_DP_Port) return DP_Port
@@ -205,29 +226,14 @@ package body HW.GFX.GMA.PCH.DP is
          Set_Pattern       => Set_Training_Pattern,
          Set_Signal_Levels => Set_Signal_Levels,
          Off               => Off);
-
-      DP_CTL_Transcoder_Select : constant Word32 :=
-        (if Config.Has_Trans_DP_Ctl
-         then 0 else PCH_TRANSCODER_SELECT (FDI_Port));
-      DP_CTL_Enhanced_Framing : constant Word32 :=
-        (if Config.Has_Trans_DP_Ctl
-         then 0 else DP_CTL_ENHANCED_FRAMING_ENABLE);
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
-
-      Registers.Write
-        (Register => DP_CTL (Port_Cfg.PCH_Port),
-         Value    => DP_CTL_DISPLAY_PORT_ENABLE or
-                     DP_CTL_Transcoder_Select or
-                     DP_CTL_PORT_WIDTH (Port_Cfg.DP.Lane_Count) or
-                     DP_CTL_Enhanced_Framing or
-                     DP_CTL_LINK_TRAIN (DP_Info.TP_1));
 
       Training.Train_DP
         (Port     => Port_Cfg.PCH_Port,
          Link     => Port_Cfg.DP,
          Success  => Success);
-   end On;
+   end Train;
 
    ----------------------------------------------------------------------------
 
