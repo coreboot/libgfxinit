@@ -13,6 +13,7 @@
 --
 
 with HW.GFX.GMA.Config;
+with HW.GFX.GMA.Config_Helpers;
 
 with HW.Debug;
 with GNAT.Source_Info;
@@ -335,24 +336,41 @@ is
 
    ----------------------------------------------------------------------------
 
-   procedure VDD_Override (Panel : Panel_Control) is
+   procedure VDD_Override (Panel : Panel_Control; Wait : Boolean := True)
+   is
+      Was_On : Boolean;
    begin
-      if Panel not in Valid_Panels then
+      if Panel not in Valid_Panels or else
+         Config.Panel_Ports (Panel) not in Active_Port_Type
+      then
          return;
       end if;
 
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
-      -- Yeah, We could do, what we are supposed to do here. But OTOH, we
-      -- are should wait for the full Power Up Delay, which we would have
-      -- to do later again. And just powering on the display seems to work
-      -- too. Also this function vanished on newer hardware.
-      On (Panel);
+      if not GMA.Config.Use_PP_VDD_Override or
+         (Config_Helpers.To_Display_Type (Config.Panel_Ports (Panel)) /= DP)
+      then
+         On (Panel, Wait);
+      end if;
+
+      Registers.Is_Set_Mask
+        (PP (Panel).CONTROL, PCH_PP_CONTROL_VDD_OVERRIDE, Was_On);
+      if not Was_On then
+         Time.Delay_Until (Power_Cycle_Timer (Panel));
+         Registers.Set_Mask (PP (Panel).CONTROL, PCH_PP_CONTROL_VDD_OVERRIDE);
+
+         Power_Up_Timer (Panel) :=
+            Time.US_From_Now (Delays_US (Panel) (Power_Up_Delay));
+      end if;
+      if Wait then
+         Wait_On (Panel, VDD_Only => True);
+      end if;
    end VDD_Override;
 
    procedure On (Panel : Panel_Control; Wait : Boolean := True)
    is
-      Was_On : Boolean;
+      Was_On, VDD_Was_on : Boolean;
    begin
       if Panel not in Valid_Panels then
          return;
@@ -361,35 +379,48 @@ is
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
       Registers.Is_Set_Mask (PP (Panel).CONTROL, PCH_PP_CONTROL_TARGET_ON, Was_On);
+      Registers.Is_Set_Mask
+        (PP (Panel).CONTROL, PCH_PP_CONTROL_VDD_OVERRIDE, VDD_Was_on);
       if not Was_On then
          Time.Delay_Until (Power_Cycle_Timer (Panel));
       end if;
 
       Registers.Set_Mask (PP (Panel).CONTROL, PCH_PP_CONTROL_TARGET_ON);
-      if not Was_On then
+      if not Was_On and not VDD_Was_on then
          Power_Up_Timer (Panel) :=
             Time.US_From_Now (Delays_US (Panel) (Power_Up_Delay));
       end if;
       if Wait then
-         Wait_On (Panel);
+         Wait_On (Panel, VDD_Only => False);
       end if;
    end On;
 
-   procedure Wait_On (Panel : Panel_Control)
+   procedure Wait_On (Panel : Panel_Control; VDD_Only : Boolean := False)
    is
       Powered_On : Boolean;
    begin
-      if Panel not in Valid_Panels then
+      if Panel not in Valid_Panels or else
+         Config.Panel_Ports (Panel) not in Active_Port_Type
+      then
          return;
       end if;
 
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
       Time.Delay_Until (Power_Up_Timer (Panel));
+
+      if VDD_Only and
+         GMA.Config.Use_PP_VDD_Override and
+         (Config_Helpers.To_Display_Type (Config.Panel_Ports (Panel)) = DP)
+      then
+         -- we didn't start the power sequencer
+         return;
+      end if;
+
       Registers.Wait_Unset_Mask
         (Register => PP (Panel).STATUS,
          Mask     => PCH_PP_STATUS_PWR_SEQ_PROGRESS_MASK,
-         TOut_MS  => 300,
+         TOut_MS  => 1_000,
          Success  => Powered_On);
       if Powered_On then
          Registers.Is_Set_Mask
@@ -406,7 +437,7 @@ is
 
    procedure Off (Panel : Panel_Control)
    is
-      Was_On : Boolean;
+      Was_On, VDD_Was_On : Boolean;
    begin
       if Panel not in Valid_Panels then
          return;
@@ -415,6 +446,8 @@ is
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
       Registers.Is_Set_Mask (PP (Panel).CONTROL, PCH_PP_CONTROL_TARGET_ON, Was_On);
+      Registers.Is_Set_Mask
+        (PP (Panel).CONTROL, PCH_PP_CONTROL_VDD_OVERRIDE, VDD_Was_On);
       Registers.Unset_Mask
         (Register => PP (Panel).CONTROL,
          Mask     => PCH_PP_CONTROL_TARGET_ON or
@@ -426,7 +459,7 @@ is
         (Register => PP (Panel).STATUS,
          Mask     => PCH_PP_STATUS_PWR_SEQ_PROGRESS_MASK,
          TOut_MS  => 600);
-      if Was_On then
+      if Was_On or VDD_Was_On then
          Power_Cycle_Timer (Panel) :=
             Time.US_From_Now (Delays_US (Panel) (Power_Cycle_Delay));
       end if;

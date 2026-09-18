@@ -136,7 +136,7 @@ is
       Success := Config.Valid_Port (Port);
 
       if Success then
-         Panel.Wait_On (Config_Helpers.To_Panel (Port));
+         Panel.Wait_On (Config_Helpers.To_Panel (Port), VDD_Only => True);
          Read_EDID (Raw_EDID, Port, Success);
       end if;
 
@@ -201,7 +201,7 @@ is
             P : constant Panel_Control := Config_Helpers.To_Panel (Ports (Idx));
          begin
             if P /= No_Panel then
-               Panel.On (P, Wait => False);
+               Panel.VDD_Override (P, Wait => False);
                Probed_Panels (P) := True;
             end if;
          end;

@@ -36,11 +36,11 @@ is
 
    ----------------------------------------------------------------------------
 
-   procedure VDD_Override (Panel : Panel_Control);
+   procedure VDD_Override (Panel : Panel_Control; Wait : Boolean := True);
 
    procedure On (Panel : Panel_Control; Wait : Boolean := True);
 
-   procedure Wait_On (Panel : Panel_Control);
+   procedure Wait_On (Panel : Panel_Control; VDD_Only : Boolean := False);
 
    procedure Off (Panel : Panel_Control);
 
