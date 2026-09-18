@@ -375,7 +375,9 @@ is
       end if;
    end On;
 
-   procedure Wait_On (Panel : Panel_Control) is
+   procedure Wait_On (Panel : Panel_Control)
+   is
+      Powered_On : Boolean;
    begin
       if Panel not in Valid_Panels then
          return;
@@ -387,9 +389,19 @@ is
       Registers.Wait_Unset_Mask
         (Register => PP (Panel).STATUS,
          Mask     => PCH_PP_STATUS_PWR_SEQ_PROGRESS_MASK,
-         TOut_MS  => 300);
+         TOut_MS  => 300,
+         Success  => Powered_On);
+      if Powered_On then
+         Registers.Is_Set_Mask
+           (PP (Panel).STATUS, PCH_PP_STATUS_ENABLED, Powered_On);
+      end if;
+      pragma Debug (not Powered_On, Debug.Put_Line
+        ("ERROR: Panel power sequencer didn't power the panel up!"));
 
-      Registers.Unset_Mask (PP (Panel).CONTROL, PCH_PP_CONTROL_VDD_OVERRIDE);
+      -- Disable VDD override only if the panel power up was successful
+      if Powered_On then
+         Registers.Unset_Mask (PP (Panel).CONTROL, PCH_PP_CONTROL_VDD_OVERRIDE);
+      end if;
    end Wait_On;
 
    procedure Off (Panel : Panel_Control)
