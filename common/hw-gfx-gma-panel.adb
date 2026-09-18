@@ -255,19 +255,19 @@ is
          Check_PP_Delays (Delays_US (Panel), Override_Delays);
       end if;
 
-      if Override_Delays then
-         if Config.Has_PP_Port_Select then
-            Port_Select :=
-              (case Config.Panel_Ports (Panel_1) is
-                  when LVDS         => PCH_PP_ON_DELAYS_PORT_SELECT_LVDS,
-                  when eDP          => PCH_PP_ON_DELAYS_PORT_SELECT_DP_A,
-                  when DP2 | HDMI2  => PCH_PP_ON_DELAYS_PORT_SELECT_DP_C,
-                  when DP3 | HDMI3  => PCH_PP_ON_DELAYS_PORT_SELECT_DP_D,
-                  when others       => 0);
-         else
-            Port_Select := 0;
-         end if;
+      if Config.Has_PP_Port_Select then
+         Port_Select :=
+           (case Config.Panel_Ports (Panel_1) is
+               when LVDS         => PCH_PP_ON_DELAYS_PORT_SELECT_LVDS,
+               when eDP          => PCH_PP_ON_DELAYS_PORT_SELECT_DP_A,
+               when DP2 | HDMI2  => PCH_PP_ON_DELAYS_PORT_SELECT_DP_C,
+               when DP3 | HDMI3  => PCH_PP_ON_DELAYS_PORT_SELECT_DP_D,
+               when others       => 0);
+      else
+         Port_Select := 0;
+      end if;
 
+      if Override_Delays then
          -- Force power-up to backlight-on delay to 100us as recommended by PRM.
          Registers.Unset_And_Set_Mask
            (Register    => PP (Panel).ON_DELAYS,
@@ -301,6 +301,12 @@ is
                Mask_Set    => BXT_PP_CONTROL_PWR_CYC_DELAY
                                 (Delays_US (Panel) (Power_Cycle_Delay)));
          end if;
+      elsif Config.Has_PP_Port_Select then
+         -- Set port select even if we did not touch the delays.
+         Registers.Unset_And_Set_Mask
+           (Register    => PP (Panel).ON_DELAYS,
+            Mask_Unset  => PCH_PP_ON_DELAYS_PORT_SELECT_MASK,
+            Mask_Set    => Port_Select);
       end if;
 
       if Config.Has_PP_Write_Protection then
