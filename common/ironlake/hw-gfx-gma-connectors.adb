@@ -86,16 +86,6 @@ is
 
    ----------------------------------------------------------------------------
 
-   function Is_Internal (Port_Cfg : Port_Config) return Boolean
-   is
-   begin
-      return
-         Port_Cfg.Port = DIGI_A or
-         (Port_Cfg.Is_FDI and Port_Cfg.PCH_Port = PCH_LVDS);
-   end Is_Internal;
-
-   ----------------------------------------------------------------------------
-
    procedure Pre_On
      (Pipe        : in     Pipe_Index;
       Port_Cfg    : in     Port_Config;
@@ -150,7 +140,7 @@ is
          Success := False;
       end if;
 
-      if Success and Is_Internal (Port_Cfg) then
+      if Success then
          Panel.On (Port_Cfg.Panel, Wait => False);
          Panel.Backlight_On (Port_Cfg.Panel);
       end if;
@@ -163,10 +153,8 @@ is
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
-      if Is_Internal (Port_Cfg) then
-         Panel.Backlight_Off (Port_Cfg.Panel);
-         Panel.Off (Port_Cfg.Panel);
-      end if;
+      Panel.Backlight_Off (Port_Cfg.Panel);
+      Panel.Off (Port_Cfg.Panel);
    end Pre_Off;
 
    procedure Post_Off (Pipe : Pipe_Index; Port_Cfg : Port_Config)
