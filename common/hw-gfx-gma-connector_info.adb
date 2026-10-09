@@ -104,6 +104,61 @@ package body HW.GFX.GMA.Connector_Info is
                end loop;
             end;
          end if;
+
+         -- MST branch devices may still be in MST mode, e.g. after a
+         -- warm reboot from an OS that used it. We only drive SST.
+         if Success and Port_Cfg.DP.Receiver_Caps.Rev >= 16#12# then
+            declare
+               DPCD_MSTM_CAP      : constant := 16#00021#;
+               DPCD_MSTM_CTRL     : constant := 16#00111#;
+               DPCD_MSTM_CTRL_SST : constant DP_Defs.Aux_Payload :=
+                 (others => 0);
+               Data : DP_Defs.Aux_Payload;
+               Length : DP_Defs.Aux_Payload_Length;
+               Read_Success : Boolean;
+               Ignored_Success : Boolean;
+            begin
+               Length := 1;
+               DP_Aux_Ch.Aux_Read
+                 (Port     => DP_Port,
+                  Address  => DPCD_MSTM_CAP,
+                  Length   => Length,
+                  Data     => Data,
+                  Success  => Read_Success);
+               if Read_Success and then Length = 1 and then
+                  (Data (0) and 1) /= 0
+               then
+                  declare
+                     procedure Report_MSTM_Ctrl
+                     is
+                        Ctrl : DP_Defs.Aux_Payload;
+                        Ctrl_Length : DP_Defs.Aux_Payload_Length;
+                        Ctrl_Success : Boolean;
+                     begin
+                        Ctrl_Length := 1;
+                        DP_Aux_Ch.Aux_Read
+                          (Port     => DP_Port,
+                           Address  => DPCD_MSTM_CTRL,
+                           Length   => Ctrl_Length,
+                           Data     => Ctrl,
+                           Success  => Ctrl_Success);
+                        if Ctrl_Success and then Ctrl_Length = 1 then
+                           Debug.Put_Reg8
+                             ("MSTM_CTRL before forcing SST", Ctrl (0));
+                        end if;
+                     end Report_MSTM_Ctrl;
+                  begin
+                     pragma Debug (Report_MSTM_Ctrl);
+                     DP_Aux_Ch.Aux_Write
+                       (Port     => DP_Port,
+                        Address  => DPCD_MSTM_CTRL,
+                        Length   => 1,
+                        Data     => DPCD_MSTM_CTRL_SST,
+                        Success  => Ignored_Success);
+                  end;
+               end if;
+            end;
+         end if;
       else
          Success := True;
       end if;
