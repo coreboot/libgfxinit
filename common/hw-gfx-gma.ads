@@ -185,6 +185,15 @@ is
          Proof_In => (Init_State)),
       Pre => Is_Initialized;
 
+   -- Reports the configurations currently active. Outputs that failed
+   -- to come up in Update_Outputs() are reported as Disabled.
+   procedure Get_Active_Configs (Configs : out Pipe_Configs)
+   with
+      Global =>
+        (Input => (State),
+         Proof_In => (Init_State)),
+      Pre => Is_Initialized;
+
    procedure Update_Cursor (Pipe : Pipe_Index; Cursor : Cursor_Type)
    with
       Global =>

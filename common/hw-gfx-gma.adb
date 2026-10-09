@@ -404,6 +404,12 @@ is
       end if;
    end Update_Outputs;
 
+   procedure Get_Active_Configs (Configs : out Pipe_Configs)
+   is
+   begin
+      Configs := Cur_Configs;
+   end Get_Active_Configs;
+
    ----------------------------------------------------------------------------
 
    procedure Update_Cursor (Pipe : Pipe_Index; Cursor : Cursor_Type)
