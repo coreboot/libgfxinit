@@ -252,60 +252,28 @@ package body HW.GFX.DP_Info is
       Link_M   :    out M_Type;
       Link_N   :    out N_Type)
    is
-      DATA_N_MAX : constant := 16#800000#;
-      LINK_N_MAX : constant := 16#100000#;
+      FIXED_DATA_N : constant := 16#80_0000#;
+      FIXED_LINK_N : constant := 16#08_0000#;
 
       subtype Calc_M_Type is Int64 range 0 .. 2 ** 38;
       subtype Calc_N_Type is Int64 range 0 .. 2 ** 38;
-      subtype N_Rounded_Type is Int64 range
-         0 .. Int64'Max (DATA_N_MAX, LINK_N_MAX);
+      subtype Target_N_Type is Pos64 range FIXED_LINK_N .. FIXED_DATA_N;
 
       M : Calc_M_Type;
       N : Calc_N_Type;
 
       procedure Cancel_M_N
-        (M     : in out Calc_M_Type;
-         N     : in out Calc_N_Type;
-         N_Max : in     N_Rounded_Type)
+        (M        : in out Calc_M_Type;
+         N        : in out Calc_N_Type;
+         Target_N : in     Target_N_Type)
       with
-         Depends => ((M, N) => (M, N, N_Max)),
-         Pre => (N > 0 and M in 0 .. Calc_M_Type'Last / 2),
-         Post => (M <= M_N_Max and N <= M_N_Max)
+         Depends => ((M, N) => (M, N, Target_N)),
+         Pre => N >= Target_N_Type'Last,
+         Post => M in M_Type and N in N_Type
       is
-         Orig_N : constant Calc_N_Type := N;
-
-         function Round_N (N : Calc_N_Type) return N_Rounded_Type
-         with
-            Post => (Round_N'Result <= N * 2)
-         is
-            RN : Calc_N_Type;
-            RN2 : Calc_N_Type := N_Max;
-         begin
-            loop
-               RN := RN2;
-               RN2 := RN2 / 2;
-               exit when RN2 < N;
-               pragma Loop_Invariant (RN2 = RN / 2 and RN2 in N .. N_Max);
-            end loop;
-            return RN;
-         end Round_N;
       begin
-         N := Round_N (N);
-
-         -- The automatic provers need a little nudge here.
-         pragma Assert
-            (if M <= Calc_M_Type'Last / 2 and
-                N <= Orig_N * 2 and
-                Orig_N > 0 and
-                M > 0
-             then
-                M * N / Orig_N <= Calc_M_Type'Last);
-
-         pragma Annotate (GNATprove, False_Positive,
-            "assertion might fail",
-            "The property cannot be proven automatically. An Isabelle proof is included as an axiom");
-
-         M := M * N / Orig_N;
+         M := M * Target_N / N;
+         N := Target_N;
 
          -- This loop is never hit for sane values (i.e. M <= N) but
          -- we have to make sure returned values are always in range.
@@ -334,7 +302,7 @@ package body HW.GFX.DP_Info is
            * DP_Symbol_Rate (Link.Bandwidth)
            * Lane_Count_As_Integer (Link.Lane_Count);
 
-      Cancel_M_N (M, N, DATA_N_MAX);
+      Cancel_M_N (M, N, FIXED_DATA_N);
       Data_M := M;
       Data_N := N;
 
@@ -343,7 +311,7 @@ package body HW.GFX.DP_Info is
       M := Pos64 (Mode.Dotclock);
       N := Pos64 (DP_Symbol_Rate (Link.Bandwidth));
 
-      Cancel_M_N (M, N, LINK_N_MAX);
+      Cancel_M_N (M, N, FIXED_LINK_N);
       Link_M := M;
       Link_N := N;
    end Calculate_M_N;
